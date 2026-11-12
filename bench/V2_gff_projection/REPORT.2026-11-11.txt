@@ -1,0 +1,70 @@
+== timing (GFF parse + protein-space projection, one process per genome; wall s / peak RSS MB)
+  Spunctatus         0.20      82.6
+  Mmucedo            0.25     102.2
+  Smaydis            0.07      22.5
+  Ccinerea           0.32     124.5
+  Cneoformans        0.17      72.6
+  Spombe             0.05      19.9
+  Scerevisiae        0.05      18.2
+  Ncrassa            0.12      42.2
+  Anidulans          0.15      55.3
+  analyze_all        8.41     506.5
+
+== per genome: annotation as read (all genes, before any alignment)
+  genome          proteins joined  introns  introns/gene  phase0  phase1  phase2
+  Spunctatus                 7457    41628          5.58    0.46    0.32    0.22
+  Mmucedo                   12214    45476          3.72    0.41    0.35    0.25
+  Smaydis                    1777     2796          1.57    0.40    0.34    0.26
+  Ccinerea                  11558    61305          5.30    0.41    0.33    0.26
+  Cneoformans                6603    35967          5.45    0.41    0.31    0.28
+  Spombe                     2339     4992          2.13    0.42    0.33    0.26
+  Scerevisiae                 335      407          1.21    0.36    0.38    0.26
+  Ncrassa                    6883    14078          2.05    0.39    0.34    0.26
+  Anidulans                  8297    22079          2.66    0.39    0.33    0.27
+  (genes with introns only; intronless genes are absent from introns.tsv, so introns/gene is an upper bound)
+
+== diagnostics raised while reading each genome (kind: count)
+  Spunctatus     site_beyond_protein_end: 2
+  Mmucedo        site_beyond_protein_end: 10
+  Smaydis        site_beyond_protein_end: 6
+  Ccinerea       site_beyond_protein_end: 24
+  Cneoformans    site_beyond_protein_end: 10
+  Spombe         site_beyond_protein_end: 1
+  Scerevisiae    none
+  Ncrassa        site_beyond_protein_end: 3
+  Anidulans      site_beyond_protein_end: 8
+
+== ortholog families through the whole pipeline
+  alignments with a matrix: 739   protein rows annotated: 6363   not annotated: 1  {'row_sequence_mismatch': 1}
+  sites scored 10849   Dollo gains 10849 losses 10034   MP steps 14295
+  introns placed per taxon (alignment sites carried):
+    Spunctatus        4644
+    Mmucedo           2770
+    Smaydis            232
+    Ccinerea          4619
+    Cneoformans       4205
+    Spombe             823
+    Scerevisiae         19
+    Ncrassa           1236
+    Anidulans         1753
+  diagnostics across the run: proteins_not_in_alignment: 739, present_not_observable: 423, site_beyond_protein_end: 64, tail_sites_dropped: 5, row_sequence_mismatch: 1
+
+== per-branch Dollo losses and gains over all families (top 12 by losses)
+  Smaydis                      losses   2883 gains    102   Smaydis
+  Spombe,Scerevisiae,Ncrassa,Anidulans losses   1654 gains     50   Spombe,Scerevisiae,Ncrassa,Anidulans
+  Scerevisiae                  losses   1030 gains      6   Scerevisiae
+  Mmucedo                      losses    963 gains    720   Mmucedo
+  Cneoformans                  losses    803 gains   1325   Cneoformans
+  Spombe                       losses    720 gains    221   Spombe
+  Scerevisiae,Ncrassa,Anidulans losses    503 gains      8   Scerevisiae,Ncrassa,Anidulans
+  Ncrassa                      losses    470 gains    279   Ncrassa
+  Ccinerea                     losses    351 gains   1250   Ccinerea
+  Smaydis,Ccinerea,Cneoformans,Spombe…(7 tips) losses    292 gains    195   Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,A...
+  Smaydis,Ccinerea,Cneoformans losses    221 gains     27   Smaydis,Ccinerea,Cneoformans
+  Anidulans                    losses     98 gains    417   Anidulans
+
+== expectations from the literature (NOT asserted; compare by eye)
+  - Intron-poor: Saccharomyces cerevisiae (few introns/gene). Intron-rich: Cryptococcus neoformans, Spizellomyces punctatus.
+  - Phase 0 is the most common intron phase and phase 2 the rarest (Fedorov 1992; Roy & Gilbert 2005).
+  - Dollo losses should concentrate on the S. cerevisiae and S. pombe branches and on the branch above the Saccharomycotina/Pezizomycotina split.
+  - The gene models are funannotate predictions, not curated annotation; differences from literature values can be annotation artefacts.

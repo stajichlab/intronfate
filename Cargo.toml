@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+members = ["crates/intron-core", "crates/intron-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+authors = ["Chris Stajich"]
+repository = "https://github.com/stajichlab/intron_projector"
+categories = ["science", "bio-informatics"]
+
+[workspace.dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive", "suggestions"] }
+flate2 = "1"
+rayon = "1"
+rustc-hash = "2"
+thiserror = "2"
+
+intron-core = { path = "crates/intron-core", version = "0.1.0" }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+debug = 1

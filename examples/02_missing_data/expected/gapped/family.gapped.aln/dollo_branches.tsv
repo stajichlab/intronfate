@@ -1,0 +1,8 @@
+branch	node	n_tips	gains	losses	tips
+root	0	4	1	0	A,B,C,D
+A,B	1	2	0	0	A,B
+A	2	1	0	0	A
+B	3	1	0	0	B
+C,D	4	2	0	0	C,D
+C	5	1	0	0	C
+D	6	1	1	0	D

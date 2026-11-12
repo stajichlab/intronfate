@@ -1,0 +1,35 @@
+== timings (s)
+  rogozin_convert  0.04
+  rogozin_score  0.05
+  chromo23_convert  0.74
+  chromo23_score_all  8.28
+  chromo23_export  0.06
+
+== Rogozin 2003 table (binary, no #MAP)
+  sites                  observed     7221   spec claimed     7221   OK
+  Dollo losses           observed     2770   spec claimed     2770   OK
+  sites needing a loss   observed     1619   spec claimed     1619   OK
+  MP steps               observed     9007   spec claimed     9007   OK
+  per-branch losses (top 12) vs MALIN guide p.27 where the branch name matches a tip or label:
+    Sp                          796   guide: 796
+    Ecdysozoa                   568   guide: 568
+    Diptera                     436   guide: 436
+    Ce                          411   guide: 411
+    Ag                          194   guide: 194
+    Dm                          156   guide: 156
+    Hs                          112   guide: 112
+    At                           46   guide: 46
+    Bilatera                     27   guide: -
+    Opisthokont                  24   guide: -
+    Root                          0   guide: -
+    Crown                         0   guide: -
+  sum over all branches: 2770   (guide's visible rows sum to 2719)
+
+== Chromo23 (phase codes + #MAP)
+  taxa 23  sites 9256  (spec claimed 9256 sites)
+  alphabet  observed: {'0': 160418, '1': 4307, '2': 4568, '3': 10493, '?': 33102}
+  alphabet  claimed : {'0': 160418, '?': 33102, '3': 10493, '2': 4568, '1': 4307} -> OK
+  alignments 405  sites scored 8686  Dollo gains 8686 losses 6475  MP steps 11760
+
+== round trip (import -> per-alignment matrices -> export)
+  taxa identical: True   sites: 9256 -> 9256   every (alignment, alipos) row identical: True

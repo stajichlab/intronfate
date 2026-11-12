@@ -1,0 +1,5 @@
+alignment	taxon	protein_id	protein_len	residues_aligned	n_sites	n_intron_records	tail_sites	clamped_sites	annotated	reason_if_not
+family.gapped.aln	A	A	12	12	1	1	0	0	yes	
+family.gapped.aln	B	B	12	12	1	1	0	0	yes	
+family.gapped.aln	C	C	12	12	1	1	0	0	yes	
+family.gapped.aln	D	D	10	10	1	1	0	0	yes	

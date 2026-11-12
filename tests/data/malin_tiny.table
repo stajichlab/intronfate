@@ -1,0 +1,8 @@
+#ORGANISM A Alpha
+#ORGANISM B Beta
+A	31?
+B	302
+#MAP	site	kog	alipos	# (site 0-based)
+#MAP	0	K1	3
+#MAP	1	K1	7
+#MAP	2	K2	8

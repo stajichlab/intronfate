@@ -1,0 +1,5 @@
+alignment	taxon	protein_id	column	phase	cds_offset	codon	residue_before	residue_after	site_label	protein_len	residues_aligned
+family.gapped.aln	A	A	5	1	16	6	6	6	5:1	12	12
+family.gapped.aln	B	B	5	1	16	6	6	6	5:1	12	12
+family.gapped.aln	C	C	5	1	16	6	6	6	5:1	12	12
+family.gapped.aln	D	D	9	0	21	7	7	8	9:0	10	10

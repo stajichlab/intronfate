@@ -1,0 +1,10 @@
+genome	scored	v2_transcripts	in_tmap	with_ref_locus	class_codes	sn_genome_wide	ref_introns_genome	sn_v2_genes	ref_introns_v2	pr_genome_wide	pred_introns_genome	pr_v2_genes	pred_introns_v2
+Spunctatus	yes	688	688	688	=:458 j:162 m:19 k:18 n:17 c:14	88.7	43219	94.0	4846	92.1	41628	95.1	4934
+Mmucedo	yes	640	640	638	=:460 j:115 k:40 m:10 n:7 c:7 e:1	79.9	41289	95.3	2699	72.5	45476	89.3	2975
+Smaydis	yes	725	725	723	=:677 o:18 j:13 k:9 e:2 m:2 c:2 u:1 p:1	72.0	2951	88.8	223	76.0	2796	82.2	253
+Ccinerea	yes	723	723	723	=:426 j:238 k:26 m:13 n:9 c:8 e:2 o:1	84.9	61784	92.8	4794	85.5	61305	90.2	4922
+Cneoformans	yes	717	717	717	=:675 j:25 k:8 c:4 m:3 n:2	94.6	36863	99.0	4476	97.0	35967	98.9	4506
+Spombe	yes	695	695	695	=:674 j:8 c:6 o:3 k:2 e:1 m:1	94.2	5113	97.3	903	96.5	4992	99.0	890
+Scerevisiae	no (no RefSeq comparison for this BFD genome)												
+Ncrassa	yes	736	736	736	=:712 j:10 c:7 k:4 m:2 o:1	81.1	15928	98.7	1323	91.7	14078	99.0	1320
+Anidulans	yes	735	735	728	=:538 j:117 m:24 k:19 c:10 n:8 o:8 u:7 e:4	70.2	24441	89.3	1837	77.7	22079	88.0	1858

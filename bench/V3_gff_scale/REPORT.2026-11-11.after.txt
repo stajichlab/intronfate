@@ -1,0 +1,18 @@
+== largest GFF3s, one genome per process (default threads)
+  genome                                         gz MB   wall s  MB/s(gz)   RSS MB  parse s  join s  write s  transcripts   introns
+  Phakopsora_pachyrhizi_GA_Moultrie_14.1          14.3     2.02       7.1      402     1.16    0.22     0.17       108494    527540
+  Phakopsora_pachyrhizi_GA_Thomas_14.3            14.2     2.08       6.8      402     1.20    0.22     0.17       107782    526098
+
+== thread scaling on the largest GFF3 (wall s; speedup vs 1 thread)
+  threads   1: wall    1.90  speedup  1.00  RSS     364 MB  parse   1.08  user    1.76
+
+== many genomes in one process (project)
+   genomes    gz MB   wall s   RSS MB  parse s proteins s  join s  write s  transcripts    introns   out MB
+        10        8      1.8      304      0.7        0.7     0.1      0.1       107691     185825       22
+       100       79     19.7     2941      7.5        8.4     1.6      0.8       997869    2017747      247
+      1000      883    225.9    32520     87.0       88.1    20.6      8.7     10899389   23375682     2869
+
+gzip_largest: wall 2.03 s  parse 1.17 s  RSS 404 MB
+
+plain_largest: wall 1.92 s  parse 1.03 s  RSS 391 MB
+  gzip decoding adds 0.13 s to the parse stage (11% of it)

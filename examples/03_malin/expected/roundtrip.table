@@ -1,0 +1,14 @@
+#ORGANISM A	A
+#ORGANISM B	B
+#ORGANISM C	C
+#ORGANISM D	D
+A	3103?
+B	31201
+C	302?0
+D	0000?
+#MAP	site	kog	alipos	# intron site (0-based) -> alignment, nucleotide position
+#MAP	0	K1	3
+#MAP	1	K1	7
+#MAP	2	K1	14
+#MAP	3	K2	9
+#MAP	4	K2	10

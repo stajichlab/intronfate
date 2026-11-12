@@ -1,0 +1,10 @@
+##gff-version 3
+chrA	ex	mRNA	101	218	.	+	.	ID=tA;Parent=gA
+chrA	ex	CDS	101	116	.	+	0	ID=cA1;Parent=tA;protein_id=A
+chrA	ex	CDS	201	220	.	+	2	ID=cA2;Parent=tA;protein_id=A
+chrB	ex	mRNA	101	218	.	+	.	ID=tB;Parent=gB
+chrB	ex	CDS	101	116	.	+	0	ID=cB1;Parent=tB;protein_id=B
+chrB	ex	CDS	201	220	.	+	2	ID=cB2;Parent=tB;protein_id=B
+chrC	ex	mRNA	101	218	.	+	.	ID=tC;Parent=gC
+chrC	ex	CDS	101	116	.	+	0	ID=cC1;Parent=tC;protein_id=C
+chrC	ex	CDS	201	220	.	+	2	ID=cC2;Parent=tC;protein_id=C

@@ -1,0 +1,36 @@
+== largest GFF3s, one genome per process (default threads)
+  genome                                         gz MB   wall s  MB/s(gz)   RSS MB  parse s  join s  write s  transcripts   introns
+  Phakopsora_pachyrhizi_GA_Moultrie_14.1          14.3     1.60       8.9      258     1.18    0.01     0.15       108494    527540
+  Phakopsora_pachyrhizi_GA_Thomas_14.3            14.2     1.67       8.5      255     1.21    0.01     0.15       107782    526098
+
+== thread scaling on the largest GFF3 (wall s; speedup vs 1 thread)
+  threads   1: wall    1.53  speedup  1.00  RSS     214 MB  parse   1.11  user    1.43
+
+== many genomes in one process (project)
+   genomes    gz MB   wall s   RSS MB  parse s proteins s  join s  write s  transcripts    introns   out MB
+        10        8      0.6      215      0.3        0.1     0.0      0.1       107691     185825       22
+       100       79      3.7      920      2.0        0.5     0.4      0.6       997869    2017747      247
+      1000      883     53.8     6956     30.1        6.0     7.6      7.1     10899389   23375682     2869
+
+== thread scaling with 100 genomes in one process (wall s; speedup vs 1 thread)
+  threads   1: wall   12.64  speedup  1.00  RSS     594 MB  parse   7.80  proteins   3.47
+  threads   4: wall    6.00  speedup  2.11  RSS     663 MB  parse   3.68  proteins   1.04
+  threads  16: wall    3.71  speedup  3.41  RSS     927 MB  parse   1.95  proteins   0.54
+
+gzip_largest: wall 1.60 s  parse 1.17 s  RSS 257 MB
+
+plain_largest: wall 1.48 s  parse 1.06 s  RSS 247 MB
+  gzip decoding adds 0.11 s to the parse stage (10% of it)
+
+== resident memory after each stage (MB: now / peak so far), per run
+  genomes_10                                     proteins=37/39  gff=212/212  join=215/215  write=215/215
+  genomes_100                                    proteins=317/348  gff=859/877  join=866/920  write=866/920
+  genomes_1000                                   proteins=3290/3343  gff=6243/6387  join=6326/6956  write=6326/6956
+  gthreads_1                                     proteins=264/297  gff=533/551  join=533/594  write=533/594
+  gthreads_4                                     proteins=281/310  gff=603/621  join=610/663  write=611/663
+  gthreads_16                                    proteins=317/349  gff=865/883  join=873/927  write=873/927
+  gzip_largest                                   proteins=30/43  gff=237/257  join=237/257  write=237/257
+  plain_largest                                  proteins=30/43  gff=227/247  join=227/247  write=227/247
+  threads_1                                      proteins=28/42  gff=194/214  join=194/214  write=194/214
+  top_Phakopsora_pachyrhizi_GA_Moultrie_14.1     proteins=30/43  gff=237/258  join=237/258  write=238/258
+  top_Phakopsora_pachyrhizi_GA_Thomas_14.3       proteins=30/43  gff=235/255  join=235/255  write=236/255

@@ -1,0 +1,5 @@
+alignment	taxon	protein_id	protein_len	residues_aligned	n_sites	n_intron_records	tail_sites	clamped_sites	annotated	reason_if_not
+family.aln	A	A	10	10	2	2	0	0	yes	
+family.aln	B	B	10	10	2	2	0	0	yes	
+family.aln	C	C	10	10	1	1	0	0	yes	
+family.aln	D	D	10	10	1	1	0	0	yes	

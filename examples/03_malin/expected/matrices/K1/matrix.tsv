@@ -1,0 +1,5 @@
+# format=2 alignment=K1 alen=0 phase_mode=strict flank=0 masked_present=0 taxa=4 sites=3 unannotated=- residues=-
+site	column	phase	n_taxa	n_observable	pattern	A	B	C	D
+1:0	1	0	3	4	1110	1	1	1	0
+2:1	2	1	2	4	1100	1	1	0	0
+4:2	4	2	2	4	0110	0	1	1	0

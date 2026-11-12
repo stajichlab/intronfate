@@ -1,0 +1,3 @@
+chrD	ex	mRNA	101	218	.	+	.	ID=tD;Parent=gD
+chrD	ex	CDS	101	121	.	+	0	ID=cD1;Parent=tD;protein_id=D
+chrD	ex	CDS	201	209	.	+	0	ID=cD2;Parent=tD;protein_id=D

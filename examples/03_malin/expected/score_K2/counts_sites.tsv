@@ -1,0 +1,3 @@
+site	column	phase	n_present	n_absent	n_missing	frequency	taxa
+3:0	3	0	1	2	1	0.333333	A
+3:1	3	1	1	1	2	0.500000	B

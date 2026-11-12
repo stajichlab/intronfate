@@ -1,0 +1,7 @@
+taxon_a	taxon_b	n_a	n_b	shared	jaccard	fraction_of_smaller	both_annotated	n_both_observable
+A	B	1	1	1	1.000000	1.000000	yes	2
+A	C	1	1	1	1.000000	1.000000	yes	2
+A	D	1	1	0	0.000000	0.000000	yes	1
+B	C	1	1	1	1.000000	1.000000	yes	2
+B	D	1	1	0	0.000000	0.000000	yes	1
+C	D	1	1	0	0.000000	0.000000	yes	1

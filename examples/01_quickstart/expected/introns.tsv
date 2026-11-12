@@ -1,0 +1,7 @@
+protein_id	gene_id	transcript_id	seqid	strand	intron_rank	coding_rank	genomic_start	genomic_end	intron_len	cds_offset	phase	codon	residue_before	residue_after	site_key	protein_len	in_range
+A	gA	tA	chrA	+	0	0	113	200	88	12	0	4	4	5	12	10	yes
+A	gA	tA	chrA	+	1	1	210	300	91	21	0	7	7	8	21	10	yes
+B	gB	tB	chrB	+	0	0	113	200	88	12	0	4	4	5	12	10	yes
+B	gB	tB	chrB	+	1	1	210	300	91	21	0	7	7	8	21	10	yes
+C	gC	tC	chrC	-	0	0	410	600	191	21	0	7	7	8	21	10	yes
+D	gD	tD	chrD	+	0	0	113	200	88	12	0	4	4	5	12	10	yes

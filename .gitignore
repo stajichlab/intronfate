@@ -1,0 +1,15 @@
+target/
+/target
+**/*.rs.bk
+intron_out/
+intron_demo/
+/out
+*.dylib
+.DS_Store
+
+# third-party reference data + licensed test datasets (see docs/SPEC.md §6b) - not ours to commit
+Malin/
+Malin.tgz
+
+# example run outputs (expected/ is committed)
+examples/*/out/

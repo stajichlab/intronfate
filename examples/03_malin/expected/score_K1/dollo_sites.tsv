@@ -1,0 +1,4 @@
+site	column	phase	n_present	n_missing	gains	losses	monophyletic	dollo_compatible	gained_at	lost_in
+1:0	1	0	3	0	1	1	no	no	root	D
+2:1	2	1	2	0	1	0	yes	yes	A,B	
+4:2	4	2	2	0	1	2	no	no	root	A;D
