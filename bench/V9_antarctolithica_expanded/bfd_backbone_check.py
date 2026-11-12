@@ -11,11 +11,12 @@ label_genus = {}
 for l in open(genomes):
     if l.strip() and not l.startswith("#") and not l.startswith("Alith"):
         lab, d, g = l.rstrip("\n").split("\t"); label_genus[lab] = d.split("_")[0]
-tag2label = {}
+tag2label = {}; used = set()
 for r in csv.DictReader(open(reps), delimiter="\t"):
     for lab, genus in label_genus.items():
-        if r["GENUS"] == genus and lab not in tag2label.values(): tag2label[r["LOCUSTAG"]] = lab
-print(f"{len(tag2label)} of {len(label_genus)} genomes have a genus representative in the BFD tree")
+        if r["GENUS"] == genus and lab not in used and r["LOCUSTAG"] not in tag2label:
+            tag2label[r["LOCUSTAG"]] = lab; used.add(lab)     # one genus representative per genus: the first label of a genus gets it
+print(f"{len(tag2label)} of {len(label_genus)} genomes have a genus representative in the BFD tree; none for: {sorted(set(label_genus) - used)}")
 root = remove(parse(open(tree).read()), lambda nm: nm not in tag2label)
 def rename(x):
     if not x["kids"]: x["name"] = tag2label[x["name"]]

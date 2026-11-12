@@ -4,9 +4,13 @@
 Each candidate tree (trees/place_NN.nwk plus the gene tree) is scored with `intronfate score -m dollo,mp`; per-site Fitch steps and Dollo losses are
 summed per family, and families are resampled with replacement to see how often each placement is the best. `--require-carrier PREFIX` keeps only
 sites where some taxon whose name starts with PREFIX carries the intron, so that absences in that lineage (shared loss) cannot attract it to other
-intron-poor lineages. Usage: bootstrap_scan.py --matrix M --trees DIR --bin intronfate --work DIR --out tsv [--require-carrier Alith] [--reps 1000]"""
-import argparse, collections, concurrent.futures as cf, csv, os, shutil, subprocess
+intron-poor lineages. Trees whose per-family score vectors are identical (the two placements on the root's two edges give the same unrooted tree, and the
+gene tree can equal one placement) are one TIE GROUP: the group wins or loses together, every member reports the group's fraction, and `tied_with` lists the
+others, so a correct placement is not penalised for having a twin. Usage: bootstrap_scan.py --matrix M --trees DIR --bin intronfate --work DIR --out tsv [--require-carrier Alith] [--reps 1000]"""
+import argparse, collections, concurrent.futures as cf, csv, os, shutil, subprocess, sys
 import numpy as np
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import scan_stats as SS
 
 ap = argparse.ArgumentParser()
 for k in ("matrix", "trees", "bin", "work", "out"): ap.add_argument("--" + k, required=True)
@@ -42,15 +46,12 @@ def table(k):
 MP, LO = table(1), table(2)
 rng = np.random.default_rng(a.seed); F = len(fam)
 W = rng.multinomial(F, [1.0 / F] * F, size=a.reps)
-def wins(X):
-    tot = W @ X; best = tot == tot.min(axis=1, keepdims=True)
-    return (best / best.sum(axis=1, keepdims=True)).sum(axis=0) / a.reps
-wm, wl = wins(MP), wins(LO)
+wm, wl = SS.win_fractions(W, MP), SS.win_fractions(W, LO); tw = SS.twins(MP, names)
 order = np.argsort(MP.sum(axis=0))
 with open(a.out, "w") as f:
     f.write(f"# {len(sites)} sites in {F} families; {a.reps} family-bootstrap replicates; carrier filter: {a.require_carrier or 'none'}\n")
-    f.write("tree\tgroup\ttips_below\tmp_steps\tsteps_over_best\tdollo_losses\tmp_best_in_fraction_of_replicates\tdollo_best_in_fraction_of_replicates\n")
+    f.write("tree\tgroup\tn_tips_below\ttips_below\tmp_steps\tsteps_over_best\tdollo_losses\tmp_best_in_fraction_of_replicates\tdollo_best_in_fraction_of_replicates\ttied_with\n")
     for t in order:
-        n = names[t]; i = index.get(n, {"group": "(gene tree)", "tips_below": ""})
-        f.write(f"{n}\t{i['group'][:60]}\t{i['tips_below'][:60]}\t{MP[:, t].sum()}\t{MP[:, t].sum() - MP.sum(axis=0).min()}\t{LO[:, t].sum()}\t{wm[t]:.3f}\t{wl[t]:.3f}\n")
+        n = names[t]; i = index.get(n, {"group": "(gene tree)", "tips_below": "", "n_tips_below": ""})
+        f.write(f"{n}\t{i['group']}\t{i['n_tips_below']}\t{i['tips_below']}\t{MP[:, t].sum()}\t{MP[:, t].sum() - MP.sum(axis=0).min()}\t{LO[:, t].sum()}\t{wm[t]:.3f}\t{wl[t]:.3f}\t{','.join(tw[t])}\n")
 print(open(a.out).read())

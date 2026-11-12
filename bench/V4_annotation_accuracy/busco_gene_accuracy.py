@@ -103,10 +103,10 @@ for label, d in genomes.items():
     pr_all, n_pred_all = pr(pred_all); pr_v2, n_pred_v2 = pr(pred_v2)
     summary.append(dict(genome=label, scored="yes", v2_transcripts=len(S), in_tmap=found, with_ref_locus=len(R),
                         class_codes=" ".join(f"{k}:{v}" for k, v in classes.most_common()),
-                        sn_genome_wide=round(sn_all, 1), ref_introns_genome=n_ref_all,
-                        sn_v2_genes=round(sn_v2, 1), ref_introns_v2=n_ref_v2,
-                        pr_genome_wide=round(pr_all, 1), pred_introns_genome=n_pred_all,
-                        pr_v2_genes=round(pr_v2, 1), pred_introns_v2=n_pred_v2))
+                        sn_genome_wide=round(sn_all, 3), ref_introns_genome=n_ref_all,
+                        sn_v2_genes=round(sn_v2, 3), ref_introns_v2=n_ref_v2,
+                        pr_genome_wide=round(pr_all, 3), pred_introns_genome=n_pred_all,
+                        pr_v2_genes=round(pr_v2, 3), pred_introns_v2=n_pred_v2))
     for kind, value in sorted(set(k for k in list(pc) + list(rc))):
         s, ns = sn(rc[(kind, value)]); p, npred = pr(pc[(kind, value)])
         by_class.append(dict(genome=label, kind=kind, value=value, sn=round(s, 1), n_ref=ns, pr=round(p, 1), n_pred=npred))

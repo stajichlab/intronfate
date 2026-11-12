@@ -7,7 +7,10 @@ owner = {}; n_prot = collections.Counter()
 for fa in glob.glob(os.path.join(pdir, "*.faa")):
     lab = os.path.basename(fa)[:-4]
     for l in open(fa):
-        if l.startswith(">"): owner[l[1:].split()[0]] = lab; n_prot[lab] += 1
+        if l.startswith(">"):
+            pid = l[1:].split()[0]
+            if pid in owner: sys.exit(f"protein id {pid} occurs in both {owner[pid]} and {lab}: introns cannot be assigned by id")
+            owner[pid] = lab; n_prot[lab] += 1
 n_int = collections.Counter(); with_int = collections.defaultdict(set)
 with open(introns, newline="") as f:
     for r in csv.DictReader(f, delimiter="\t"):

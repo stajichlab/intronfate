@@ -24,6 +24,8 @@ def groups_from(genomes_tsv):
         if t in lip: return "Lipomycetes"
         if g == "Saccharomycotina": return "Sacch_other"
         if t in ("Pyronema", "Orbilia"): return "Pez_early(Pyronema,Orbilia)"
+        if g.startswith("outgroup") or g in ("", "Taphrinomycotina", "Saccharomycotina"):
+            sys.exit(f"{t} (group {g!r}) is not assigned to any group in exclusive_sharing.py")
         return "Pez_core"
     return which
 

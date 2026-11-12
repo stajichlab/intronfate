@@ -1,29 +1,29 @@
-target	mode	true_sibling	best_placement_tips_below	best_is_true	bootstrap_best	steps_true_over_best	dollo_best_tips
-Botrytis	all	Antarctomyces	Ncrassa	NO	1.000	87	Antarctomyces,Ncrassa
-Botrytis	carrier	Antarctomyces	Geoglossum	NO	0.988	336	Antarctomyces,Ncrassa
-Cneoformans	all	Smaydis	Neolecta	NO	1.000	1822	Anidulans,Antarctomyces,Arthonia,Botr...
-Cneoformans	carrier	Smaydis	Neolecta	NO	1.000	2312	Anidulans,Antarctomyces,Arthonia,Botr...
-Cryomyces	all	Hortaea,Zymoseptoria	Geoglossum,Lichina	NO	0.873	32	Arthonia,Hortaea,Zymoseptoria
-Cryomyces	carrier	Hortaea,Zymoseptoria	Geoglossum	NO	0.723	48	Anidulans,Cladonia,Exophiala,Geogloss...
-Lipomyces	all	Yarrowia	Neolecta	NO	1.000	1298	Yarrowia
-Lipomyces	carrier	Yarrowia	Neolecta	NO	1.000	1783	Anidulans,Antarctomyces,Arthonia,Botr...
-Neolecta	all	Saitoella	Cneoformans	NO	1.000	1641	Anidulans,Antarctomyces,Arthonia,Botr...
-Neolecta	carrier	Saitoella	Cneoformans	NO	1.000	1738	Anidulans,Antarctomyces,Arthonia,Botr...
-Orbilia	all	Pyronema	Pyronema	yes	0.492	0	Pyronema
-Orbilia	carrier	Pyronema	Geoglossum	NO	1.000	780	Anidulans,Antarctomyces,Arthonia,Botr...
-Protomyces	all	Taphrina	Taphrina	yes	0.500	0	Savitreella
-Protomyces	carrier	Taphrina	Taphrina	yes	0.500	0	Taphrina
-Pyronema	all	Orbilia	Orbilia	yes	0.500	0	Arthonia,Cryomyces,Hortaea,Zymoseptoria
-Pyronema	carrier	Orbilia	Geoglossum	NO	0.545	8	Anidulans,Antarctomyces,Arthonia,Botr...
-Saitoella	all	Neolecta	Neolecta	yes	0.299	0	Yarrowia
-Saitoella	carrier	Neolecta	Neolecta	yes	0.500	0	Anidulans,Antarctomyces,Arthonia,Botr...
-Savitreella	all	Protomyces,Taphrina	Protomyces,Taphrina	yes	0.500	0	Protomyces
-Savitreella	carrier	Protomyces,Taphrina	Protomyces	NO	0.525	19	Protomyces
-Smaydis	all	Cneoformans	Protomyces,Savitreella,Taphrina	NO	1.000	2011	Savitreella
-Smaydis	carrier	Cneoformans	Cneoformans	yes	0.500	0	Cneoformans
-Spombe	all	Protomyces,Savitreella,Taphrina	Mmucedo	NO	0.474	70	Protomyces,Savitreella,Taphrina
-Spombe	carrier	Protomyces,Savitreella,Taphrina	Neolecta	NO	1.000	653	Anidulans,Antarctomyces,Arthonia,Botr...
-Taphrina	all	Protomyces	Protomyces	yes	0.500	0	Protomyces,Savitreella
-Taphrina	carrier	Protomyces	Protomyces	yes	0.500	0	Protomyces,Savitreella
-Yarrowia	all	Lipomyces	Protomyces,Savitreella,Taphrina	NO	1.000	1038	Savitreella
-Yarrowia	carrier	Lipomyces	Lipomyces	yes	0.500	0	Lipomyces
+target	mode	true_sibling	best_n_tips_below	best_tips_below	best_is_true	tied_with_best	bootstrap_best	steps_true_over_best	dollo_best_n_tips_below	dollo_best_is_true	dollo_bootstrap_best
+Botrytis	all	Antarctomyces	1	Ncrassa	NO	0	1.000	87	2	NO	1.000
+Botrytis	carrier	Antarctomyces	1	Geoglossum	NO	0	0.988	336	2	NO	1.000
+Cneoformans	all	Smaydis	1	Neolecta	NO	0	1.000	1822	18	NO	1.000
+Cneoformans	carrier	Smaydis	1	Neolecta	NO	0	1.000	2312	18	NO	1.000
+Cryomyces	all	Hortaea,Zymoseptoria	2	Geoglossum,Lichina	NO	0	0.873	32	3	NO	0.848
+Cryomyces	carrier	Hortaea,Zymoseptoria	1	Geoglossum	NO	0	0.723	48	5	NO	0.687
+Lipomyces	all	Yarrowia	1	Neolecta	NO	0	1.000	1298	1	yes	1.000
+Lipomyces	carrier	Yarrowia	1	Neolecta	NO	0	1.000	1783	15	NO	1.000
+Neolecta	all	Saitoella	1	Cneoformans	NO	0	1.000	1641	17	NO	0.873
+Neolecta	carrier	Saitoella	1	Cneoformans	NO	0	1.000	1738	17	NO	0.912
+Orbilia	all	Pyronema	1	Pyronema	yes	0	0.985	0	1	yes	1.000
+Orbilia	carrier	Pyronema	1	Geoglossum	NO	0	1.000	780	13	NO	1.000
+Protomyces	all	Taphrina	1	Taphrina	yes	0	1.000	0	1	NO	1.000
+Protomyces	carrier	Taphrina	1	Taphrina	yes	0	1.000	0	1	yes	1.000
+Pyronema	all	Orbilia	1	Orbilia	yes	0	1.000	0	4	NO	0.950
+Pyronema	carrier	Orbilia	1	Geoglossum	NO	0	0.545	8	13	NO	0.995
+Saitoella	all	Neolecta	1	Neolecta	yes	0	0.595	0	1	NO	1.000
+Saitoella	carrier	Neolecta	1	Neolecta	yes	0	1.000	0	17	NO	0.672
+Savitreella	all	Protomyces,Taphrina	2	Protomyces,Taphrina	yes	0	1.000	0	1	NO	1.000
+Savitreella	carrier	Protomyces,Taphrina	1	Protomyces	NO	0	0.525	19	1	NO	0.645
+Smaydis	all	Cneoformans	3	Protomyces,Savitreella,Taphrina	NO	0	1.000	2011	1	NO	1.000
+Smaydis	carrier	Cneoformans	1	Cneoformans	yes	0	1.000	0	1	yes	0.880
+Spombe	all	Protomyces,Savitreella,Taphrina	1	Mmucedo	NO	1	0.948	70	3	yes	1.000
+Spombe	carrier	Protomyces,Savitreella,Taphrina	1	Neolecta	NO	0	1.000	653	16	NO	0.680
+Taphrina	all	Protomyces	1	Protomyces	yes	0	1.000	0	2	NO	1.000
+Taphrina	carrier	Protomyces	1	Protomyces	yes	0	1.000	0	2	NO	0.932
+Yarrowia	all	Lipomyces	3	Protomyces,Savitreella,Taphrina	NO	0	1.000	1038	1	NO	1.000
+Yarrowia	carrier	Lipomyces	1	Lipomyces	yes	0	1.000	0	1	yes	1.000

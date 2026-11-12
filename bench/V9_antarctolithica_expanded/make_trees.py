@@ -86,7 +86,10 @@ if a.root_on: root = reroot(root, a.root_on)
 if a.drop_prefix: root = remove(root, lambda nm: nm.startswith(a.drop_prefix))
 is_g = lambda nm: nm.startswith(a.group_prefix)
 clade = extract(root, is_g)
-if clade is None: sys.exit("the lineage under test is not a clade in the gene tree; give its subtree explicitly")
+matching = sorted(l for l in leaves(root) if is_g(l))
+if clade is None or sorted(leaves(clade)) != matching:
+    sys.exit(f"the tips starting with {a.group_prefix!r} ({len(matching)}) are not one clade in the tree (the smallest clade holds "
+             f"{0 if clade is None else len(leaves(clade))} of them); give the lineage's subtree explicitly")
 backbone = remove(root, is_g)
 def sibling_tips(x, target_clade):                         # tips of the sibling of `target_clade` in tree x
     for k in x["kids"]:
@@ -95,7 +98,9 @@ def sibling_tips(x, target_clade):                         # tips of the sibling
         if r is not None: return r
     return None
 os.makedirs(a.out, exist_ok=True)
-open(f"{a.out}/true_sibling.txt", "w").write(",".join(sibling_tips(root, clade) or []) + "\n")
+_sib = sibling_tips(root, clade) or []
+# when the lineage is a child of the root, its sibling is the whole rest of the tree, which is not an edge: the true position is "the root"
+open(f"{a.out}/true_sibling.txt", "w").write(("ROOT" if len(_sib) == len(leaves(backbone)) else ",".join(_sib)) + "\n")
 if a.taph_monophyletic:
     is_taph = lambda nm: group_of.get(nm) == "Taphrinomycotina"
     def max_clades(x):                                       # maximal clades made only of Taphrinomycotina tips

@@ -7,7 +7,7 @@ for tier in sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(roo
     gains = collections.Counter(); losses = collections.Counter(); n_tips = {}; fams = 0; sites = 0
     for aln in glob.glob(os.path.join(root, tier, "*.aln")):
         fams += 1
-        with open(os.path.join(aln, "sites.tsv")) as f: sites += sum(1 for l in f if l.strip() and not l.startswith(("#", "site")))
+        with open(os.path.join(aln, "sites.tsv")) as f: sites += sum(1 for l in f if l.strip() and not l.startswith(("#", "alignment")))
         with open(os.path.join(aln, "dollo_branches.tsv")) as f:
             for r in csv.DictReader(f, delimiter="\t"):
                 gains[r["tips"]] += int(r["gains"]); losses[r["tips"]] += int(r["losses"]); n_tips[r["tips"]] = int(r["n_tips"])

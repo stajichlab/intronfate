@@ -37,6 +37,22 @@ def remove(x, pred):
     if not kids: return None
     return kids[0] if len(kids) == 1 else {"kids": kids, "name": None}
 
+def reroot(nd, target):
+    """The same unrooted tree, rooted on the branch above leaf `target`: (target, rest)."""
+    path = []
+    def find(x):
+        if not x["kids"]: return x["name"] == target
+        for k in x["kids"]:
+            if find(k): path.append((x, k)); return True
+        return False
+    if not find(nd): sys.exit(f"--root-on: no tip named {target}")
+    cur = None
+    for parent, child in reversed(path):                    # from the old root down to the target's parent: each node keeps its other children
+        others = [k for k in parent["kids"] if k is not child]
+        up = {"kids": others + ([cur] if cur else []), "name": None}
+        cur = up["kids"][0] if len(up["kids"]) == 1 else up
+    return {"kids": [{"kids": [], "name": target}, cur], "name": None}
+
 def extract(x, pred):
     """The smallest subtree containing exactly the tips matching pred (must be a clade)."""
     L = leaves(x)
@@ -56,6 +72,7 @@ def edges(x, root=True):
 
 ap = argparse.ArgumentParser(); ap.add_argument("tree"); ap.add_argument("--group-prefix", required=True)
 ap.add_argument("--genomes", required=True); ap.add_argument("--out", required=True)
+ap.add_argument("--root-on", default="", help="re-root the tree on the branch above this tip (OrthoFinder's own rooting is not always the outgroup)")
 ap.add_argument("--drop-prefix", default="", help="remove tips with this prefix from every tree (e.g. the lineage under test, for a calibration run)")
 ap.add_argument("--taph-monophyletic", action="store_true",
                 help="force the Taphrinomycotina genomes into one clade, sister to the other Ascomycota (the gene tree splits them)")
@@ -65,10 +82,14 @@ for l in open(a.genomes):
     if l.strip() and not l.startswith("#"):
         f = l.rstrip("\n").split("\t"); group_of[f[0]] = f[2]
 root = parse(open(a.tree).read())
+if a.root_on: root = reroot(root, a.root_on)
 if a.drop_prefix: root = remove(root, lambda nm: nm.startswith(a.drop_prefix))
 is_g = lambda nm: nm.startswith(a.group_prefix)
 clade = extract(root, is_g)
-if clade is None: sys.exit("the lineage under test is not a clade in the gene tree; give its subtree explicitly")
+matching = sorted(l for l in leaves(root) if is_g(l))
+if clade is None or sorted(leaves(clade)) != matching:
+    sys.exit(f"the tips starting with {a.group_prefix!r} ({len(matching)}) are not one clade in the tree (the smallest clade holds "
+             f"{0 if clade is None else len(leaves(clade))} of them); give the lineage's subtree explicitly")
 backbone = remove(root, is_g)
 def sibling_tips(x, target_clade):                         # tips of the sibling of `target_clade` in tree x
     for k in x["kids"]:
@@ -77,7 +98,9 @@ def sibling_tips(x, target_clade):                         # tips of the sibling
         if r is not None: return r
     return None
 os.makedirs(a.out, exist_ok=True)
-open(f"{a.out}/true_sibling.txt", "w").write(",".join(sibling_tips(root, clade) or []) + "\n")
+_sib = sibling_tips(root, clade) or []
+# when the lineage is a child of the root, its sibling is the whole rest of the tree, which is not an edge: the true position is "the root"
+open(f"{a.out}/true_sibling.txt", "w").write(("ROOT" if len(_sib) == len(leaves(backbone)) else ",".join(_sib)) + "\n")
 if a.taph_monophyletic:
     is_taph = lambda nm: group_of.get(nm) == "Taphrinomycotina"
     def max_clades(x):                                       # maximal clades made only of Taphrinomycotina tips

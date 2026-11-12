@@ -1,4 +1,4 @@
-== A_strict: 1106 families, 32706 intron rows (taxon x site, rows of sites.tsv), Dollo gains 15697, losses 14316
+== A_strict: 1106 families, 31600 intron rows (taxon x site, rows of sites.tsv), Dollo gains 15697, losses 14316
   branch (tips below)                                                      gains  losses
   Spunctatus,Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncr    4037       0
   Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidul     831       0
@@ -17,7 +17,7 @@
   Smaydis                                                                    147    4055
   Spombe                                                                     348    1011
   Spunctatus                                                                2599       0
-== B_partial: 689 families, 17546 intron rows (taxon x site, rows of sites.tsv), Dollo gains 9643, losses 5330
+== B_partial: 689 families, 16857 intron rows (taxon x site, rows of sites.tsv), Dollo gains 9643, losses 5330
   branch (tips below)                                                      gains  losses
   Spunctatus,Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncr    1494       0
   Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidul     592       0
@@ -36,7 +36,7 @@
   Smaydis                                                                    117    1479
   Spombe                                                                     215     346
   Spunctatus                                                                1633       0
-== C_hog: 401 families, 8281 intron rows (taxon x site, rows of sites.tsv), Dollo gains 4828, losses 1926
+== C_hog: 401 families, 7880 intron rows (taxon x site, rows of sites.tsv), Dollo gains 4828, losses 1926
   branch (tips below)                                                      gains  losses
   Spunctatus,Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncr       0       0
   Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidul     177       0

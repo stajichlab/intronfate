@@ -13,3 +13,5 @@ Malin.tgz
 
 # example run outputs (expected/ is committed)
 examples/*/out/
+__pycache__/
+*.pyc

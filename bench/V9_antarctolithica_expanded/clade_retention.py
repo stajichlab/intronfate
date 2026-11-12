@@ -5,8 +5,12 @@ A clade-specific site: >= M members of the clade (the target itself excluded) ca
 lineage under test, Alith, excluded), and >= 2 outside genomes were observed without it. An ancient site: carried by >= 1 outgroup genome and by >= 2
 ascomycete genomes. For a target genome T (or the Alith lineage: carrier if any strain carries) the retention of a site set is
    carriers / sites where T was observed (present or absent, not `?`).
-R = retention(clade-specific) / retention(ancient) is ~ 0 for a lineage outside the clade (only convergent insertions) and of order 1 for a lineage inside it,
-and it is normalised by the lineage's own intron richness, which is what biased the whole-matrix scans.
+R = retention(clade-specific) / retention(ancient) is expected to be small for a lineage outside the clade (convergent insertions, residual ancient introns) and of
+order 1 for a lineage inside it, and it is normalised by the lineage's own intron richness, which is what biased the whole-matrix scans.
+Caveats (from review): a member and a non-member are scored on different site sets (a member needs M OTHER members to carry the site, so fewer sites qualify), and
+for a non-member the genomes that are its relatives outside the clade are filtered out of the "no outside carrier" condition, which Alith (strains merged, no
+relatives) does not suffer; both make R for Alith conservative for "ruled out" conclusions and weaker for "unresolved". For a clade that has few outside genomes
+(Ascomycota: Mucor and two basidiomycetes) the filter lets ancient introns through, so outsiders score well above 0 there; do not read that row.
 Clades come from genomes.tsv (its group column): Pezizomycotina = Ascomycota minus Saccharomycotina and Taphrinomycotina; the outgroups are the genomes whose
 group starts with `outgroup`; Taphrinomycetes and Lipomycetes are given by label below.
 Usage: clade_retention.py matrix.tsv genomes.tsv > table.tsv"""

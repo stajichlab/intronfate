@@ -105,3 +105,8 @@ not representative of the genome as a whole; *S. maydis* has few reference intro
 
 ## Rescoring over the V6 tiers
 `run_v6.sbatch` runs `busco_gene_accuracy.py` (now with `--genomes/--taxon-map/--projection/--out`) over each V6 tier's genes into `results_v6/<tier>/`. *S. cerevisiae* S288C is scored there (tier A genes: Sn 97.4 %, Pr 82.6 %, but over only 39 reference and 46 predicted introns, so noisy; 343 reference introns genome-wide), so the earlier "unscored" note no longer applies to the V6 set. Tier C has no *S. punctatus* genes (the N1 clade excludes it), so that row has no reference introns and the script now skips such rows instead of crashing.
+
+**A discrepancy not resolved (S288C genome-wide Sn).** `busco_gene_accuracy.py` gives genome-wide Sn 63.3 % over 343 distinct reference introns for S288C (217 matched), while the colleague's
+summary quoted above gives 73.3 % over 312. Precision agrees (66.0 % over 329 predicted introns) and every other genome matches the colleague's gffcompare figures. The reference-intron
+table has no duplicate keys with conflicting status (`check_ref_duplicates.py`: 0 conflicts in the five genomes checked), so row order is not the cause; the likelier cause is a different
+set of reference introns being counted. The S288C figures used by V6/V7 are the gene-restricted ones from this script (Sn 97.4 %, Pr 82.6 % over 39 / 46 introns at the tier-A genes).
