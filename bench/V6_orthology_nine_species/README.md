@@ -28,3 +28,11 @@ orthogroups (`N1`, the clade without *Spunctatus*) single-copy in >= 7; D_synten
   for annotation misses (V4 gives per-species ceilings), so read the terminal-branch losses with V4 beside them.
 - Diagnostics: `no_cds` warnings are mRNAs without CDS in the annotation (none is in a family); `proteins_not_in_alignment` is one record per alignment.
 - Pitfall met: `rsync --exclude data` also skipped `tests/fixture/data`; anchor excludes (`/data`).
+
+## Dollo losses vs. annotation error (`loss_ceiling_tiers.py`, `reports/loss_ceiling_tiers.txt`)
+Terminal-branch losses compared with the V4 ceiling (`carried x (1 - Sn)/Sn`) and terminal gains with `carried x (1 - Pr)`, using V4's accuracy at the V2 BUSCO
+genes (an approximation: the V6 gene sets overlap V2's but differ; S288C has only genome-wide Sn/Pr from 312 reference introns).
+Same split in all three tiers: *N. crassa*, *C. neoformans*, *S. pombe*, *S. maydis* (and *S. cerevisiae*) losses are at most 4-8 % explainable by missed introns
+(tier A: 3.9, 6.0, 3.8, 1.3, 1.2 %); *M. mucedo* 16-29 %; *C. cinerea* and *A. nidulans* are at or above 100 %, so their losses cannot be told from misses.
+Gains are less safe: ceilings of 24-52 % for *A. nidulans*, *C. cinerea*, *M. mucedo*, *S. maydis* and *S. cerevisiae* (possible novel/false introns).
+*S. cerevisiae* carries only 46 introns in tier A (1,447 terminal losses), matching its known intron poverty, but its Sn/Pr is the weakest measured.
