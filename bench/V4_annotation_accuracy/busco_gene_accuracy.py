@@ -27,6 +27,7 @@ ap.add_argument("--taxon-map", help="protein<TAB>label map of the gene set to sc
 ap.add_argument("--projection", help="folder of per-alignment result folders holding taxa.tsv and dollo_branches.tsv "
                                       "(default: <v2>/results/projection/all)")
 ap.add_argument("--out", default="results")
+ap.add_argument("--min-ref-intron", type=int, default=10, help="ignore reference introns shorter than this (bp): S288C RefSeq has 47 one-base CDS gaps (start==end, frameshifts) that the scoring table lists as introns")
 args = ap.parse_args()
 SCORING = args.scoring
 V2 = args.v2
@@ -87,6 +88,7 @@ for label, d in genomes.items():
                 pc[("phase", r["phase"])][r["status"]] += 1
                 pc[("position", position(r))][r["status"]] += 1
         else:
+            if int(r["end"]) - int(r["start"]) + 1 < args.min_ref_intron: continue
             key = (r["seqid"], r["start"], r["end"], r["strand"])
             ref_all[key] = r["status"]
             if r["transcript"] in R:
