@@ -189,7 +189,7 @@ pub fn prepare_with(
     }
 
     let mut characters = Vec::with_capacity(m.sites.len());
-    for site in &m.sites {
+    for (si, site) in m.sites.iter().enumerate() {
         let mut states = vec![ABSENT; tips.len()];
         for (t, &maybe) in col_of_taxon.iter().enumerate() {
             states[t] = match maybe {
@@ -216,8 +216,8 @@ pub fn prepare_with(
             continue;
         }
         characters.push(Character {
-            label: site.label(),
-            col: site.col,
+            label: m.site_label(si),
+            col: m.site_column(si),
             phase: site.phase,
             states,
         });
@@ -875,8 +875,8 @@ pub fn score_counts(m: &SiteMatrix) -> Vec<CountsSite> {
             let n_absent = site.n_observable() - n_present;
             let n_missing = m.taxa.len() as u32 - site.n_observable();
             CountsSite {
-                label: site.label(),
-                col: site.col,
+                label: m.site_label(i),
+                col: m.site_column(i),
                 phase: site.phase,
                 n_present,
                 n_absent,

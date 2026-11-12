@@ -43,6 +43,18 @@ complete codon.
 | `tree_gains.nwk` | The tree with `[gains=N]` on the branches where Dollo origins were placed. |
 | `summary_score.tsv` | `key value`: method totals (`dollo_gains`, `dollo_losses`, `mp_steps`, `mp_consistency_index`, …), how many tree tips and matrix taxa matched, `characters_scored`, `characters_skipped` (by `--min-taxa` or no carrier), `characters_too_sparse` (by `--min-observed`), and whether the tree looked rooted. |
 
+## Combined matrix: `<out>/combined/` (`--combine`)
+
+Written by `matrix`/`analyze --combine`, or by `score --combine -o DIR`. It holds the matrix-level files of a single alignment
+(`matrix.tsv`, `presence.tsv`, `pairwise.tsv`, `sharing_matrix.tsv`, `spectrum.tsv`, `counts_sites.tsv`; plus the scoring files for `analyze` and
+`score`), computed over all families at once. Differences from a per-alignment folder:
+
+- `matrix.tsv` line 1 has `alignment=combined families=<n> family_pad=<p>`, and the header is `site column phase family family_column n_taxa
+  n_observable pattern <taxon>...`. `site` is `<family>:<family_column>:<phase>`; `column` is `family_column` plus the family's offset.
+- In every other file the `site`/`label` is that same `<family>:<column>:<phase>` and `column` is the family-local column.
+- `pairwise.tsv`, `sharing_matrix.tsv`: `n_a`, `n_b`, `shared`, `n_both_observable` are sums over families (sites of different families never pair).
+- No `taxa.tsv`, `sites.tsv` or `characters.nex`: those are per-alignment projection records.
+
 ## MALIN export
 
 `convert --to-malin` writes `#ORGANISM` lines, one row per taxon (`0`, `?`, and `3`/`1`/`2` for a present

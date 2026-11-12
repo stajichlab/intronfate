@@ -29,7 +29,7 @@ for tier in A_strict B_partial C_hog D_synteny; do
     ls families/$tier/families/*.faa | xargs -P "${SLURM_CPUS_PER_TASK:-8}" -I{} sh -c \
         'b=$(basename {} .faa); [ -s alignments/'$tier'/$b.aln.fasta ] || mafft --auto --thread 1 --quiet {} > alignments/'$tier'/$b.aln.fasta'
     rm -rf results_projection/$tier
-    /usr/bin/time -f "$tier\t%e s\t%M kB" "$BIN" -v analyze "${gffs[@]}" "${prots[@]}" --msa-dir alignments/$tier --msa-ext aln.fasta \
+    /usr/bin/time -f "$tier\t%e s\t%M kB" "$BIN" -v analyze "${gffs[@]}" "${prots[@]}" --msa-dir alignments/$tier --msa-ext aln.fasta --combine \
         --taxon-map families/$tier/taxon_map.tsv -t species.nwk -m dollo,mp,counts -o results_projection/$tier \
         > results_projection/$tier.stdout 2> results_projection/$tier.stderr || { tail -20 results_projection/$tier.stderr; exit 1; }
     echo "== $tier: $n families"; tail -3 results_projection/$tier.stderr

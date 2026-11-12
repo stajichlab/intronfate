@@ -212,9 +212,35 @@ intronfate analyze --gff sp1.gff3.gz --gff sp2.gff3.gz ... -p sp1.faa.gz -p sp2.
 ```
 
 One process handles every alignment and writes `out/<alignment>/…`; alignments are processed one at a time and
-released, so memory does not grow with the number of families. Per-family Dollo/MP results are then summed:
-`dollo_branches.tsv` of each family gives losses per branch, and adding them gives the total per lineage.
-A family that lacks a species simply has no row for it, and that tip is scored as missing.
+released, so per-family memory does not grow with the number of families. A family that lacks a species simply has no row
+for it, and that tip is scored as missing.
+
+### One matrix for all families: `--combine`
+
+Add `--combine` (to `matrix` or `analyze`) and the tool also stacks every family into one matrix and, for `analyze`, scores it, so the
+totals per lineage need no summing afterwards:
+
+```sh
+intronfate analyze ... --msa-dir alignments/ --msa-ext aln.fasta -t species.nwk --combine -o out
+#   out/<family>/...       as before
+#   out/combined/matrix.tsv, dollo_branches.tsv, dollo_sites.tsv, mp_*.tsv, counts_*.tsv, pairwise.tsv, sharing_matrix.tsv, ...
+```
+
+or afterwards from per-family matrices, with any of the input forms: `intronfate score --matrix-dir out/ --combine -t species.nwk -o combined/`
+(careful: `--matrix-dir out/` after a `--combine` run also finds `out/combined/matrix.tsv`; use `--matrix-list`, or a folder that holds only
+the per-family results).
+
+- **Rows.** Every site of every family is one row, labelled `<family>:<column>:<phase>`; the same column in two families is two sites.
+  `matrix.tsv` gains `family` and `family_column` columns; `column` is the *shifted* column (each family's columns are offset by its
+  alignment length plus 10,000), which is what keeps sites of different families from ever being matched to each other.
+  `dollo_sites.tsv`, `mp_sites.tsv`, `counts_sites.tsv` and `presence.tsv` show the family-local column.
+- **Taxa** are the union over families, in first-seen order. A taxon that a family lacks is `?` at all of that family's sites: missing data,
+  never an absence.
+- **Totals.** Dollo, MP and counts are computed per site, so the combined `dollo_branches.tsv` equals the per-family tables summed (the
+  tests check this, and so does `bench/V6_orthology_nine_species/check_combined.py` on real data). Pairwise sharing is summed over families
+  likewise. Sites keep their family label, so a per-family breakdown is a group-by on the label's first field.
+- **Limits.** All families must share phase mode and flank and have distinct names; `--tolerance` must be below 10,000; the combined matrix
+  is held in memory (sites × taxa bits), unlike the per-family streaming. Per-family folders are still written; use them or `combined/`.
 [`bench/V2_gff_projection`](../bench/V2_gff_projection/README.md) builds exactly this from BUSCO orthologs.
 
 ## 10. Limits

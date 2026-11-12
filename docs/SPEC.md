@@ -475,6 +475,17 @@ absolute coordinates, no wrapped lines, stable ordering (diffable between runs).
 | `<aln>/reconstructions.tsv`| per-node ancestral states (with `--reconstructions`)                 |
 | `<aln>/tree_gains.nwk`     | Newick with `[gains=N]` annotations                                  |
 | `<aln>/characters.nex`     | NEXUS discrete-character block for external phylogenetics            |
+| `combined/*`               | with `--combine`: all families stacked into one matrix (`family`, `family_column`) and scored once; see below |
+
+**Combined matrix (`--combine`, `SiteMatrix::combine`).** A run over many gene families needs the totals per lineage; summing per-family tables
+afterwards is error-prone, and the right unit for it is one matrix. Design decisions: (1) Dollo, Fitch and counts are per-site, so scoring the stacked
+sites once equals summing the families; this is asserted by a test on every branch. (2) A site's identity is *(family, column, phase)*, never
+*(column, phase)*: the same column in two families is two sites. To keep `matrix.tsv` readable by the existing reader (which sorts and merges by
+`(column, phase)`), every family's columns are shifted by its alignment length plus a pad of 10,000, so the stored `column` is unique and ascending, the
+true column is a separate `family_column`, and pairwise matching at a tolerance below the pad can never pair sites of different families (a larger
+tolerance is refused). (3) Taxa are the union over families, and a taxon a family lacks is `?` at that family's sites: missing, never absent. (4) Families
+must share phase mode and flank and have distinct names; anything else would make sites incomparable or ambiguous, so it is an error. The combined
+matrix is held in memory; the per-family folders are still streamed and written.
 
 `matrix.tsv` is the pipeline's interchange format: `score` reads it back (including the metadata line
 that says which taxa were unannotated), so re-scoring under different rootings, tolerances or weight
@@ -503,7 +514,7 @@ Dollo/MP values are asserted by the test suite.
 
 ## 9. Correctness strategy
 
-239 tests pass (180 core unit, 23 core integration in `crates/intronfate-core/tests/per_cell_missing.rs`, 10 CLI unit, 23 CLI end-to-end in `crates/intronfate-cli/tests/cli.rs`, 3 doc) plus 3 Python converter tests (`scripts/test_malin_to_matrix.py`); last verified 2026-11-12. The layers are described in [`TESTING.md`](TESTING.md). Layers:
+245 tests pass (180 core unit, 23 + 4 core integration in `crates/intronfate-core/tests/per_cell_missing.rs` and `combined.rs`, 10 CLI unit, 25 CLI end-to-end in `crates/intronfate-cli/tests/cli.rs`, 3 doc) plus 3 Python converter tests (`scripts/test_malin_to_matrix.py`); last verified 2026-11-12. The layers are described in [`TESTING.md`](TESTING.md). Layers:
 
 1. **Property/consistency tests on the coordinate model.** `cds_offset == codon_index0*3 + phase` for
    every offset; every derived view agrees with the emitted table columns.

@@ -81,7 +81,17 @@ intronfate score --matrix out/family/matrix.tsv \
                        --methods dollo,mp -o out/family
 ```
 
-Or one pass with `analyze`. `matrix.tsv` is the interchange format, so step 3 is cheap and can be
+Or one pass with `analyze`. For many families or genomes, give lists or folders instead of repeating flags
+(`--msa-dir alignments/ --msa-ext aln.fasta`, `--msa-list families.txt`, likewise `--gff-dir/--gff-list` and `--proteins-dir/--proteins-list`), and add
+`--combine` to also stack every family into one matrix, scored once (`out/combined/`; see [`docs/USAGE.md`](docs/USAGE.md) §9):
+
+```sh
+intronfate analyze --gff-dir genomes/ --proteins-dir genomes/ --proteins-ext faa \
+                   --msa-dir alignments/ --msa-ext aln.fasta --taxon-map taxon_map.tsv \
+                   -t species.nwk --combine -o out        # out/<family>/... and out/combined/dollo_branches.tsv
+```
+
+`matrix.tsv` is the interchange format, so step 3 is cheap and can be
 re-run over rootings, tolerances and methods without re-parsing annotation.
 
 ## Output
@@ -112,6 +122,35 @@ generates (`demo.gff3`, `demo.faa`, `demo.aln.fasta`, `demo.nwk`).
 - **`introns.tsv` numbers are per-protein.** Cross-species comparisons use `matrix.tsv` columns.
 - **Annotation/sequence must correspond.** `unmatched.tsv` and the `length_mismatch` diagnostic exist
   because a join onto the wrong paralog otherwise yields plausible-looking tables.
+
+## Results so far
+
+Everything below was run on a university HPC cluster; the scripts, the small result tables and a README for each step are in [`bench/`](bench/).
+These are validation and first-use results, not a finished biological study.
+
+| Step | What was tested | Result |
+|---|---|---|
+| [V1](bench/V1_malin_validation/README.md) | Scoring and MALIN interop on MALIN's published test data | Every figure in the spec reproduced. Per-branch Dollo losses match the MALIN guide exactly (Rogozin table: 7,221 sites, 2,770 losses); MALIN tables round-trip losslessly. |
+| [V2](bench/V2_gff_projection/README.md) | GFF3 to protein space to alignment columns on nine fungal genomes | 739 BUSCO families (single-copy in at least 7 of 9 genomes), 6,363 protein rows, every row joined to its transcript; all families through `analyze` in 8.4 s and 507 MB. |
+| [V3](bench/V3_gff_scale/README.md) | Genome-scale `project` | 1,000 genomes in one process: 294 s and 55.8 GB at the start, **52 s and 7.0 GB** after the optimisations (the largest GFF3 in the BFD, 165 MB uncompressed, takes 1.6 s). A single file does not scale with threads. |
+| [V4](bench/V4_annotation_accuracy/README.md) | How accurate are the annotated introns? (funannotate against RefSeq, at the genes actually used) | Intron sensitivity at those genes is 89-99 % for eight of the nine species (*S. cerevisiae* is scored separately, over very few introns); per-species figures and the resulting ceilings on how many apparent losses could be annotation misses are in the README. |
+| [V6](bench/V6_orthology_nine_species/README.md) | Ortholog families that are as single-copy as possible (OrthoFinder, synteny refinement, tiers) | 8,766 orthogroups; 1,106 single-copy in all 9 species, 689 more in 7-8, 401 more from splitting multi-copy orthogroups. Synteny refinement added none (166 groups of about two genes). |
+| [V7](bench/V7_annotation_error_sensitivity/README.md) | How much could annotation error change the Dollo losses and gains? | Terminal losses in *S. maydis*, *S. cerevisiae*, *C. neoformans*, *S. pombe* and *N. crassa* move by 0-4 % even when every missed intron is assumed to hide a loss; *M. mucedo* by about 10 %; *C. cinerea* and *A. nidulans* by 25-41 %, so their loss counts are unreliable. |
+
+**A worked result.** On the 1,106 single-copy families (nine fungal genomes; 15,697 inferred intron gains and 14,316 losses in total) the largest
+terminal-branch loss counts are in *Mycosarcoma maydis* (4,055), *M. mucedo* (1,516), *S. cerevisiae* (1,447) and *C. neoformans* (1,091). For
+*M. maydis* and *S. cerevisiae*, whose low intron density is well known, that is the expected direction, and V7 shows these counts are not
+artefacts of missed introns. The per-lineage totals come from one command (`analyze --combine`, see below) with nothing to sum afterwards.
+The other counts need the limits below before they are interpreted.
+
+**What the results do and do not show.**
+
+- The annotations are funannotate predictions, compared with RefSeq where a RefSeq annotation exists. RefSeq is not truth, and the scores come from
+  exact-coordinate matching at conserved single-copy genes, which are the genes the analysis uses but not representative of whole genomes.
+- Annotation error is measured, not removed: V7 shows which loss counts survive it and which do not. Terminal gains are less certain than
+  losses, because false introns move them in no consistent direction.
+- *S. cerevisiae* has so few introns that its scores rest on a few dozen introns and are noisy.
+- Nothing here validates the evolutionary model itself (Dollo parsimony assumes one gain per site). Likelihood scoring is not implemented.
 
 ## Layout
 

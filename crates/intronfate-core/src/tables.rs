@@ -293,27 +293,27 @@ pub fn taxa_table(ap: &AlignmentProjection, proteins: &ProteinSet, m: &SiteMatri
 pub fn write_matrix_tsv(m: &SiteMatrix, path: impl AsRef<Path>) -> Result<usize> {
     crate::util::write_atomic_with(path.as_ref(), |w| {
         writeln!(w, "# {}", matrix_comment(m))?;
-        write!(w, "site\tcolumn\tphase\tn_taxa\tn_observable\tpattern")?;
+        write!(w, "site\tcolumn\tphase")?;
+        if m.is_combined() {
+            write!(w, "\tfamily\tfamily_column")?;
+        }
+        write!(w, "\tn_taxa\tn_observable\tpattern")?;
         for name in &m.taxa {
             write!(w, "\t{name}")?;
         }
         writeln!(w)?;
         let mut cells = String::with_capacity(m.taxa.len() * 2);
-        for site in &m.sites {
+        for (i, site) in m.sites.iter().enumerate() {
             cells.clear();
             for t in 0..m.taxa.len() {
                 cells.push('\t');
                 cells.push(site.cell(t).symbol());
             }
-            write!(
-                w,
-                "{}\t{}\t{}\t{}\t{}\t",
-                site.label(),
-                site.col,
-                site.phase,
-                site.n_taxa(),
-                site.n_observable()
-            )?;
+            write!(w, "{}\t{}\t{}\t", m.site_label(i), site.col, site.phase)?;
+            if let Some(&f) = m.site_family.get(i) {
+                write!(w, "{}\t{}\t", m.families[f as usize].name, m.site_column(i))?;
+            }
+            write!(w, "{}\t{}\t", site.n_taxa(), site.n_observable())?;
             for t in 0..m.taxa.len() {
                 write!(w, "{}", site.cell(t).symbol())?;
             }
@@ -327,21 +327,22 @@ pub fn write_matrix_tsv(m: &SiteMatrix, path: impl AsRef<Path>) -> Result<usize>
 
 /// The binary `site × taxon` matrix, with the pattern string first for quick reading.
 pub fn matrix_table(m: &SiteMatrix) -> Table {
-    let mut header = vec![
-        "site",
-        "column",
-        "phase",
-        "n_taxa",
-        "n_observable",
-        "pattern",
-    ];
+    let mut header = vec!["site", "column", "phase"];
+    if m.is_combined() {
+        header.extend(["family", "family_column"]);
+    }
+    header.extend(["n_taxa", "n_observable", "pattern"]);
     header.extend(m.taxa.iter().map(|s| s.as_str()));
     let mut t = Table::new(&header);
     for (i, site) in m.sites.iter().enumerate() {
         t.push_row(|c| {
-            c.push(site.label());
+            c.push(m.site_label(i));
             c.push(cell(site.col));
             c.push(cell(site.phase));
+            if let Some(&f) = m.site_family.get(i) {
+                c.push(m.families[f as usize].name.clone());
+                c.push(cell(m.site_column(i)));
+            }
             c.push(cell(site.n_taxa()));
             c.push(cell(site.n_observable()));
             c.push(m.pattern(i));
@@ -364,7 +365,7 @@ fn matrix_comment(m: &SiteMatrix) -> String {
         .map(|(n, _)| n.as_str())
         .collect();
     format!(
-        "format=2 alignment={} alen={} phase_mode={} flank={} masked_present={} taxa={} sites={} unannotated={} residues={}",
+        "format=2 alignment={} alen={} phase_mode={} flank={} masked_present={} taxa={} sites={} unannotated={} residues={}{}",
         m.alignment.replace(' ', "_"),
         m.alen,
         if matches!(m.phase_mode, crate::project::PhaseMode::Ignore) {
@@ -394,6 +395,11 @@ fn matrix_comment(m: &SiteMatrix) -> String {
                 .collect::<Vec<_>>()
                 .join(",")
         },
+        if m.is_combined() {
+            format!(" families={} family_pad={}", m.families.len(), m.family_pad)
+        } else {
+            String::new()
+        },
     )
 }
 
@@ -404,8 +410,8 @@ pub fn presence_table(m: &SiteMatrix) -> Table {
         for tx in site.taxa() {
             if let Some(name) = m.taxa.get(tx) {
                 t.push(vec![
-                    m.sites[i].label(),
-                    cell(site.col),
+                    m.site_label(i),
+                    cell(m.site_column(i)),
                     cell(site.phase),
                     name.clone(),
                 ]);

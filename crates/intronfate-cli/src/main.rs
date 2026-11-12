@@ -178,6 +178,11 @@ struct MatrixArgs {
     #[arg(long, short = 'o', default_value = "intron_out")]
     out_dir: PathBuf,
 
+    /// Also write one matrix that stacks the sites of every alignment (`<out-dir>/combined/matrix.tsv`, with `family` and
+    /// `family_column` columns); `analyze` scores it too, so the totals over all families need no summing afterwards.
+    #[arg(long)]
+    combine: bool,
+
     /// Group sites by alignment column only, ignoring codon phase.
     #[arg(long)]
     ignore_phase: bool,
@@ -260,6 +265,11 @@ struct ScoreArgs {
     /// Extension(s) selecting files in `--matrix-dir` (default `matrix.tsv`, which matches `matrix.tsv` and `X.matrix.tsv`).
     #[arg(long, value_delimiter = ',', value_name = "EXT")]
     matrix_ext: Vec<String>,
+
+    /// Stack all the given matrices into one combined matrix and score that once, writing everything into `-o`
+    /// (sites are labelled `<alignment>:<column>:<phase>`; taxa missing from an alignment are `?` there).
+    #[arg(long)]
+    combine: bool,
 
     /// Newick tree whose tips are matrix taxon names.
     #[arg(long, short = 't', value_name = "FILE")]
@@ -896,6 +906,7 @@ fn build_matrices(
 }
 
 fn cmd_matrix(a: &MatrixArgs, verbose: u8) -> Result<()> {
+    let mut parts: Vec<SiteMatrix> = Vec::new();
     build_matrices(a, verbose, |stem, m, _| {
         println!(
             "{stem}: {} sites x {} taxa -> {}/{stem}/matrix.tsv",
@@ -903,9 +914,43 @@ fn cmd_matrix(a: &MatrixArgs, verbose: u8) -> Result<()> {
             m.n_taxa(),
             a.out_dir.display()
         );
+        if a.combine {
+            parts.push(m.clone());
+        }
         Ok(())
     })?;
+    if a.combine {
+        let c = write_combined(&parts, &a.out_dir.join("combined"), a.tolerance)?;
+        println!(
+            "combined: {} sites from {} alignments x {} taxa -> {}/combined/matrix.tsv",
+            c.n_sites(),
+            parts.len(),
+            c.n_taxa(),
+            a.out_dir.display()
+        );
+    }
     Ok(())
+}
+
+/// Stack `parts` into one matrix and write it with its matrix-level tables (not the per-alignment projection tables) into `dir`.
+fn write_combined(parts: &[SiteMatrix], dir: &Path, tolerance: u32) -> Result<SiteMatrix> {
+    let c = SiteMatrix::combine(parts, "combined")?;
+    if tolerance >= c.family_pad {
+        bail!(
+            "--tolerance {tolerance} is not below the {} columns that separate alignments in a combined matrix",
+            c.family_pad
+        );
+    }
+    std::fs::create_dir_all(dir)?;
+    tables::write_matrix_tsv(&c, dir.join("matrix.tsv"))?;
+    tables::presence_table(&c).write(dir.join("presence.tsv"))?;
+    let strict = matches!(c.phase_mode, intronfate_core::project::PhaseMode::Strict);
+    let pairs = c.pairwise(tolerance, strict);
+    tables::pairwise_table(&pairs).write(dir.join("pairwise.tsv"))?;
+    tables::sharing_matrix_table_from(&c, &pairs).write(dir.join("sharing_matrix.tsv"))?;
+    tables::spectrum_table(&c).write(dir.join("spectrum.tsv"))?;
+    tables::counts_table(&score::score_counts(&c)).write(dir.join("counts_sites.tsv"))?;
+    Ok(c)
 }
 
 fn cmd_convert(a: &ConvertArgs) -> Result<()> {
@@ -958,7 +1003,11 @@ fn cmd_convert(a: &ConvertArgs) -> Result<()> {
 
 fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
     let methods = resolve_methods(&a.methods)?;
+    let mut parts: Vec<SiteMatrix> = Vec::new();
     build_matrices(&a.matrix, verbose, |stem, m, _| {
+        if a.matrix.combine {
+            parts.push(m.clone());
+        }
         let dir = a.matrix.out_dir.join(stem);
         let summary = score_matrix(
             m,
@@ -980,12 +1029,77 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
         }
         Ok(())
     })?;
+    if a.matrix.combine {
+        let dir = a.matrix.out_dir.join("combined");
+        let c = write_combined(&parts, &dir, a.matrix.tolerance)?;
+        let summary = score_matrix(
+            &c,
+            &dir,
+            &ScoreOpts {
+                methods,
+                tree: a.tree.clone(),
+                outgroups: a.outgroups.clone(),
+                min_taxa: a.min_taxa,
+                min_observed: a.min_observed,
+                reconstructions: a.reconstructions,
+                matrix_label: dir.join("matrix.tsv").display().to_string(),
+            },
+            verbose,
+        )
+        .context("scoring the combined matrix")?;
+        if let Some(line) = summary {
+            println!("combined: {line}");
+        }
+        println!(
+            "combined: {} sites from {} alignments x {} taxa -> {}",
+            c.n_sites(),
+            parts.len(),
+            c.n_taxa(),
+            dir.display()
+        );
+    }
     Ok(())
 }
 
 fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
     if a.matrix.is_empty() {
         bail!("--matrix is required: give a matrix.tsv, or use --matrix-list / --matrix-dir");
+    }
+    if a.combine {
+        let parts = a
+            .matrix
+            .iter()
+            .map(|p| {
+                SiteMatrix::read_tsv(p)
+                    .with_context(|| format!("could not read matrix {}", p.display()))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let c = write_combined(&parts, &a.out_dir, a.tolerance)?;
+        let summary = score_matrix(
+            &c,
+            &a.out_dir,
+            &ScoreOpts {
+                methods: resolve_methods(&a.methods)?,
+                tree: a.tree.clone(),
+                outgroups: a.outgroups.clone(),
+                min_taxa: a.min_taxa,
+                min_observed: a.min_observed,
+                reconstructions: a.reconstructions,
+                matrix_label: format!("{} matrices combined", parts.len()),
+            },
+            verbose,
+        )?;
+        if let Some(line) = summary {
+            println!("{line}");
+        }
+        println!(
+            "combined {} matrices: {} sites x {} taxa -> {}",
+            parts.len(),
+            c.n_sites(),
+            c.n_taxa(),
+            a.out_dir.display()
+        );
+        return Ok(());
     }
     if !a.many() {
         return score_one(a, &a.matrix[0], &a.out_dir, verbose);
@@ -1621,6 +1735,7 @@ mod tests {
             matrix_list: vec![],
             matrix_dir: vec![],
             matrix_ext: vec![],
+            combine: false,
             tree: Some(dir.join("demo.nwk")),
             methods: vec!["dollo".into()],
             outgroups: vec!["outgroup".into()],
@@ -1652,6 +1767,7 @@ mod tests {
             matrix_list: vec![],
             matrix_dir: vec![],
             matrix_ext: vec![],
+            combine: false,
             tree: None,
             methods: vec!["counts".into()],
             outgroups: vec![],
@@ -1681,6 +1797,7 @@ mod tests {
             matrix_list: vec![],
             matrix_dir: vec![],
             matrix_ext: vec![],
+            combine: false,
             tree: None,
             methods: vec!["dollo".into()],
             outgroups: vec![],
@@ -1731,6 +1848,7 @@ mod tests {
                 msa_list: vec![],
                 msa_dir: vec![],
                 msa_ext: vec![],
+                combine: false,
                 out_dir: dir.join("out"),
                 ignore_phase: false,
                 clamp_tail: false,

@@ -953,3 +953,156 @@ fn score_matrix_dir_scores_every_family_into_its_own_folder() {
         fs::read(scored.join("one.aln/dollo_branches.tsv")).unwrap()
     );
 }
+
+fn branch_totals(path: &Path) -> (u64, u64) {
+    let text = fs::read_to_string(path).unwrap();
+    let mut lines = text.lines();
+    let head: Vec<&str> = lines.next().unwrap().split('\t').collect();
+    let (g, l) = (
+        head.iter().position(|h| *h == "gains").unwrap(),
+        head.iter().position(|h| *h == "losses").unwrap(),
+    );
+    lines.fold((0, 0), |(ag, al), line| {
+        let c: Vec<&str> = line.split('\t').collect();
+        (
+            ag + c[g].parse::<u64>().unwrap(),
+            al + c[l].parse::<u64>().unwrap(),
+        )
+    })
+}
+
+#[test]
+fn combine_stacks_every_family_and_scores_the_total() {
+    let w = demo_inputs("combine");
+    let d = w.join("in");
+    let (gff, faa, nwk, aln) = (
+        d.join("a.gff3"),
+        d.join("a.faa"),
+        d.join("t.nwk"),
+        d.join("aln"),
+    );
+    let out = w.join("out");
+    let stdout = ok(&[
+        "analyze",
+        "--gff",
+        gff.to_str().unwrap(),
+        "-p",
+        faa.to_str().unwrap(),
+        "--msa-dir",
+        aln.to_str().unwrap(),
+        "-t",
+        nwk.to_str().unwrap(),
+        "--combine",
+        "-o",
+        out.to_str().unwrap(),
+    ]);
+    assert!(
+        stdout.contains("combined: ") && stdout.contains("2 alignments"),
+        "{stdout}"
+    );
+    let one = branch_totals(&out.join("one.aln/dollo_branches.tsv"));
+    let two = branch_totals(&out.join("two.aln/dollo_branches.tsv"));
+    let both = branch_totals(&out.join("combined/dollo_branches.tsv"));
+    assert_eq!(
+        both,
+        (one.0 + two.0, one.1 + two.1),
+        "combined totals are the sums"
+    );
+    assert!(both.0 > 0);
+    let sites = fs::read_to_string(out.join("combined/dollo_sites.tsv")).unwrap();
+    assert!(
+        sites.contains("one.aln:") && sites.contains("two.aln:"),
+        "{sites}"
+    );
+    let m = fs::read_to_string(out.join("combined/matrix.tsv")).unwrap();
+    assert!(m
+        .lines()
+        .nth(1)
+        .unwrap()
+        .starts_with("site\tcolumn\tphase\tfamily\tfamily_column\t"));
+    let n = |p: &str| {
+        fs::read_to_string(out.join(p))
+            .unwrap()
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+            .count()
+            - 1
+    };
+    assert_eq!(
+        n("combined/matrix.tsv"),
+        n("one.aln/matrix.tsv") + n("two.aln/matrix.tsv")
+    );
+}
+
+#[test]
+fn score_combine_of_families_matches_analyze_combine() {
+    let w = demo_inputs("combine_score");
+    let d = w.join("in");
+    let fam = w.join("fam");
+    ok(&[
+        "matrix",
+        "--gff",
+        d.join("a.gff3").to_str().unwrap(),
+        "-p",
+        d.join("a.faa").to_str().unwrap(),
+        "--msa-dir",
+        d.join("aln").to_str().unwrap(),
+        "-o",
+        fam.to_str().unwrap(),
+    ]);
+    let list = w.join("fam.list");
+    fs::write(&list, "fam/one.aln/matrix.tsv\nfam/two.aln/matrix.tsv\n").unwrap();
+    let nwk = d.join("t.nwk");
+    let a = w.join("a");
+    ok(&[
+        "score",
+        "--matrix-list",
+        list.to_str().unwrap(),
+        "-t",
+        nwk.to_str().unwrap(),
+        "--combine",
+        "-o",
+        a.to_str().unwrap(),
+    ]);
+    let b = w.join("b");
+    ok(&[
+        "analyze",
+        "--gff",
+        d.join("a.gff3").to_str().unwrap(),
+        "-p",
+        d.join("a.faa").to_str().unwrap(),
+        "--msa-dir",
+        d.join("aln").to_str().unwrap(),
+        "-t",
+        nwk.to_str().unwrap(),
+        "--combine",
+        "-o",
+        b.to_str().unwrap(),
+    ]);
+    for f in ["dollo_branches.tsv", "dollo_sites.tsv", "matrix.tsv"] {
+        let norm = |p: PathBuf| {
+            fs::read_to_string(p)
+                .unwrap()
+                .lines()
+                .filter(|l| !l.starts_with('#'))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+        assert_eq!(norm(a.join(f)), norm(b.join("combined").join(f)), "{f}");
+    }
+    // a tolerance that could reach across alignments is refused
+    let o = run(&[
+        "score",
+        "--matrix-list",
+        list.to_str().unwrap(),
+        "-t",
+        nwk.to_str().unwrap(),
+        "--combine",
+        "--tolerance",
+        "10000",
+        "-o",
+        w.join("c").to_str().unwrap(),
+    ]);
+    assert_eq!(o.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&o.stderr).contains("not below"));
+}

@@ -169,6 +169,17 @@ impl Site {
     }
 }
 
+/// One alignment inside a combined matrix: its name and the offset added to its columns.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FamilyBlock {
+    pub name: String,
+    pub offset: u32,
+}
+
+/// Columns between two alignments of a combined matrix. A pairwise `--tolerance` must stay below this, so that sites of
+/// different alignments can never be matched to each other.
+pub const FAMILY_PAD: u32 = 10_000;
+
 /// Rows = sites, columns = taxa.
 #[derive(Clone, Debug)]
 pub struct SiteMatrix {
@@ -193,6 +204,13 @@ pub struct SiteMatrix {
     /// around the site. Reported rather than silently promoted to observed: counting presence while
     /// discarding absence in poorly aligned regions would bias towards gains.
     pub masked_present: u64,
+    /// Empty for the matrix of one alignment. In a combined matrix (see [`SiteMatrix::combine`]) one block per alignment, in
+    /// order; `Site::col` is then `block.offset + column in that alignment`, so columns stay unique and ascending.
+    pub families: Vec<FamilyBlock>,
+    /// Combined matrices only: the index into `families` of each site.
+    pub site_family: Vec<u32>,
+    /// Combined matrices only: the padding used between alignments (see [`FAMILY_PAD`]).
+    pub family_pad: u32,
 }
 
 /// Everything `pairwise` precomputes once per matrix.
@@ -255,6 +273,9 @@ impl SiteMatrix {
             phase_mode,
             flank: 0,
             masked_present: 0,
+            families: Vec::new(),
+            site_family: Vec::new(),
+            family_pad: 0,
         }
     }
 
@@ -341,6 +362,9 @@ impl SiteMatrix {
             phase_mode: ap.phase_mode,
             flank: ap.flank,
             masked_present,
+            families: Vec::new(),
+            site_family: Vec::new(),
+            family_pad: 0,
         }
     }
 
@@ -393,6 +417,8 @@ impl SiteMatrix {
         let col_ix = header.iter().position(|h| h == "column").ok_or_else(|| {
             Error::parse(format!("{}: header has no `column` column", path.display()))
         })?;
+        let family_ix = header.iter().position(|h| h == "family");
+        let fcol_ix = header.iter().position(|h| h == "family_column");
         let phase_ix = header.iter().position(|h| h == "phase").ok_or_else(|| {
             Error::parse(format!("{}: header has no `phase` column", path.display()))
         })?;
@@ -424,7 +450,8 @@ impl SiteMatrix {
             .map(|t| !annotated_names.iter().any(|n| n == t))
             .collect();
         let n_annotated = annotated.iter().filter(|&&b| b).count();
-        let mut parsed: Vec<Site> = Vec::with_capacity(rows.len());
+        // Combined matrices carry `family` and `family_column`; `column` is then the offset (global) column.
+        let mut parsed: Vec<(Site, Option<(String, u32)>)> = Vec::with_capacity(rows.len());
         for (r, row) in rows.iter().enumerate() {
             if row.len() != header.len() {
                 return Err(Error::parse(format!(
@@ -482,18 +509,40 @@ impl SiteMatrix {
                     }
                 }
             }
-            parsed.push(Site {
-                col,
-                phase,
-                presence,
-                observable,
-            });
+            let fam = match (family_ix, fcol_ix) {
+                (Some(fi), Some(ci)) => {
+                    let fcol: u32 = row[ci].parse().map_err(|_| {
+                        Error::parse(format!(
+                            "{}: bad family_column {:?}",
+                            path.display(),
+                            row[ci]
+                        ))
+                    })?;
+                    if fcol > col {
+                        return Err(Error::parse(format!(
+                            "{}: family_column {fcol} exceeds column {col}",
+                            path.display()
+                        )));
+                    }
+                    Some((row[fi].clone(), fcol))
+                }
+                _ => None,
+            };
+            parsed.push((
+                Site {
+                    col,
+                    phase,
+                    presence,
+                    observable,
+                },
+                fam,
+            ));
         }
         // Scoring and pairwise matching assume ascending, unique (column, phase); a hand-edited or
         // converted file need not honour that.
-        parsed.sort_by_key(|s| (s.col, s.phase));
+        parsed.sort_by_key(|(s, _)| (s.col, s.phase));
         let before = parsed.len();
-        parsed.dedup_by(|dup, keep| {
+        parsed.dedup_by(|(dup, _), (keep, _)| {
             let same = (dup.col, dup.phase) == (keep.col, keep.phase);
             if same {
                 keep.presence.or_assign(&dup.presence);
@@ -502,7 +551,20 @@ impl SiteMatrix {
             same
         });
         let _ = before;
-        let sites = parsed;
+        let mut families: Vec<FamilyBlock> = Vec::new();
+        let mut site_family: Vec<u32> = Vec::new();
+        for (site, fam) in &parsed {
+            if let Some((name, fcol)) = fam {
+                if families.last().is_none_or(|f| &f.name != name) {
+                    families.push(FamilyBlock {
+                        name: name.clone(),
+                        offset: site.col - fcol,
+                    });
+                }
+                site_family.push(families.len() as u32 - 1);
+            }
+        }
+        let sites: Vec<Site> = parsed.into_iter().map(|(s, _)| s).collect();
         let mut taxon_sites = vec![Vec::new(); n_taxa];
         for (r, site) in sites.iter().enumerate() {
             for t in site.presence.positions() {
@@ -528,6 +590,145 @@ impl SiteMatrix {
             masked_present: get("masked_present")
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(0),
+            families,
+            site_family,
+            family_pad: get("family_pad").and_then(|v| v.parse().ok()).unwrap_or(0),
+        })
+    }
+
+    /// `true` for a matrix made by [`SiteMatrix::combine`].
+    pub fn is_combined(&self) -> bool {
+        !self.families.is_empty()
+    }
+
+    /// Column of site `i` within its own alignment (the stored column minus the alignment's offset).
+    pub fn site_column(&self, i: usize) -> u32 {
+        match self.site_family.get(i) {
+            Some(&f) => self.sites[i].col - self.families[f as usize].offset,
+            None => self.sites[i].col,
+        }
+    }
+
+    /// Label of site `i`: `<column>:<phase>`, or `<alignment>:<column>:<phase>` in a combined matrix.
+    pub fn site_label(&self, i: usize) -> String {
+        match self.site_family.get(i) {
+            Some(&f) => format!(
+                "{}:{}:{}",
+                self.families[f as usize].name,
+                self.site_column(i),
+                self.sites[i].phase
+            ),
+            None => self.sites[i].label(),
+        }
+    }
+
+    /// Stack the matrices of many alignments into one, so one scoring run covers every family.
+    ///
+    /// Taxa are the union of the parts' taxa in first-seen order; a taxon missing from an alignment is missing (`?`) at all of that
+    /// alignment's sites, never absent. Every site keeps its own alignment: its column is shifted by that alignment's offset
+    /// (alignment length plus [`FAMILY_PAD`]), so columns stay ascending and unique and pairwise matching at a tolerance below
+    /// [`FAMILY_PAD`] cannot pair sites of different alignments. All parts must share phase mode and flank, and have distinct names.
+    pub fn combine(parts: &[SiteMatrix], name: &str) -> Result<SiteMatrix> {
+        let first = parts
+            .first()
+            .ok_or_else(|| Error::parse("no matrices to combine"))?;
+        let mut taxa: Vec<String> = Vec::new();
+        let mut index: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
+        let mut names = std::collections::HashSet::new();
+        for p in parts {
+            if p.is_combined() {
+                return Err(Error::parse(format!(
+                    "matrix {:?} is already a combined matrix",
+                    p.alignment
+                )));
+            }
+            if p.phase_mode != first.phase_mode || p.flank != first.flank {
+                return Err(Error::parse(format!(
+                    "cannot combine {:?} with {:?}: different phase mode or flank",
+                    first.alignment, p.alignment
+                )));
+            }
+            if !names.insert(p.alignment.as_str()) {
+                return Err(Error::parse(format!(
+                    "two matrices are both named {:?}; combined sites would be ambiguous",
+                    p.alignment
+                )));
+            }
+            for t in &p.taxa {
+                if !index.contains_key(t.as_str()) {
+                    index.insert(t.as_str(), taxa.len());
+                    taxa.push(t.clone());
+                }
+            }
+        }
+        let n = taxa.len();
+        let mut annotated = vec![false; n];
+        let mut sites: Vec<Site> = Vec::new();
+        let mut site_family: Vec<u32> = Vec::new();
+        let mut families: Vec<FamilyBlock> = Vec::new();
+        let mut masked_present = 0u64;
+        let mut offset: u64 = 0;
+        for p in parts {
+            let map: Vec<usize> = p.taxa.iter().map(|t| index[t.as_str()]).collect();
+            for (i, &a) in p.annotated.iter().enumerate() {
+                annotated[map[i]] |= a;
+            }
+            let off32 = u32::try_from(offset).map_err(|_| {
+                Error::parse("too many alignment columns to combine into one matrix (u32 overflow)")
+            })?;
+            families.push(FamilyBlock {
+                name: p.alignment.clone(),
+                offset: off32,
+            });
+            let mut width = p.alen as u64;
+            for s in &p.sites {
+                let mut presence = Bitset::new(n);
+                let mut observable = Bitset::new(n);
+                for t in s.presence.positions() {
+                    presence.set(map[t]);
+                }
+                for t in s.observable.positions() {
+                    observable.set(map[t]);
+                }
+                width = width.max(s.col as u64 + 1);
+                let col = off32.checked_add(s.col).ok_or_else(|| {
+                    Error::parse(
+                        "too many alignment columns to combine into one matrix (u32 overflow)",
+                    )
+                })?;
+                sites.push(Site {
+                    col,
+                    phase: s.phase,
+                    presence,
+                    observable,
+                });
+                site_family.push(families.len() as u32 - 1);
+            }
+            offset += width + FAMILY_PAD as u64;
+            masked_present += p.masked_present;
+        }
+        let n_annotated = annotated.iter().filter(|&&a| a).count();
+        let mut taxon_sites = vec![Vec::new(); n];
+        for (i, site) in sites.iter().enumerate() {
+            for t in site.presence.positions() {
+                taxon_sites[t].push(i as u32);
+            }
+        }
+        Ok(SiteMatrix {
+            alignment: name.to_string(),
+            alen: usize::try_from(offset).unwrap_or(usize::MAX),
+            taxa,
+            annotated,
+            sites,
+            taxon_sites,
+            n_annotated,
+            aligned_residues: Vec::new(),
+            phase_mode: first.phase_mode,
+            flank: first.flank,
+            masked_present,
+            families,
+            site_family,
+            family_pad: FAMILY_PAD,
         })
     }
 
