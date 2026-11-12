@@ -3,7 +3,8 @@
 #SBATCH --job-name=V9_families_scan
 #SBATCH --output=logs/V9_families_scan.%j.log
 
-# Families (A: >=22 lineages, B: 18-21; multi-copy genomes treated as missing; the Antarctolithica strains count as one lineage) -> MAFFT ->
+# Families (A: at least TIER_A lineages, B: TIER_B up to TIER_A-1; chosen 33/29 of 37 lineages; multi-copy genomes treated as missing; the Antarctolithica
+# strains count as one lineage) -> MAFFT ->
 # intronfate analyze --combine -> every candidate placement of the Antarctolithica clade scored.
 # Needs results/plain (run_orthofinder.sbatch). Submit: sbatch -p highclock --export=ALL,VARIANT=plain run_all.sbatch
 # Purgeable: families/ alignments/ results_projection/ trees/. Absolute path, not dirname "$0".
