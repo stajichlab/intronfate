@@ -25,21 +25,31 @@ The OrthoFinder tree splits the Taphrinomycotina (*Saitoella* and *Neolecta* apa
 | placement scans | `make_trees.py`, `bootstrap_scan.py`, `run_scan2.sbatch` | the strains attached at every branch of the backbone (48 trees), scored by Fitch parsimony and Dollo, bootstrap over families |
 | calibration | `run_calibration.sbatch`, `loo_calibration.py` | 14 known lineages treated as the unknown |
 | clade-specific retention | `clade_retention.py`, `exclusive_sharing.py`, `intron_density.py` | see below |
-| tests | `tests/` | fixture tests for the family builder and the retention test |
+| tests | `tests/` | fixture tests for the family builder, the retention test, the tree functions and the bootstrap tie handling |
 
 ## Results
 **Intron density** (`results_summary/intron_density.tsv`): *Antarctolithica* has 0.55-0.63 introns per protein (about a third of proteins have any); Pezizomycotina
 1.2-2.5; the intron-poor controls *Savitreella* and *Yarrowia* 0.24, *Protomyces* 0.64, *Taphrina* 0.82.
 
-**Whole-matrix parsimony is miscalibrated for an intron-poor lineage, so it cannot be used.** Attaching the strains at every branch of the backbone (scores in
-`results_summary/scan/` and `A|B/placements.tsv`):
+**Whole-matrix scoring is miscalibrated for an intron-poor lineage, so it cannot be used.** Attaching the strains at every branch of the backbone (48 trees; scores in
+`results_summary/scan/` and `A|B/placements.tsv`; trees with identical per-family scores are one tie group, so the gene tree and its twin placement do not split their support):
 - on all sites, parsimony chooses the Taphrinomycetes (bootstrap over families 0.98 in tier A) and Dollo chooses *Yarrowia* (1.00): two intron-poor lineages, the two
   criteria disagree, and the pattern is shared loss;
-- on sites where a strain carries the intron, parsimony chooses *Neolecta* (1.00 in tier A, 0.55-0.58 in tier B), the most intron-rich genome of all.
+- on sites where a strain carries the intron, parsimony chooses *Neolecta* (1.00 in tier A, 0.58 in tier B; it is the most intron-rich ascomycete here, 4.0 introns per
+  protein), while Dollo chooses the gene-tree position, sister to Saccharomycotina + Pezizomycotina (1.00 in tier A, 0.87 in tier B).
 
-Calibration (`results_summary/loo/`): each of 14 known lineages was treated as the unknown. Both modes recover the truth for only part of them and misplace others with
-bootstrap 1.00: *Yarrowia* and *M. maydis* are pulled into the Taphrinomycetes on all sites; *C. neoformans*, *Lipomyces* and *S. pombe* are pulled to *Neolecta*, and
-*Botrytis*, *Orbilia* and *Pyronema* to *Geoglossum* (both intron-rich), on carrier-only sites. The two *Antarctolithica* results are the same artefacts.
+Calibration (`results_summary/loo/`): each of 14 known lineages was treated as the unknown. With the true position being the sister clade in the gene tree:
+
+| Mode (tier A) | parsimony recovers the true position | Dollo recovers it |
+|---|---|---|
+| all sites | 6 of 14 | 3 of 14 |
+| sites where the lineage carries the intron | 5 of 14 | 3 of 14 |
+
+(tier B: 6 and 5 for parsimony, 5 and 6 for Dollo). The errors are confident and systematic, with bootstrap 0.98-1.00 in tier A: *Yarrowia* and *M. maydis* are pulled into the
+Taphrinomycetes on all sites (parsimony); *C. neoformans*, *Lipomyces* and *S. pombe* are pulled to *Neolecta*, and *Botrytis* and *Orbilia* to *Geoglossum* (both intron-rich), on
+carrier-only sites (parsimony); and Dollo on carrier-only sites attaches *Orbilia*, *Pyronema*, *C. neoformans*, *Lipomyces*, *Neolecta* and *S. pombe* to a large clade of 13-18
+genomes, the kind of position it gives *Antarctolithica*. So all of the whole-matrix answers for *Antarctolithica*, including the Dollo one that agrees with the gene tree, are
+what these methods do to any intron-poor lineage and are not evidence.
 
 **Clade-specific intron retention** (`clade_retention.py`, `results_summary/*/clade_retention.tsv`, fixture-tested) is calibrated on the known lineages. R = a
 lineage's retention of the introns that define a clade / its retention of ancient introns (normalised for its own intron richness; tier A):
@@ -49,13 +59,23 @@ lineage's retention of the introns that define a clade / its retention of ancien
 | Pezizomycotina (~1,700) | 0.98-1.9 | 0.00-0.32 | **0.18** |
 | Taphrinomycetes (245) | 7.0-9.0 | 0.00-0.12 | **0.04** |
 | Taphrinomycotina (100) | 0.33-6.5 | 0.0-0.7 | **0.00** |
-| Saccharomycotina + Pezizomycotina (~1,800) | 0.37-2.1 | 0.00-0.17 (*Neolecta* 0.32) | 0.30 |
+| Saccharomycotina + Pezizomycotina (~1,800) | 0.37-2.3 | 0.00-0.17 (*Neolecta* 0.32) | 0.30 |
 
 ## Conclusions, and their limits
 - Intron positions **rule out** *Antarctolithica* inside Pezizomycotina (including Dothideomycetes and the black fungi) and inside the Taphrinomycetes. This agrees with its small
   proteome and with the gene tree, and it removes the whole-matrix "Taphrinomycetes" and "*Neolecta*" answers as artefacts.
 - They **do not resolve** whether it sits just outside Saccharomycotina + Pezizomycotina (the gene tree) or inside it as a yeast-like branch: its retention of that group's
-  introns (0.30) lies between the non-members and the members, and the clade cannot be calibrated for Saccharomycotina with two genomes.
+  introns (0.30) is inside the range of the non-members (up to 0.32, *Neolecta*) and just below the lowest member (0.37, *Lipomyces*), and the clade cannot be calibrated for
+  Saccharomycotina with two genomes.
+- The retention test is not free of bias: a member and a non-member are scored on different site sets, and a non-member's relatives outside the clade are filtered out of the
+  "no outside carrier" condition while *Antarctolithica* (strains merged, no relatives in the set) has none, which makes its R conservative for the "ruled out" conclusions and
+  weaker for the "unresolved" one. *Cryomyces* is mostly missing data in the ancient-intron reference (93 sites, against about 4,000 for the others; probably dropped from most
+  families by the two-or-more-genes-is-missing rule, not checked), so its calibration rows carry no information and the "black fungi" exclusion rests on *Hortaea* and *Zymoseptoria*.
 - Power is limited by the lineage's own intron poverty (about 1,765 carried introns in tier A), and the annotations are funannotate predictions. The six strains were analysed as
   one lineage (their gene-tree branches differ by under 0.005 substitutions per site); a strain-by-strain check was not done.
 - Not done: more Saccharomycotina and Taphrinomycotina genomes (to calibrate the Saccharomycotina question), the V7-style error sensitivity, and families below 18 lineages.
+
+## Review
+The code was reviewed independently (two read-only reviews). Fixed as a result: the bootstrap now treats trees with identical scores as a tie group (a correct placement that has a
+twin was capped at 0.5); non-clade input to `make_trees.py` is rejected; labels in the output tables are no longer truncated; `n_tips_below` and a Dollo calibration column were added.
+Documented, not fixed: the `--taph-monophyletic` variant joins its parts in an arbitrary order (exact when there are two parts, as here).
