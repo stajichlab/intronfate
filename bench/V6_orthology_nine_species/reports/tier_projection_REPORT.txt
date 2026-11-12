@@ -1,0 +1,57 @@
+== A_strict: 1106 families, 32706 intron rows (taxon x site, rows of sites.tsv), Dollo gains 15697, losses 14316
+  branch (tips below)                                                      gains  losses
+  Spunctatus,Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncr    4037       0
+  Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidul     831       0
+  Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidulans          236     464
+  Spombe,Scerevisiae,Ncrassa,Anidulans                                        72    2569
+  Scerevisiae,Ncrassa,Anidulans                                                9     524
+  Smaydis,Ccinerea,Cneoformans                                                45     297
+  Ccinerea,Cneoformans                                                       917       9
+  Ncrassa,Anidulans                                                          473      40
+  Anidulans                                                                  610     151
+  Ccinerea                                                                  1799     514
+  Cneoformans                                                               1951    1091
+  Mmucedo                                                                   1220    1516
+  Ncrassa                                                                    386     628
+  Scerevisiae                                                                 17    1447
+  Smaydis                                                                    147    4055
+  Spombe                                                                     348    1011
+  Spunctatus                                                                2599       0
+== B_partial: 689 families, 17546 intron rows (taxon x site, rows of sites.tsv), Dollo gains 9643, losses 5330
+  branch (tips below)                                                      gains  losses
+  Spunctatus,Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncr    1494       0
+  Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidul     592       0
+  Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidulans          214     230
+  Spombe,Scerevisiae,Ncrassa,Anidulans                                        45     629
+  Scerevisiae,Ncrassa,Anidulans                                                0     272
+  Smaydis,Ccinerea,Cneoformans                                                44     157
+  Ccinerea,Cneoformans                                                       601      25
+  Ncrassa,Anidulans                                                          304     323
+  Anidulans                                                                  395      72
+  Ccinerea                                                                  1444     210
+  Cneoformans                                                               1452     439
+  Mmucedo                                                                    847     418
+  Ncrassa                                                                    239     307
+  Scerevisiae                                                                  7     423
+  Smaydis                                                                    117    1479
+  Spombe                                                                     215     346
+  Spunctatus                                                                1633       0
+== C_hog: 401 families, 8281 intron rows (taxon x site, rows of sites.tsv), Dollo gains 4828, losses 1926
+  branch (tips below)                                                      gains  losses
+  Spunctatus,Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncr       0       0
+  Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidul     177       0
+  Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidulans          433       0
+  Spombe,Scerevisiae,Ncrassa,Anidulans                                        52      91
+  Scerevisiae,Ncrassa,Anidulans                                                4      95
+  Smaydis,Ccinerea,Cneoformans                                                38      10
+  Ccinerea,Cneoformans                                                       842       2
+  Ncrassa,Anidulans                                                          295       8
+  Anidulans                                                                  327      31
+  Ccinerea                                                                  1030      69
+  Cneoformans                                                               1032     163
+  Mmucedo                                                                    147       0
+  Ncrassa                                                                    205     194
+  Scerevisiae                                                                  6     434
+  Smaydis                                                                     69     534
+  Spombe                                                                     171     295
+  Spunctatus                                                                   0       0

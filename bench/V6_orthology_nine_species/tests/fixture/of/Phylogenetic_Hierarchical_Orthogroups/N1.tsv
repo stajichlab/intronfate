@@ -1,0 +1,5 @@
+HOG	OG	Gene Tree Parent Clade	A	B	C
+N1.HOG0	OG4	n1	a4	b4	c4
+N1.HOG1	OG4	n1	a5		
+N1.HOG2	OG5	n1	a6, a7	b6	c6
+N1.HOG3	OG1	n1	a1	b1	c1

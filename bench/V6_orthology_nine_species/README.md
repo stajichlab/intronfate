@@ -1,0 +1,30 @@
+# V6: orthology for the nine-species set (OrthoFinder, synteny refinement, tiered families)
+
+Goal: ortholog families that are as single-copy as possible, for `intron-projector analyze --taxon-map`. Same nine species as V2 except
+*S. cerevisiae* is the reference strain S288C (BFD `Saccharomyces_cerevisiae_S288C`; V2 uses AMP_1a, which has no RefSeq annotation to score).
+Everything runs on the HPCC; the laptop only holds the scripts and the small summaries in `reports/`. Purgeable on the HPCC:
+`data/ proteomes/ bed/ results/ refined/ families/ alignments/ results_projection/ logs/`.
+
+| Step | Script | Notes |
+|---|---|---|
+| link GFF3 + proteins | `link_data.sh` | read-only symlinks into BFD |
+| proteomes | `prepare_proteomes.sh` | one `<label>.faa` per species, terminal `*` stripped |
+| orthologs | `run_orthofinder.sbatch` | OrthoFinder 3.1.0, `-s species.nwk`, MSA gene trees; `VARIANT=y` adds `-y` (changes little) |
+| synteny | `run_refine.sbatch`, `make_bed.py`, `pixi.toml` | [orthoSynAssign](https://github.com/stajichlab/orthoSynAssign) via pixi, windows 8 and 30 |
+| families, align, project | `run_tiers.sbatch`, `make_families.py` | MAFFT `--auto`, then `analyze` per tier |
+| summaries | `orthogroup_summary.py`, `summarize_tiers.py` | output copied to `reports/` |
+| test | `tests/test_make_families.py` | 3-species fixture (`python3 tests/test_make_families.py`) |
+
+Tiers (at most one protein per species; a missing species is missing data, never a loss; MIN = 7 of 9; ambiguous paralogs are in no tier):
+A_strict = root orthogroups single-copy in all 9; B_partial = single-copy in 7-8; C_hog = from multi-copy orthogroups, hierarchical
+orthogroups (`N1`, the clade without *Spunctatus*) single-copy in >= 7; D_synteny = synteny-refined groups single-copy in >= 7.
+
+## Results (job chain 32032336, 32032337, 32032364)
+- OrthoFinder: 8,766 orthogroups, 4,785 multi-copy (67 % of grouped genes), 12,996 genes unassigned; 1,106 strict single-copy, 1,795
+  single-copy in >= 7/9. `N0` has no HOG file (the orthogroups are the root level); each `N<k>` covers only the species below its node.
+- Synteny (window 8): 166 groups, 333 genes (pairs); window 30: none. Too little conserved gene order across these clades, so D_synteny is empty.
+- Families: A 1,106 (9,953 proteins), B 689, C 401, D 0. `analyze` takes 10-26 s per tier. See `reports/`.
+- Dollo gains/losses are summed per branch in `reports/tier_projection_REPORT.txt`. These are annotation-based counts with no correction
+  for annotation misses (V4 gives per-species ceilings), so read the terminal-branch losses with V4 beside them.
+- Diagnostics: `no_cds` warnings are mRNAs without CDS in the annotation (none is in a family); `proteins_not_in_alignment` is one record per alignment.
+- Pitfall met: `rsync --exclude data` also skipped `tests/fixture/data`; anchor excludes (`/data`).

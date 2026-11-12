@@ -1,0 +1,17 @@
+== results/plain
+  orthogroups (OG, root)         groups   8766 genes  66669 | strict single-copy  1106 | single-copy >= 7/9:  1795 single-copy >= 5/9:  2231 | multi-copy  4785 (67% of grouped genes; median max copies 2)
+  HOG N1                         groups   8400 genes  59397 | strict single-copy  1243 | single-copy >= 7/8:  1678 single-copy >= 5/8:  2238 | multi-copy  4485 (65% of grouped genes; median max copies 2)
+  HOG N2                         groups   8434 genes  46540 | strict single-copy  1617 | single-copy >= 7/7:  1617 single-copy >= 5/7:  2615 | multi-copy  3528 (51% of grouped genes; median max copies 2)
+  HOG N3                         groups   6655 genes  21317 | strict single-copy  3244 | single-copy >= 7/3:  3244 single-copy >= 5/3:  3244 | multi-copy  1724 (42% of grouped genes; median max copies 2)
+  HOG N4                         groups   7010 genes  24778 | strict single-copy  2027 | single-copy >= 7/4:  2027 single-copy >= 5/4:  2027 | multi-copy  2213 (44% of grouped genes; median max copies 2)
+  HOG N5                         groups   6186 genes  15715 | strict single-copy  3664 | single-copy >= 7/2:  3664 single-copy >= 5/2:  3664 | multi-copy  1503 (47% of grouped genes; median max copies 2)
+  HOG N6                         groups   6844 genes  20374 | strict single-copy  2422 | single-copy >= 7/3:  2422 single-copy >= 5/3:  2422 | multi-copy  1993 (43% of grouped genes; median max copies 2)
+  HOG N7                         groups   7002 genes  15788 | strict single-copy  4924 | single-copy >= 7/2:  4924 single-copy >= 5/2:  4924 | multi-copy  1485 (34% of grouped genes; median max copies 2)
+  refined Refined_SOGs.w8.tsv    groups    166 genes    333 | strict single-copy     0 | single-copy >= 7/9:     0 single-copy >= 5/9:     0 | multi-copy     1 (1% of grouped genes; median max copies 2)
+  genes in no orthogroup (unassigned singletons): 12996
+
+tier	families	sequences	species_per_family
+A_strict	1106	9953	8:1;9:1105
+B_partial	689	5244	7:268;8:421
+C_hog	401	2878	7:330;8:71
+D_synteny	0	0	

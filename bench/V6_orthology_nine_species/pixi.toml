@@ -1,0 +1,14 @@
+# Environment for the orthology step: orthoSynAssign (synteny refinement of OrthoFinder orthogroups).
+# OrthoFinder itself, DIAMOND, MAFFT and FastTree come from the HPCC modules, not from here.
+[workspace]
+name = "v6-orthology"
+channels = ["conda-forge", "bioconda"]
+platforms = ["linux-64"]
+
+[dependencies]
+python = ">=3.11,<3.14"
+rust = ">=1.80"          # orthoSynAssign's synteny core is Rust (PyO3, abi3-py39), built at install time
+maturin = ">=1.0,<2.0"   # its build backend
+
+[pypi-dependencies]
+orthosynassign = { git = "https://github.com/stajichlab/orthoSynAssign" }
