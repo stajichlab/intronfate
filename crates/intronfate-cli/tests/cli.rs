@@ -1106,3 +1106,62 @@ fn score_combine_of_families_matches_analyze_combine() {
     assert_eq!(o.status.code(), Some(1));
     assert!(String::from_utf8_lossy(&o.stderr).contains("not below"));
 }
+
+#[test]
+fn combined_only_writes_just_the_combined_folder_and_the_same_totals() {
+    let w = demo_inputs("combined_only");
+    let d = w.join("in");
+    let args = |out: &Path, extra: &[&str]| {
+        let mut a: Vec<String> = [
+            "analyze",
+            "--gff",
+            d.join("a.gff3").to_str().unwrap(),
+            "-p",
+            d.join("a.faa").to_str().unwrap(),
+            "--msa-dir",
+            d.join("aln").to_str().unwrap(),
+            "-t",
+            d.join("t.nwk").to_str().unwrap(),
+            "--combine",
+            "-o",
+            out.to_str().unwrap(),
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        a.extend(extra.iter().map(|s| s.to_string()));
+        a
+    };
+    let (full, lean) = (w.join("full"), w.join("lean"));
+    for (out, extra) in [(&full, vec![]), (&lean, vec!["--combined-only"])] {
+        let a = args(out, &extra);
+        ok(&a.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+    }
+    assert!(full.join("one.aln/matrix.tsv").exists());
+    assert!(!lean.join("one.aln").exists() && !lean.join("two.aln").exists());
+    assert!(lean.join("introns.tsv").exists() && lean.join("unmatched.tsv").exists());
+    for f in [
+        "matrix.tsv",
+        "dollo_branches.tsv",
+        "dollo_sites.tsv",
+        "pairwise.tsv",
+    ] {
+        assert_eq!(
+            fs::read(full.join("combined").join(f)).unwrap(),
+            fs::read(lean.join("combined").join(f)).unwrap(),
+            "{f}"
+        );
+    }
+    // --combined-only means nothing without --combine: a usage error
+    let o = run(&[
+        "matrix",
+        "--gff",
+        "a.gff3",
+        "-p",
+        "a.faa",
+        "--msa",
+        "x.aln",
+        "--combined-only",
+    ]);
+    assert_eq!(o.status.code(), Some(2));
+}

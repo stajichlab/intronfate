@@ -37,3 +37,9 @@ Same split in all three tiers: *N. crassa*, *C. neoformans*, *S. pombe*, *S. may
 (tier A: 3.9, 6.0, 3.8, 1.3, 1.2 %); *M. mucedo* 16-29 %; *C. cinerea* and *A. nidulans* are at or above 100 %, so their losses cannot be told from misses.
 Gains are less safe: ceilings of 24-52 % for *A. nidulans*, *C. cinerea*, *M. mucedo*, *S. maydis* and *S. cerevisiae* (possible novel/false introns).
 *S. cerevisiae* carries only 46 introns in tier A (1,447 terminal losses), matching its known intron poverty, but its Sn/Pr is the weakest measured.
+
+## `--combine` and `--combined-only` on the tiers
+`run_tiers.sbatch` runs `analyze --combine`: `results_projection/<tier>/combined/` holds all families in one matrix, and `check_combined.py` confirms its Dollo
+table equals the per-family tables summed (0 differences in all three tiers; tier A: 15,697 sites, 17 branches). `check_combined_only.sbatch` re-runs tier A with
+`--combined-only`: the six compared `combined/` files are byte-identical, the run writes 15 files instead of 15,499 (32 MB instead of 107 MB), and `analyze` takes 2.0 s
+instead of about 8 s.

@@ -514,7 +514,7 @@ Dollo/MP values are asserted by the test suite.
 
 ## 9. Correctness strategy
 
-245 tests pass (180 core unit, 23 + 4 core integration in `crates/intronfate-core/tests/per_cell_missing.rs` and `combined.rs`, 10 CLI unit, 25 CLI end-to-end in `crates/intronfate-cli/tests/cli.rs`, 3 doc) plus 3 Python converter tests (`scripts/test_malin_to_matrix.py`); last verified 2026-11-12. The layers are described in [`TESTING.md`](TESTING.md). Layers:
+246 tests pass (180 core unit, 23 + 4 core integration in `crates/intronfate-core/tests/per_cell_missing.rs` and `combined.rs`, 10 CLI unit, 26 CLI end-to-end in `crates/intronfate-cli/tests/cli.rs`, 3 doc) plus 3 Python converter tests (`scripts/test_malin_to_matrix.py`); last verified 2026-11-12. The layers are described in [`TESTING.md`](TESTING.md). Layers:
 
 1. **Property/consistency tests on the coordinate model.** `cds_offset == codon_index0*3 + phase` for
    every offset; every derived view agrees with the emitted table columns.

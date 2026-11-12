@@ -183,6 +183,11 @@ struct MatrixArgs {
     #[arg(long)]
     combine: bool,
 
+    /// With `--combine`: write only `<out-dir>/combined/` (plus the run-level `introns.tsv`, `unmatched.tsv` and diagnostics), not one
+    /// folder per alignment. For runs over thousands of families, where the per-family folders are most of the output.
+    #[arg(long, requires = "combine")]
+    combined_only: bool,
+
     /// Group sites by alignment column only, ignoring codon phase.
     #[arg(long)]
     ignore_phase: bool,
@@ -810,21 +815,27 @@ fn build_matrices(
             let t0 = Instant::now();
             let stem = claim_stem(&mut used_stems, &aln.name)?;
             let dir = a.out_dir.join(&stem);
-            std::fs::create_dir_all(&dir)?;
-            tables::sites_table(&ap, &proteins).write(dir.join("sites.tsv"))?;
-            tables::taxa_table(&ap, &proteins, &m).write(dir.join("taxa.tsv"))?;
-            tables::write_matrix_tsv(&m, dir.join("matrix.tsv"))?;
-            tables::presence_table(&m).write(dir.join("presence.tsv"))?;
-            let pairs = m.pairwise(a.tolerance, !a.ignore_phase);
-            tables::pairwise_table(&pairs).write(dir.join("pairwise.tsv"))?;
-            tables::sharing_matrix_table_from(&m, &pairs).write(dir.join("sharing_matrix.tsv"))?;
-            tables::spectrum_table(&m).write(dir.join("spectrum.tsv"))?;
-            tables::counts_table(&score::score_counts(&m)).write(dir.join("counts_sites.tsv"))?;
-            std::fs::write(
-                dir.join("characters.nex"),
-                intronfate_core::matrix::characters_nexus(&m),
-            )
-            .with_context(|| format!("could not write {}", dir.join("characters.nex").display()))?;
+            if !a.combined_only {
+                std::fs::create_dir_all(&dir)?;
+                tables::sites_table(&ap, &proteins).write(dir.join("sites.tsv"))?;
+                tables::taxa_table(&ap, &proteins, &m).write(dir.join("taxa.tsv"))?;
+                tables::write_matrix_tsv(&m, dir.join("matrix.tsv"))?;
+                tables::presence_table(&m).write(dir.join("presence.tsv"))?;
+                let pairs = m.pairwise(a.tolerance, !a.ignore_phase);
+                tables::pairwise_table(&pairs).write(dir.join("pairwise.tsv"))?;
+                tables::sharing_matrix_table_from(&m, &pairs)
+                    .write(dir.join("sharing_matrix.tsv"))?;
+                tables::spectrum_table(&m).write(dir.join("spectrum.tsv"))?;
+                tables::counts_table(&score::score_counts(&m))
+                    .write(dir.join("counts_sites.tsv"))?;
+                std::fs::write(
+                    dir.join("characters.nex"),
+                    intronfate_core::matrix::characters_nexus(&m),
+                )
+                .with_context(|| {
+                    format!("could not write {}", dir.join("characters.nex").display())
+                })?;
+            }
 
             t_tables += t0.elapsed();
             for taxon in &ap.taxa {
@@ -908,12 +919,14 @@ fn build_matrices(
 fn cmd_matrix(a: &MatrixArgs, verbose: u8) -> Result<()> {
     let mut parts: Vec<SiteMatrix> = Vec::new();
     build_matrices(a, verbose, |stem, m, _| {
-        println!(
-            "{stem}: {} sites x {} taxa -> {}/{stem}/matrix.tsv",
-            m.n_sites(),
-            m.n_taxa(),
-            a.out_dir.display()
-        );
+        if !a.combined_only {
+            println!(
+                "{stem}: {} sites x {} taxa -> {}/{stem}/matrix.tsv",
+                m.n_sites(),
+                m.n_taxa(),
+                a.out_dir.display()
+            );
+        }
         if a.combine {
             parts.push(m.clone());
         }
@@ -1007,6 +1020,9 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
     build_matrices(&a.matrix, verbose, |stem, m, _| {
         if a.matrix.combine {
             parts.push(m.clone());
+        }
+        if a.matrix.combined_only {
+            return Ok(());
         }
         let dir = a.matrix.out_dir.join(stem);
         let summary = score_matrix(
@@ -1849,6 +1865,7 @@ mod tests {
                 msa_dir: vec![],
                 msa_ext: vec![],
                 combine: false,
+                combined_only: false,
                 out_dir: dir.join("out"),
                 ignore_phase: false,
                 clamp_tail: false,

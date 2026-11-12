@@ -240,7 +240,10 @@ the per-family results).
   tests check this, and so does `bench/V6_orthology_nine_species/check_combined.py` on real data). Pairwise sharing is summed over families
   likewise. Sites keep their family label, so a per-family breakdown is a group-by on the label's first field.
 - **Limits.** All families must share phase mode and flank and have distinct names; `--tolerance` must be below 10,000; the combined matrix
-  is held in memory (sites × taxa bits), unlike the per-family streaming. Per-family folders are still written; use them or `combined/`.
+  is held in memory (sites × taxa bits), unlike the per-family streaming.
+- **`--combined-only`** (with `--combine`) skips the per-family folders and writes just `combined/` plus the run-level `introns.tsv`, `unmatched.tsv` and
+  (when there is anything to report) diagnostics. Use it for thousands of families, where the per-family folders are most of the output; the `combined/` files are byte-identical either way
+  (tested). Per-family detail stays recoverable from the family prefix of each site label.
 [`bench/V2_gff_projection`](../bench/V2_gff_projection/README.md) builds exactly this from BUSCO orthologs.
 
 ## 10. Limits
