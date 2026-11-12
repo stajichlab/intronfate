@@ -786,3 +786,170 @@ fn a_clean_run_writes_no_diagnostics_file() {
         "info-only runs write no report"
     );
 }
+
+/// The demo writes a GFF, proteins, an alignment and a tree; lay them out so every input form can be exercised.
+fn demo_inputs(name: &str) -> PathBuf {
+    let w = scratch(name);
+    ok(&["demo", "-o", w.join("demo").to_str().unwrap()]);
+    let d = w.join("in");
+    fs::create_dir_all(d.join("aln")).unwrap();
+    fs::copy(w.join("demo/demo.gff3"), d.join("a.gff3")).unwrap();
+    fs::copy(w.join("demo/demo.faa"), d.join("a.faa")).unwrap();
+    fs::copy(w.join("demo/demo.aln.fasta"), d.join("aln/one.aln.fasta")).unwrap();
+    fs::copy(w.join("demo/demo.aln.fasta"), d.join("aln/two.aln.fasta")).unwrap();
+    fs::write(d.join("aln/notes.txt"), "not an alignment").unwrap();
+    fs::copy(w.join("demo/demo.nwk"), d.join("t.nwk")).unwrap();
+    w
+}
+
+#[test]
+fn msa_dir_and_msa_list_give_the_same_result_as_repeated_msa() {
+    let w = demo_inputs("msa_forms");
+    let d = w.join("in");
+    let (gff, faa, nwk) = (
+        d.join("a.gff3").to_str().unwrap().to_string(),
+        d.join("a.faa").to_str().unwrap().to_string(),
+        d.join("t.nwk").to_str().unwrap().to_string(),
+    );
+    let base = ["analyze", "--gff", &gff, "-p", &faa, "-t", &nwk];
+    let go = |extra: &[&str], out: &str| {
+        let mut a: Vec<&str> = base.to_vec();
+        a.extend_from_slice(extra);
+        let o = w.join(out);
+        a.extend_from_slice(&["-o", o.to_str().unwrap()]);
+        ok(&a);
+        o
+    };
+    let (one, two) = (d.join("aln/one.aln.fasta"), d.join("aln/two.aln.fasta"));
+    let explicit = go(
+        &[
+            "--msa",
+            one.to_str().unwrap(),
+            "--msa",
+            two.to_str().unwrap(),
+        ],
+        "explicit",
+    );
+    let by_dir = go(&["--msa-dir", d.join("aln").to_str().unwrap()], "bydir");
+    fs::write(
+        d.join("fam.list"),
+        "# two families\naln/one.aln.fasta\naln/two.aln.fasta\n",
+    )
+    .unwrap();
+    let by_list = go(
+        &["--msa-list", d.join("fam.list").to_str().unwrap()],
+        "bylist",
+    );
+    for out in [&by_dir, &by_list] {
+        for f in [
+            "one.aln/matrix.tsv",
+            "two.aln/matrix.tsv",
+            "one.aln/dollo_branches.tsv",
+        ] {
+            assert_eq!(
+                fs::read(explicit.join(f)).unwrap(),
+                fs::read(out.join(f)).unwrap(),
+                "{f} differs for {out:?}"
+            );
+        }
+    }
+    // an extension that matches nothing is an error naming what was tried
+    let o = run(&[
+        "matrix",
+        "--gff",
+        d.join("a.gff3").to_str().unwrap(),
+        "-p",
+        d.join("a.faa").to_str().unwrap(),
+        "--msa-dir",
+        d.join("aln").to_str().unwrap(),
+        "--msa-ext",
+        "stk",
+    ]);
+    assert_eq!(o.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&o.stderr).contains("no alignment files"));
+}
+
+#[test]
+fn gff_and_protein_folders_and_lists_work() {
+    let w = demo_inputs("ann_forms");
+    let d = w.join("in");
+    let o = w.join("out");
+    ok(&[
+        "project",
+        "--gff-dir",
+        d.to_str().unwrap(),
+        "--proteins-dir",
+        d.to_str().unwrap(),
+        "-o",
+        o.to_str().unwrap(),
+    ]);
+    assert!(o.join("introns.tsv").exists());
+    fs::write(d.join("g.list"), "a.gff3\n").unwrap();
+    fs::write(d.join("p.list"), "a.faa\n").unwrap();
+    let o2 = w.join("out2");
+    ok(&[
+        "project",
+        "--gff-list",
+        d.join("g.list").to_str().unwrap(),
+        "--proteins-list",
+        d.join("p.list").to_str().unwrap(),
+        "-o",
+        o2.to_str().unwrap(),
+    ]);
+    assert_eq!(
+        fs::read(o.join("introns.tsv")).unwrap(),
+        fs::read(o2.join("introns.tsv")).unwrap()
+    );
+}
+
+#[test]
+fn score_matrix_dir_scores_every_family_into_its_own_folder() {
+    let w = demo_inputs("score_dir");
+    let d = w.join("in");
+    let fam = w.join("fam");
+    ok(&[
+        "matrix",
+        "--gff",
+        d.join("a.gff3").to_str().unwrap(),
+        "-p",
+        d.join("a.faa").to_str().unwrap(),
+        "--msa-dir",
+        d.join("aln").to_str().unwrap(),
+        "-o",
+        fam.to_str().unwrap(),
+    ]);
+    let scored = w.join("scored");
+    let out = ok(&[
+        "score",
+        "--matrix-dir",
+        fam.to_str().unwrap(),
+        "-t",
+        d.join("t.nwk").to_str().unwrap(),
+        "-o",
+        scored.to_str().unwrap(),
+    ]);
+    assert!(out.contains("scored 2 matrices"), "{out}");
+    for f in ["one.aln", "two.aln"] {
+        assert!(
+            scored.join(f).join("dollo_branches.tsv").exists(),
+            "{:?}",
+            files_under(&scored)
+        );
+    }
+    // a single --matrix keeps the old layout: results directly in -o
+    let single = w.join("single");
+    ok(&[
+        "score",
+        "--matrix",
+        fam.join("one.aln/matrix.tsv").to_str().unwrap(),
+        "-t",
+        d.join("t.nwk").to_str().unwrap(),
+        "-o",
+        single.to_str().unwrap(),
+    ]);
+    assert!(single.join("dollo_branches.tsv").exists());
+    assert_eq!(
+        fs::read(single.join("dollo_branches.tsv")).unwrap(),
+        fs::read(scored.join("one.aln/dollo_branches.tsv")).unwrap()
+    );
+}

@@ -26,10 +26,37 @@ Requires Rust 1.85 or newer. There are no runtime dependencies.
 
 | Input | Flag | Requirements |
 |---|---|---|
-| Annotation | `--gff` (repeatable) | GFF3 or GTF, optionally gzip. Needs `CDS` features grouped by transcript. `exon` features are used to find UTR introns. |
-| Proteins | `-p` / `--proteins` (repeatable) | FASTA of the proteins those transcripts encode. |
-| Alignment | `--msa` (repeatable) | Aligned FASTA or Stockholm of the orthologs. Row ids must equal the protein ids. |
+| Annotation | `--gff` (repeatable; also `--gff-list`, `--gff-dir`) | GFF3 or GTF, optionally gzip. Needs `CDS` features grouped by transcript. `exon` features are used to find UTR introns. |
+| Proteins | `-p` / `--proteins` (repeatable; also `--proteins-list`, `--proteins-dir`) | FASTA of the proteins those transcripts encode. |
+| Alignment | `--msa` (repeatable; also `--msa-list`, `--msa-dir`) | Aligned FASTA or Stockholm of the orthologs. Row ids must equal the protein ids. |
 | Tree (to score) | `-t` / `--tree` | Newick. Tip names must equal the alignment row ids exactly. |
+
+### Many input files: lists and folders
+
+A run over thousands of alignments or genomes does not need thousands of flags. Every multi-file input (`--gff`, `-p/--proteins`,
+`--msa`, and `--matrix` for `score`) takes the same three forms, which can be mixed:
+
+| Form | Example | Meaning |
+|---|---|---|
+| files | `--msa a.aln --msa b.aln` | exactly these files |
+| list | `--msa-list families.txt` | one path per line; blank lines and `#` comments are skipped; a relative path is relative to the folder of the list file, not the working directory, so a list can travel with its data; a path that does not exist is an error naming the list and line |
+| folder | `--msa-dir alignments/ --msa-ext aln.fasta` | the files directly inside the folder whose names match, sorted by name |
+
+An extension (`--gff-ext`, `--proteins-ext`, `--msa-ext`, `--matrix-ext`; comma-separated or repeated) matches a file name that **is** it or
+**ends in `.<ext>`**, ignoring case and a trailing `.gz`/`.bgz`: `aln` matches `OG1.aln` and `OG1.ALN.gz`, but not `OGaln` or `OG1.aln.bak`;
+`aln.fasta` matches `OG1.aln.fasta`. Defaults when no extension is given: GFF `gff3, gff, gtf`; proteins `faa, fa, fasta, pep`;
+alignments `aln, aln.fasta, aln.fa, aln.faa, afa, msa, sto, stockholm` (plain `.fasta` is deliberately not an alignment default,
+because proteins use it too; a folder that mixes proteins and alignments needs an explicit `--msa-ext`). Folders are not searched recursively,
+except `--matrix-dir` (below).
+
+The result keeps the order *files, then each list's lines, then each folder's sorted matches*, and a path that occurs twice is used once.
+Naming a list or folder that yields nothing is an error that says what was looked for (nothing named at all falls through to the usual
+"`--msa` is required").
+
+`score` also accepts many matrices: `--matrix-dir out/` searches the folder and its immediate sub-folders for `matrix.tsv` (or
+`X.matrix.tsv`), so the output folder of `analyze` or `matrix` can be passed as it is. A single `--matrix FILE` writes its results into `-o`
+as before; several matrices (or any list or folder form) are each scored into `<-o>/<family>/`, where `<family>` is the folder holding
+`matrix.tsv` or the file name without `.matrix.tsv`; two matrices that would share a folder are an error.
 
 Three requirements that cause most problems:
 
@@ -180,7 +207,7 @@ taxon_map.tsv       Smaydis_g123-T1<TAB>Smaydis   Scerevisiae_g88-T1<TAB>Scerevi
 
 ```sh
 intronfate analyze --gff sp1.gff3.gz --gff sp2.gff3.gz ... -p sp1.faa.gz -p sp2.faa.gz ... \
-    $(for f in alignments/*.aln.fasta; do echo --msa $f; done) \
+    --msa-dir alignments/ --msa-ext aln.fasta \
     --taxon-map taxon_map.tsv -t species.nwk -o out
 ```
 

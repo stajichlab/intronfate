@@ -71,9 +71,33 @@ struct AnnotationArgs {
     #[arg(long, value_name = "FILE")]
     gff: Vec<PathBuf>,
 
+    /// Text file listing GFF3/GTF files, one per line (`#` comments; relative paths are relative to the list). Repeatable.
+    #[arg(long, value_name = "LIST")]
+    gff_list: Vec<PathBuf>,
+
+    /// Folder of GFF3/GTF files (matched by `--gff-ext`, default gff3, gff, gtf; `.gz` allowed). Repeatable.
+    #[arg(long, value_name = "DIR")]
+    gff_dir: Vec<PathBuf>,
+
+    /// Extension(s) selecting files in `--gff-dir`, e.g. `gff3` or `annot.gff`.
+    #[arg(long, value_delimiter = ',', value_name = "EXT")]
+    gff_ext: Vec<String>,
+
     /// Protein FASTA file(s) corresponding to the annotation. Repeatable.
     #[arg(long, short = 'p', value_name = "FILE")]
     proteins: Vec<PathBuf>,
+
+    /// Text file listing protein FASTA files, one per line. Repeatable.
+    #[arg(long, value_name = "LIST")]
+    proteins_list: Vec<PathBuf>,
+
+    /// Folder of protein FASTA files (matched by `--proteins-ext`, default faa, fa, fasta, pep; `.gz` allowed). Repeatable.
+    #[arg(long, value_name = "DIR")]
+    proteins_dir: Vec<PathBuf>,
+
+    /// Extension(s) selecting files in `--proteins-dir`.
+    #[arg(long, value_delimiter = ',', value_name = "EXT")]
+    proteins_ext: Vec<String>,
 
     /// Attribute(s) naming the transcript a CDS/exon belongs to, tried in order.
     #[arg(
@@ -139,6 +163,18 @@ struct MatrixArgs {
     #[arg(long, value_name = "FILE")]
     msa: Vec<PathBuf>,
 
+    /// Text file listing alignments, one per line (`#` comments; relative paths are relative to the list). Repeatable.
+    #[arg(long, value_name = "LIST")]
+    msa_list: Vec<PathBuf>,
+
+    /// Folder of alignments (matched by `--msa-ext`, default aln, aln.fasta, aln.fa, aln.faa, afa, msa, sto, stockholm; `.gz` allowed; plain `.fasta` is not a default because proteins use it too). Repeatable.
+    #[arg(long, value_name = "DIR")]
+    msa_dir: Vec<PathBuf>,
+
+    /// Extension(s) selecting files in `--msa-dir`, e.g. `aln.fasta` (a name matches when it is, or ends in, `.ext`).
+    #[arg(long, value_delimiter = ',', value_name = "EXT")]
+    msa_ext: Vec<String>,
+
     #[arg(long, short = 'o', default_value = "intron_out")]
     out_dir: PathBuf,
 
@@ -203,9 +239,27 @@ struct AnalyzeArgs {
 
 #[derive(Args, Debug)]
 struct ScoreArgs {
-    /// `matrix.tsv` written by the matrix or analyze command.
-    #[arg(long, value_name = "FILE")]
-    matrix: PathBuf,
+    /// `matrix.tsv` written by the matrix or analyze command. One file scores into `--out-dir` itself; with several
+    /// (or any of the list/folder forms) each is scored into `<out-dir>/<name>/`. Repeatable.
+    #[arg(
+        long,
+        value_name = "FILE",
+        required_unless_present_any = ["matrix_list", "matrix_dir"]
+    )]
+    matrix: Vec<PathBuf>,
+
+    /// Text file listing matrix files, one per line. Repeatable.
+    #[arg(long, value_name = "LIST")]
+    matrix_list: Vec<PathBuf>,
+
+    /// Folder of matrices: the folder and its immediate sub-folders are searched, so the output folder of
+    /// `analyze`/`matrix` works as is (`<dir>/<family>/matrix.tsv`). Repeatable.
+    #[arg(long, value_name = "DIR")]
+    matrix_dir: Vec<PathBuf>,
+
+    /// Extension(s) selecting files in `--matrix-dir` (default `matrix.tsv`, which matches `matrix.tsv` and `X.matrix.tsv`).
+    #[arg(long, value_delimiter = ',', value_name = "EXT")]
+    matrix_ext: Vec<String>,
 
     /// Newick tree whose tips are matrix taxon names.
     #[arg(long, short = 't', value_name = "FILE")]
@@ -268,10 +322,11 @@ fn main() -> Result<()> {
         .build()
         .context("could not start the worker pool")?;
     let started = Instant::now();
-    let result = pool.install(|| run(&cli));
+    let verbose = cli.verbose;
+    let result = pool.install(|| run(cli));
     match result {
         Ok(()) => {
-            if cli.verbose > 0 {
+            if verbose > 0 {
                 eprintln!("done in {:.2}s", started.elapsed().as_secs_f64());
             }
             Ok(())
@@ -284,15 +339,140 @@ fn main() -> Result<()> {
     }
 }
 
-fn run(cli: &Cli) -> Result<()> {
-    match &cli.command {
-        Command::Project(a) => cmd_project(a, cli.verbose),
-        Command::Matrix(a) => cmd_matrix(a, cli.verbose),
-        Command::Analyze(a) => cmd_analyze(a, cli.verbose),
-        Command::Score(a) => cmd_score(a, cli.verbose),
-        Command::Demo(a) => cmd_demo(a, cli.verbose),
-        Command::Convert(a) => cmd_convert(a),
+fn run(cli: Cli) -> Result<()> {
+    let verbose = cli.verbose;
+    match cli.command {
+        Command::Project(mut a) => {
+            a.ann.resolve_inputs()?;
+            cmd_project(&a, verbose)
+        }
+        Command::Matrix(mut a) => {
+            a.resolve_inputs()?;
+            cmd_matrix(&a, verbose)
+        }
+        Command::Analyze(mut a) => {
+            a.matrix.resolve_inputs()?;
+            cmd_analyze(&a, verbose)
+        }
+        Command::Score(mut a) => {
+            a.resolve_inputs()?;
+            cmd_score(&a, verbose)
+        }
+        Command::Demo(a) => cmd_demo(&a, verbose),
+        Command::Convert(a) => cmd_convert(&a),
     }
+}
+
+/// Fold `--x`, `--x-list` and `--x-dir/--x-ext` into one ordered file list (see `intronfate_core::inputs`).
+fn expand_inputs(
+    what: &str,
+    files: &[PathBuf],
+    lists: &[PathBuf],
+    dirs: &[PathBuf],
+    exts: &[String],
+    default_exts: &[&str],
+    depth: usize,
+) -> Result<Vec<PathBuf>> {
+    Ok(intronfate_core::inputs::expand(
+        &intronfate_core::inputs::Inputs {
+            what,
+            files,
+            lists,
+            dirs,
+            exts,
+            default_exts,
+            depth,
+        },
+    )?)
+}
+
+impl AnnotationArgs {
+    fn resolve_inputs(&mut self) -> Result<()> {
+        self.gff = expand_inputs(
+            "GFF",
+            &self.gff,
+            &self.gff_list,
+            &self.gff_dir,
+            &self.gff_ext,
+            &["gff3", "gff", "gtf"],
+            0,
+        )?;
+        self.proteins = expand_inputs(
+            "protein",
+            &self.proteins,
+            &self.proteins_list,
+            &self.proteins_dir,
+            &self.proteins_ext,
+            &["faa", "fa", "fasta", "pep"],
+            0,
+        )?;
+        Ok(())
+    }
+}
+
+impl MatrixArgs {
+    fn resolve_inputs(&mut self) -> Result<()> {
+        self.ann.resolve_inputs()?;
+        self.msa = expand_inputs(
+            "alignment",
+            &self.msa,
+            &self.msa_list,
+            &self.msa_dir,
+            &self.msa_ext,
+            &[
+                "aln",
+                "aln.fasta",
+                "aln.fa",
+                "aln.faa",
+                "afa",
+                "msa",
+                "sto",
+                "stockholm",
+            ],
+            0,
+        )?;
+        Ok(())
+    }
+}
+
+impl ScoreArgs {
+    /// `true` when the matrices came from anything but a single `--matrix FILE`: each then gets its own output folder.
+    fn many(&self) -> bool {
+        self.matrix.len() > 1 || !self.matrix_list.is_empty() || !self.matrix_dir.is_empty()
+    }
+
+    fn resolve_inputs(&mut self) -> Result<()> {
+        self.matrix = expand_inputs(
+            "matrix",
+            &self.matrix,
+            &self.matrix_list,
+            &self.matrix_dir,
+            &self.matrix_ext,
+            &["matrix.tsv"],
+            1,
+        )?;
+        Ok(())
+    }
+}
+
+/// Output-folder name for a matrix file: the family folder for `<family>/matrix.tsv`, else the file name without
+/// `.matrix.tsv`/`.tsv`.
+fn matrix_stem(p: &Path) -> String {
+    let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("matrix");
+    let name = name.strip_suffix(".gz").unwrap_or(name);
+    if name == "matrix.tsv" {
+        if let Some(parent) = p
+            .parent()
+            .and_then(|d| d.file_name())
+            .and_then(|n| n.to_str())
+        {
+            return parent.to_string();
+        }
+    }
+    name.strip_suffix(".matrix.tsv")
+        .or_else(|| name.strip_suffix(".tsv"))
+        .unwrap_or(name)
+        .to_string()
 }
 
 /// Everything `AnnotationArgs::load_projection` returns.
@@ -804,18 +984,40 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
 }
 
 fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
-    let m = SiteMatrix::read_tsv(&a.matrix)
-        .with_context(|| format!("could not read matrix {}", a.matrix.display()))?;
-    std::fs::create_dir_all(&a.out_dir)?;
+    if a.matrix.is_empty() {
+        bail!("--matrix is required: give a matrix.tsv, or use --matrix-list / --matrix-dir");
+    }
+    if !a.many() {
+        return score_one(a, &a.matrix[0], &a.out_dir, verbose);
+    }
+    let mut used = std::collections::HashSet::new();
+    for path in &a.matrix {
+        let stem = claim_stem(&mut used, &matrix_stem(path))?;
+        let out = a.out_dir.join(&stem);
+        println!("{stem}:");
+        score_one(a, path, &out, verbose).with_context(|| format!("scoring {}", path.display()))?;
+    }
+    println!(
+        "scored {} matrices into {}",
+        a.matrix.len(),
+        a.out_dir.display()
+    );
+    Ok(())
+}
+
+fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Result<()> {
+    let m = SiteMatrix::read_tsv(matrix)
+        .with_context(|| format!("could not read matrix {}", matrix.display()))?;
+    std::fs::create_dir_all(out_dir)?;
     // Re-emit pairwise statistics at the requested tolerance without re-reading the annotation.
     let pairs = m.pairwise(a.tolerance, true);
-    tables::pairwise_table(&pairs).write(a.out_dir.join("pairwise.tsv"))?;
-    tables::sharing_matrix_table_from(&m, &pairs).write(a.out_dir.join("sharing_matrix.tsv"))?;
+    tables::pairwise_table(&pairs).write(out_dir.join("pairwise.tsv"))?;
+    tables::sharing_matrix_table_from(&m, &pairs).write(out_dir.join("sharing_matrix.tsv"))?;
 
     let methods = resolve_methods(&a.methods)?;
     let summary = score_matrix(
         &m,
-        &a.out_dir,
+        out_dir,
         &ScoreOpts {
             methods,
             tree: a.tree.clone(),
@@ -823,7 +1025,7 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
             min_taxa: a.min_taxa,
             min_observed: a.min_observed,
             reconstructions: a.reconstructions,
-            matrix_label: a.matrix.display().to_string(),
+            matrix_label: matrix.display().to_string(),
         },
         verbose,
     )?;
@@ -834,7 +1036,7 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
         "scored {} sites x {} taxa from {}",
         m.n_sites(),
         m.n_taxa(),
-        a.matrix.display()
+        matrix.display()
     );
     Ok(())
 }
@@ -1415,7 +1617,10 @@ mod tests {
         .unwrap();
         // Score from the file alone, with no annotation in sight.
         let a = ScoreArgs {
-            matrix: dir.join("matrix.tsv"),
+            matrix: vec![dir.join("matrix.tsv")],
+            matrix_list: vec![],
+            matrix_dir: vec![],
+            matrix_ext: vec![],
             tree: Some(dir.join("demo.nwk")),
             methods: vec!["dollo".into()],
             outgroups: vec!["outgroup".into()],
@@ -1443,7 +1648,10 @@ mod tests {
         )
         .unwrap();
         let a = ScoreArgs {
-            matrix: dir.join("matrix.tsv"),
+            matrix: vec![dir.join("matrix.tsv")],
+            matrix_list: vec![],
+            matrix_dir: vec![],
+            matrix_ext: vec![],
             tree: None,
             methods: vec!["counts".into()],
             outgroups: vec![],
@@ -1469,7 +1677,10 @@ mod tests {
         )
         .unwrap();
         let a = ScoreArgs {
-            matrix: dir.join("matrix.tsv"),
+            matrix: vec![dir.join("matrix.tsv")],
+            matrix_list: vec![],
+            matrix_dir: vec![],
+            matrix_ext: vec![],
             tree: None,
             methods: vec!["dollo".into()],
             outgroups: vec![],
@@ -1499,7 +1710,13 @@ mod tests {
             matrix: MatrixArgs {
                 ann: AnnotationArgs {
                     gff: vec![gff],
+                    gff_list: vec![],
+                    gff_dir: vec![],
+                    gff_ext: vec![],
                     proteins: vec![faa],
+                    proteins_list: vec![],
+                    proteins_dir: vec![],
+                    proteins_ext: vec![],
                     transcript_attrs: GffOptions::default().transcript_attrs,
                     protein_attrs: GffOptions::default().protein_attrs,
                     gene_attrs: GffOptions::default().gene_attrs,
@@ -1511,6 +1728,9 @@ mod tests {
                     strict: false,
                 },
                 msa: vec![aln],
+                msa_list: vec![],
+                msa_dir: vec![],
+                msa_ext: vec![],
                 out_dir: dir.join("out"),
                 ignore_phase: false,
                 clamp_tail: false,
