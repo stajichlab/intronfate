@@ -30,6 +30,7 @@ orthogroups (`N1`, the clade without *Spunctatus*) single-copy in >= 7; D_synten
 - Pitfall met: `rsync --exclude data` also skipped `tests/fixture/data`; anchor excludes (`/data`).
 
 ## Dollo losses vs. annotation error (`loss_ceiling_tiers.py`, `reports/loss_ceiling_tiers.txt`)
+*Superseded by V4's rescoring over the V6 genes (`../V4_annotation_accuracy/results_v6/`, which also gives S288C a gene-restricted Sn of 97.4 %, not the 73.3 % used below) and by the simulation in `../V7_annotation_error_sensitivity/`.*
 Terminal-branch losses compared with the V4 ceiling (`carried x (1 - Sn)/Sn`) and terminal gains with `carried x (1 - Pr)`, using V4's accuracy at the V2 BUSCO
 genes (an approximation: the V6 gene sets overlap V2's but differ; S288C has only genome-wide Sn/Pr from 312 reference introns).
 Same split in all three tiers: *N. crassa*, *C. neoformans*, *S. pombe*, *S. maydis* (and *S. cerevisiae*) losses are at most 4-8 % explainable by missed introns

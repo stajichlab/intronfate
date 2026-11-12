@@ -102,3 +102,6 @@ not representative of the genome as a whole; *S. maydis* has few reference intro
    `1KFG/2026/NCBI_fungi/source/NCBI_ASM/GCF_000146045.2_R64/GCF_000146045.2_R64_genomic.gff.gz`; per-intron table and gffcompare maps under
    `analysis/rc6_vs_pre_rc6/reference_introns/` and `reference_gffcompare/` (`Saccharomyces_cerevisiae_S288C.new.*`).
 
+
+## Rescoring over the V6 tiers
+`run_v6.sbatch` runs `busco_gene_accuracy.py` (now with `--genomes/--taxon-map/--projection/--out`) over each V6 tier's genes into `results_v6/<tier>/`. *S. cerevisiae* S288C is scored there (Sn 97.4 % / 97.4 % Pr-adjusted at the tier-A genes; 343 reference introns genome-wide), so the earlier "unscored" note no longer applies to the V6 set. Tier C has no reference introns for *S. punctatus* at its genes and the script now skips such rows instead of crashing.

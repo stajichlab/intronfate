@@ -2,6 +2,8 @@
 """Intron accuracy (funannotate rc.6 vs RefSeq, from a colleague's gffcompare run) measured over ONLY the genes used in the V2
 alignments, not the genome-wide rate. Read-only on the shared scoring folder.
 
+Usage: busco_gene_accuracy.py SCORING V2 [--genomes G] [--taxon-map M] [--projection DIR] [--out DIR]
+  (the options let the same scoring run over another gene set, e.g. the V6 tiers; the S288C row needs its BFD folder in G)
 Inputs
   SCORING   BFD/Fungi_BFD_runs/analysis/rc6_vs_pre_rc6/   (reference_introns/*.new.introns.tsv.gz, reference_gffcompare/*.new.cds.tmap.gz)
   V2        bench/V2_gff_projection/   (taxon_map.tsv: V2 protein id -> genome label; genomes.tsv; results/projection/all/*/{taxa,dollo_branches}.tsv)
@@ -17,19 +19,31 @@ map to in the gffcompare .tmap (class codes in ACCEPT, i.e. the reference locus 
 """
 import collections, csv, glob, gzip, os, sys
 
-SCORING = sys.argv[1]
-V2 = sys.argv[2]
-OUT = "results"
+import argparse
+ap = argparse.ArgumentParser()
+ap.add_argument("scoring"); ap.add_argument("v2", help="folder holding genomes.tsv, taxon_map.tsv and results/projection/all/ (the V2 layout)")
+ap.add_argument("--genomes", help="genomes.tsv (default: <v2>/genomes.tsv)")
+ap.add_argument("--taxon-map", help="protein<TAB>label map of the gene set to score (default: <v2>/taxon_map.tsv)")
+ap.add_argument("--projection", help="folder of per-alignment result folders holding taxa.tsv and dollo_branches.tsv "
+                                      "(default: <v2>/results/projection/all)")
+ap.add_argument("--out", default="results")
+args = ap.parse_args()
+SCORING = args.scoring
+V2 = args.v2
+OUT = args.out
+GENOMES = args.genomes or os.path.join(V2, "genomes.tsv")
+TAXON_MAP = args.taxon_map or os.path.join(V2, "taxon_map.tsv")
+PROJECTION = args.projection or os.path.join(V2, "results", "projection", "all")
 ACCEPT = set("=cjkmneo")        # reference transcript shares the locus (exact chain, contained, new junction, ...)
 os.makedirs(OUT, exist_ok=True)
 
 genomes = {}
-for l in open(os.path.join(V2, "genomes.tsv")):
+for l in open(GENOMES):
     if l.strip() and not l.startswith("#"):
         label, d, _ = l.rstrip("\n").split("\t")
         genomes[label] = d
 tx_of = collections.defaultdict(set)
-for l in open(os.path.join(V2, "taxon_map.tsv")):
+for l in open(TAXON_MAP):
     pid, lab = l.rstrip("\n").split("\t")
     tx_of[lab].add(pid)
 
@@ -110,7 +124,7 @@ write(f"{OUT}/busco_accuracy_by_class.tsv", by_class)
 
 # ---- loss ceiling with the MEASURED Sn ----
 carried, losses = collections.Counter(), collections.Counter()
-for d in glob.glob(f"{V2}/results/projection/all/*/"):
+for d in glob.glob(os.path.join(PROJECTION, "*", "")):
     try:
         for r in csv.DictReader(open(d + "taxa.tsv"), delimiter="\t"):
             carried[r["taxon"]] += int(r["n_sites"])
@@ -124,6 +138,8 @@ for r in summary:
     if r.get("scored") != "yes": continue
     g = r["genome"]; s = r["sn_v2_genes"] / 100; sa = r["sn_genome_wide"] / 100
     c = carried[g]; l = losses[g]
+    if s != s or sa != sa:        # no reference introns at this gene set (Sn is NaN): there is nothing to bound
+        ceil.append(dict(genome=g, sites_carried=c, terminal_losses=l, sn_genome_wide=r["sn_genome_wide"], sn_v2_genes="nan")); continue
     miss_v2 = c * (1 - s) / s if s else float("nan"); miss_all = c * (1 - sa) / sa if sa else float("nan")
     ceil.append(dict(genome=g, sites_carried=c, terminal_losses=l,
                      sn_genome_wide=r["sn_genome_wide"], missed_if_genome_wide=round(miss_all), share_of_losses_genome_wide=round(miss_all / l * 100, 1) if l else "",

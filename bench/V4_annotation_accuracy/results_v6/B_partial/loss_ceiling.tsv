@@ -1,0 +1,10 @@
+genome	sites_carried	terminal_losses	sn_genome_wide	missed_if_genome_wide	share_of_losses_genome_wide	sn_v2_genes	missed_if_v2_genes	share_of_losses_v2_genes
+Spunctatus	3127	0	88.7	398		90.7	321	
+Mmucedo	2294	418	79.9	577	138.1	92.8	178	42.6
+Smaydis	283	1479	72.0	110	7.4	87.5	40	2.7
+Ccinerea	3635	210	84.9	647	307.9	90.8	368	175.4
+Cneoformans	3336	439	94.6	190	43.4	97.7	79	17.9
+Spombe	653	346	94.2	40	11.6	97.1	20	5.6
+Scerevisiae	14	423	63.3	8	1.9	84.6	3	0.6
+Ncrassa	1001	307	81.1	233	76.0	96.8	33	10.8
+Anidulans	1409	72	70.2	598	830.7	85.1	247	342.6
