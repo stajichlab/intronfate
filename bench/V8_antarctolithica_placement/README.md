@@ -8,9 +8,12 @@ families/ alignments/ results_projection/ trees*/ scan/ loo/ logs/`; the small r
 ## Data and taxon set (`genomes.tsv`, 31 genomes)
 Chosen with the project owner: Taphrinomycotina (6: *S. pombe*, *Taphrina*, *Protomyces*, *Savitreella*, *Saitoella*, *Neolecta*; *Pneumocystis* dropped),
 Saccharomycotina (*Yarrowia*, *Lipomyces*; *S. cerevisiae* dropped), 14 Pezizomycotina from ten classes, outgroups *Mucor mucedo*, *M. maydis* and *C. neoformans*
-(*Spizellomyces* dropped), and 6 *Antarctolithica* strains (Mars-19.38 and Mars-9.1 have no finished annotation). The BFD tree was **not** used as a
-backbone: pruned to these genera and rooted on *Mucor* it nests the basidiomycetes inside the Ascomycota with support 1.0, a long-branch artefact at exactly the
-depth this question needs.
+(*Spizellomyces* dropped), and 6 *Antarctolithica* strains (Mars-19.38 and Mars-9.1 have no finished annotation). The backbone for the placement scans is OrthoFinder's gene tree for these genomes (with the strains removed). **Correction:** an earlier version of this README said the
+BFD genus-representative tree, pruned to these genera and rooted on *Mucor*, nests the basidiomycetes inside the Ascomycota. That was wrong: it came from a bug in
+my re-rooting code (found later by a fixture test in V9; the V8 scripts that were committed do not contain that code). Re-done correctly, the BFD tree gives
+(*Mucor*, ((basidiomycetes), Ascomycota)) with the Taphrinomycotina as one clade sister to Saccharomycotina + Pezizomycotina (`../V9_antarctolithica_expanded/bfd_backbone_check.py`).
+The OrthoFinder tree splits the Taphrinomycotina (*Saitoella* and *Neolecta* apart from the rest), so the scans were also run with the Taphrinomycotina forced to be one clade
+(`trees_taphmono`); the conclusions did not change.
 
 ## Steps (all on the HPCC; scripts here)
 | Step | Script | Result |

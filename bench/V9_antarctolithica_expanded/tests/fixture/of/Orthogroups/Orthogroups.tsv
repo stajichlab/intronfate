@@ -1,0 +1,7 @@
+Orthogroup	X	Y	Z	G1	G2
+OG1	x1	y1	z1	g1a	g2a
+OG2	x2	y2	z2		g2b
+OG3	x3	y3, y3b	z3	g1c	
+OG4	x4			g1d	
+OG5	x5	y5	z5		
+OG6	x6	y6	z6	g1f	g2f
