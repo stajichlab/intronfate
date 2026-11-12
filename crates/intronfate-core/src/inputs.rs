@@ -30,6 +30,8 @@ pub struct Inputs<'a> {
     pub default_exts: &'a [&'a str],
     /// 0: only the folder itself; 1: also its immediate sub-folders.
     pub depth: usize,
+    /// Names of sub-folders never entered (e.g. `combined`, the output of `--combine`, which would double-count its own inputs).
+    pub skip_dirs: &'a [&'a str],
 }
 
 fn bad(msg: String) -> Error {
@@ -82,7 +84,13 @@ fn read_list(list: &Path, out: &mut Vec<PathBuf>, what: &str) -> Result<()> {
     Ok(())
 }
 
-fn scan_dir(dir: &Path, exts: &[String], depth: usize, out: &mut Vec<PathBuf>) -> Result<()> {
+fn scan_dir(
+    dir: &Path,
+    exts: &[String],
+    depth: usize,
+    skip: &[&str],
+    out: &mut Vec<PathBuf>,
+) -> Result<()> {
     let entries = std::fs::read_dir(dir)
         .map_err(|e| bad(format!("could not read folder {}: {e}", dir.display())))?;
     let mut files = Vec::new();
@@ -90,7 +98,13 @@ fn scan_dir(dir: &Path, exts: &[String], depth: usize, out: &mut Vec<PathBuf>) -
     for e in entries {
         let p = e?.path();
         if p.is_dir() {
-            subs.push(p);
+            let skipped = p
+                .file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| skip.contains(&n));
+            if !skipped {
+                subs.push(p);
+            }
         } else if let Some(n) = p.file_name().and_then(|n| n.to_str()) {
             if exts.iter().any(|x| matches_ext(n, x)) {
                 files.push(p);
@@ -102,7 +116,7 @@ fn scan_dir(dir: &Path, exts: &[String], depth: usize, out: &mut Vec<PathBuf>) -
     if depth > 0 {
         subs.sort();
         for s in subs {
-            scan_dir(&s, exts, depth - 1, out)?;
+            scan_dir(&s, exts, depth - 1, skip, out)?;
         }
     }
     Ok(())
@@ -129,7 +143,7 @@ pub fn expand(spec: &Inputs) -> Result<Vec<PathBuf>> {
     };
     for d in spec.dirs {
         let before = all.len();
-        scan_dir(d, &exts, spec.depth, &mut all)?;
+        scan_dir(d, &exts, spec.depth, spec.skip_dirs, &mut all)?;
         if all.len() == before {
             return Err(bad(format!(
                 "no {} files in {} (looked for extension(s): {}; use the matching --*-ext to change)",
@@ -172,6 +186,7 @@ mod tests {
             exts,
             default_exts: &["aln", "fasta"],
             depth: 0,
+            skip_dirs: &[],
         }
     }
 
@@ -242,6 +257,24 @@ mod tests {
         let mut deep = spec(&[], &[], &dirs, &aln);
         deep.depth = 1;
         assert_eq!(expand(&deep).unwrap().len(), 3, "a, b and sub/z");
+    }
+
+    #[test]
+    fn skipped_subfolders_are_not_entered() {
+        let d = tmp("skip");
+        for n in ["fam1/matrix.tsv", "fam2/matrix.tsv", "combined/matrix.tsv"] {
+            touch(&d.join(n));
+        }
+        let dirs = [d.clone()];
+        let ext = ["matrix.tsv".to_string()];
+        let mut sp = spec(&[], &[], &dirs, &ext);
+        sp.depth = 1;
+        assert_eq!(expand(&sp).unwrap().len(), 3);
+        sp.skip_dirs = &["combined"];
+        assert_eq!(
+            expand(&sp).unwrap(),
+            vec![d.join("fam1/matrix.tsv"), d.join("fam2/matrix.tsv")]
+        );
     }
 
     #[test]

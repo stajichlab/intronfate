@@ -3,8 +3,8 @@
 **Nothing is committed.** The whole tree is untracked, so there is no baseline to diff against; the first
 commit should be made once you have read this and are happy with it (the repo owner decides).
 
-Snapshot: `cargo test --workspace` → **246 tests pass** (180 core unit, 23 + 4 core integration, 10 CLI unit,
-26 CLI end-to-end, 3 doc); `cargo clippy --workspace --all-targets` → 0 warnings; `cargo fmt` applied;
+Snapshot: `cargo test --workspace` → **248 tests pass** (181 core unit, 23 + 4 core integration, 10 CLI unit,
+27 CLI end-to-end, 3 doc); `cargo clippy --workspace --all-targets` → 0 warnings; `cargo fmt` applied;
 `python3 -I scripts/test_malin_to_matrix.py` → 3 pass. Real-data validation (MALIN's published data, nine fungal
 genomes, genome-scale timing, annotation accuracy, orthology tiers, error sensitivity) is in `bench/V1`–`V7`; per project
 policy analysis runs on the HPCC. Inputs can be given as files, list files or folders (`--msa-list`/`--msa-dir` etc., USAGE §3).

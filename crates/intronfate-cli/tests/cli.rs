@@ -1165,3 +1165,85 @@ fn combined_only_writes_just_the_combined_folder_and_the_same_totals() {
     ]);
     assert_eq!(o.status.code(), Some(2));
 }
+
+#[test]
+fn convert_exports_matrices_from_lists_and_folders_and_skips_combined() {
+    let w = demo_inputs("convert_forms");
+    let d = w.join("in");
+    let out = w.join("out");
+    ok(&[
+        "analyze",
+        "--gff",
+        d.join("a.gff3").to_str().unwrap(),
+        "-p",
+        d.join("a.faa").to_str().unwrap(),
+        "--msa-dir",
+        d.join("aln").to_str().unwrap(),
+        "-t",
+        d.join("t.nwk").to_str().unwrap(),
+        "--combine",
+        "-o",
+        out.to_str().unwrap(),
+    ]);
+    let (one, two) = (
+        out.join("one.aln/matrix.tsv"),
+        out.join("two.aln/matrix.tsv"),
+    );
+    let explicit = w.join("explicit.table");
+    ok(&[
+        "convert",
+        "--to-malin",
+        one.to_str().unwrap(),
+        two.to_str().unwrap(),
+        "-o",
+        explicit.to_str().unwrap(),
+    ]);
+    // the analyze folder also holds combined/matrix.tsv; --matrix-dir must not pick it up
+    let by_dir = w.join("bydir.table");
+    ok(&[
+        "convert",
+        "--matrix-dir",
+        out.to_str().unwrap(),
+        "-o",
+        by_dir.to_str().unwrap(),
+    ]);
+    assert_eq!(fs::read(&explicit).unwrap(), fs::read(&by_dir).unwrap());
+    let list = w.join("m.list");
+    fs::write(&list, "out/one.aln/matrix.tsv\nout/two.aln/matrix.tsv\n").unwrap();
+    let by_list = w.join("bylist.table");
+    ok(&[
+        "convert",
+        "--matrix-list",
+        list.to_str().unwrap(),
+        "-o",
+        by_list.to_str().unwrap(),
+    ]);
+    assert_eq!(fs::read(&explicit).unwrap(), fs::read(&by_list).unwrap());
+    // score --matrix-dir skips combined/ too: two matrices, not three
+    let scored = w.join("scored");
+    let o = ok(&[
+        "score",
+        "--matrix-dir",
+        out.to_str().unwrap(),
+        "-t",
+        d.join("t.nwk").to_str().unwrap(),
+        "-o",
+        scored.to_str().unwrap(),
+    ]);
+    assert!(o.contains("scored 2 matrices"), "{o}");
+    // nothing to export is an error that says how to give input
+    let o = run(&["convert", "-o", w.join("none.table").to_str().unwrap()]);
+    assert_eq!(o.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&o.stderr).contains("--matrix-dir"));
+    // --matrix-dir is for export, so it conflicts with --from-malin (clap usage error)
+    let o = run(&[
+        "convert",
+        "--from-malin",
+        "x.table",
+        "--matrix-dir",
+        ".",
+        "-o",
+        "y",
+    ]);
+    assert_eq!(o.status.code(), Some(2));
+}

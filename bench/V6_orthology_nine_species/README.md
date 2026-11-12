@@ -43,3 +43,5 @@ Gains are less safe: ceilings of 24-52 % for *A. nidulans*, *C. cinerea*, *M. mu
 table equals the per-family tables summed (0 differences in all three tiers; tier A: 15,697 sites, 17 branches). `check_combined_only.sbatch` re-runs tier A with
 `--combined-only`: the six compared `combined/` files are byte-identical, the run writes 15 files instead of 15,499 (32 MB instead of 107 MB), and `analyze` takes 2.0 s
 instead of about 8 s.
+
+`check_tutorial.sbatch` runs the section 6 command of [`docs/TUTORIAL.md`](../../docs/TUTORIAL.md) as written on tier A; its `combined/` files are byte-identical to the earlier run.

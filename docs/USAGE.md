@@ -53,7 +53,7 @@ The result keeps the order *files, then each list's lines, then each folder's so
 Naming a list or folder that yields nothing is an error that says what was looked for (nothing named at all falls through to the usual
 "`--msa` is required").
 
-`score` also accepts many matrices: `--matrix-dir out/` searches the folder and its immediate sub-folders for `matrix.tsv` (or
+`convert --to-malin` takes the same matrix forms (`--matrix-list`, `--matrix-dir`, `--matrix-ext`) instead of a long list of paths. `score` also accepts many matrices: `--matrix-dir out/` searches the folder and its immediate sub-folders for `matrix.tsv` (or
 `X.matrix.tsv`), so the output folder of `analyze` or `matrix` can be passed as it is. A single `--matrix FILE` writes its results into `-o`
 as before; several matrices (or any list or folder form) are each scored into `<-o>/<family>/`, where `<family>` is the folder holding
 `matrix.tsv` or the file name without `.matrix.tsv`; two matrices that would share a folder are an error.
@@ -227,8 +227,7 @@ intronfate analyze ... --msa-dir alignments/ --msa-ext aln.fasta -t species.nwk 
 ```
 
 or afterwards from per-family matrices, with any of the input forms: `intronfate score --matrix-dir out/ --combine -t species.nwk -o combined/`
-(careful: `--matrix-dir out/` after a `--combine` run also finds `out/combined/matrix.tsv`; use `--matrix-list`, or a folder that holds only
-the per-family results).
+(`--matrix-dir` skips a sub-folder named `combined`, so pointing it at the output folder of a `--combine` run does not count the combined matrix twice).
 
 - **Rows.** Every site of every family is one row, labelled `<family>:<column>:<phase>`; the same column in two families is two sites.
   `matrix.tsv` gains `family` and `family_column` columns; `column` is the *shifted* column (each family's columns are offset by its

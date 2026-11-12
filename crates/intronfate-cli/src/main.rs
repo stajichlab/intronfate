@@ -320,6 +320,24 @@ struct ConvertArgs {
     #[arg(long, value_name = "MATRIX", num_args = 1.., conflicts_with = "from_malin")]
     to_malin: Vec<PathBuf>,
 
+    /// Export: text file listing matrix files, one per line (`#` comments; relative paths are relative to the list). Repeatable.
+    #[arg(long, value_name = "LIST", conflicts_with = "from_malin")]
+    matrix_list: Vec<PathBuf>,
+
+    /// Export: folder of matrices; the folder and its immediate sub-folders are searched (so `analyze`'s output folder works; a
+    /// sub-folder named `combined` is skipped). Repeatable.
+    #[arg(long, value_name = "DIR", conflicts_with = "from_malin")]
+    matrix_dir: Vec<PathBuf>,
+
+    /// Export: extension(s) selecting files in `--matrix-dir` (default `matrix.tsv`).
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_name = "EXT",
+        conflicts_with = "from_malin"
+    )]
+    matrix_ext: Vec<String>,
+
     /// Output directory (import) or output file (export).
     #[arg(long, short = 'o')]
     out: PathBuf,
@@ -374,19 +392,29 @@ fn run(cli: Cli) -> Result<()> {
             cmd_score(&a, verbose)
         }
         Command::Demo(a) => cmd_demo(&a, verbose),
-        Command::Convert(a) => cmd_convert(&a),
+        Command::Convert(mut a) => {
+            a.to_malin = expand_inputs(
+                "matrix",
+                (&a.to_malin, &a.matrix_list, &a.matrix_dir),
+                &a.matrix_ext,
+                &["matrix.tsv"],
+                (1, &["combined"]),
+            )?;
+            cmd_convert(&a)
+        }
     }
 }
+
+/// Where an input's files come from: `--x`, `--x-list`, `--x-dir`.
+type Sources<'a> = (&'a [PathBuf], &'a [PathBuf], &'a [PathBuf]);
 
 /// Fold `--x`, `--x-list` and `--x-dir/--x-ext` into one ordered file list (see `intronfate_core::inputs`).
 fn expand_inputs(
     what: &str,
-    files: &[PathBuf],
-    lists: &[PathBuf],
-    dirs: &[PathBuf],
+    (files, lists, dirs): Sources,
     exts: &[String],
     default_exts: &[&str],
-    depth: usize,
+    depth_and_skip: (usize, &[&str]),
 ) -> Result<Vec<PathBuf>> {
     Ok(intronfate_core::inputs::expand(
         &intronfate_core::inputs::Inputs {
@@ -396,7 +424,8 @@ fn expand_inputs(
             dirs,
             exts,
             default_exts,
-            depth,
+            depth: depth_and_skip.0,
+            skip_dirs: depth_and_skip.1,
         },
     )?)
 }
@@ -405,21 +434,17 @@ impl AnnotationArgs {
     fn resolve_inputs(&mut self) -> Result<()> {
         self.gff = expand_inputs(
             "GFF",
-            &self.gff,
-            &self.gff_list,
-            &self.gff_dir,
+            (&self.gff, &self.gff_list, &self.gff_dir),
             &self.gff_ext,
             &["gff3", "gff", "gtf"],
-            0,
+            (0, &[]),
         )?;
         self.proteins = expand_inputs(
             "protein",
-            &self.proteins,
-            &self.proteins_list,
-            &self.proteins_dir,
+            (&self.proteins, &self.proteins_list, &self.proteins_dir),
             &self.proteins_ext,
             &["faa", "fa", "fasta", "pep"],
-            0,
+            (0, &[]),
         )?;
         Ok(())
     }
@@ -430,9 +455,7 @@ impl MatrixArgs {
         self.ann.resolve_inputs()?;
         self.msa = expand_inputs(
             "alignment",
-            &self.msa,
-            &self.msa_list,
-            &self.msa_dir,
+            (&self.msa, &self.msa_list, &self.msa_dir),
             &self.msa_ext,
             &[
                 "aln",
@@ -444,7 +467,7 @@ impl MatrixArgs {
                 "sto",
                 "stockholm",
             ],
-            0,
+            (0, &[]),
         )?;
         Ok(())
     }
@@ -459,12 +482,10 @@ impl ScoreArgs {
     fn resolve_inputs(&mut self) -> Result<()> {
         self.matrix = expand_inputs(
             "matrix",
-            &self.matrix,
-            &self.matrix_list,
-            &self.matrix_dir,
+            (&self.matrix, &self.matrix_list, &self.matrix_dir),
             &self.matrix_ext,
             &["matrix.tsv"],
-            1,
+            (1, &["combined"]),
         )?;
         Ok(())
     }
@@ -992,7 +1013,7 @@ fn cmd_convert(a: &ConvertArgs) -> Result<()> {
         return Ok(());
     }
     if a.to_malin.is_empty() {
-        bail!("give --from-malin <table> or --to-malin <matrix.tsv>...");
+        bail!("give --from-malin <table>, or --to-malin <matrix.tsv>... (or --matrix-list / --matrix-dir) to export");
     }
     let matrices = a
         .to_malin

@@ -8,7 +8,8 @@ counts.
 
 Rust workspace, no runtime dependencies beyond the binary.
 
-**Documentation:** [`docs/USAGE.md`](docs/USAGE.md) user guide ·
+**Documentation:** [`docs/TUTORIAL.md`](docs/TUTORIAL.md) start here: genomes to results ·
+[`docs/USAGE.md`](docs/USAGE.md) user guide ·
 [`docs/OUTPUTS.md`](docs/OUTPUTS.md) every output column · [`examples/`](examples/) runnable, hand-checked
 examples · [`docs/SPEC.md`](docs/SPEC.md) design, assumptions and references ·
 [`docs/TESTING.md`](docs/TESTING.md) the test suite · [`docs/HANDOFF.md`](docs/HANDOFF.md) current state.
