@@ -1,0 +1,12 @@
+results/plain/Orthogroups/Orthogroups.tsv: 26 lineages (25 genomes + Alith group)
+   single-copy in >= 26 lineages:    16 families,    16 include an Antarctolithica strain
+   single-copy in >= 24 lineages:    33 families,    32 include an Antarctolithica strain
+   single-copy in >= 22 lineages:    48 families,    44 include an Antarctolithica strain
+   single-copy in >= 18 lineages:    72 families,    59 include an Antarctolithica strain
+   single-copy in >= 14 lineages:    99 families,    72 include an Antarctolithica strain
+results/plain/Orthogroups/Orthogroups.tsv: multi-copy genomes treated as missing, Alith strain required
+   >= 26 of 26 lineages:    16 families
+   >= 22 of 26 lineages:  2317 families
+   >= 18 of 26 lineages:  3086 families
+   >= 14 of 26 lineages:  3417 families
+   >= 10 of 26 lineages:  3689 families

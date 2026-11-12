@@ -1,0 +1,49 @@
+# 37612 sites with at least one carrier; groups: Alith=6 genomes; Mucor=1 genomes; Basidio=2 genomes; Taphrinomycetes=3 genomes; Spombe=1 genomes; Saitoella+Neolecta=2 genomes; Saccharomycotina=2 genomes; Pez_early(Pyronema,Orbilia)=2 genomes; Pez_core=12 genomes
+group	sites_carried	sites_carried_by_this_group_only
+Alith	1765	839
+Mucor	6342	2601
+Basidio	12161	7130
+Taphrinomycetes	2578	1653
+Spombe	2023	470
+Saitoella+Neolecta	10551	4176
+Saccharomycotina	5479	1408
+Pez_early(Pyronema,Orbilia)	8039	2230
+Pez_core	12084	6553
+
+group_a	group_b	sites_exclusive_to_the_two	sites_carried_by_both_and_possibly_others
+Pez_early(Pyronema,Orbilia)	Pez_core	1265	4550
+Mucor	Basidio	700	2398
+Basidio	Saitoella+Neolecta	591	3328
+Saitoella+Neolecta	Saccharomycotina	295	2778
+Mucor	Saitoella+Neolecta	279	2320
+Saitoella+Neolecta	Pez_early(Pyronema,Orbilia)	191	3178
+Saitoella+Neolecta	Pez_core	173	2943
+Saccharomycotina	Pez_early(Pyronema,Orbilia)	112	2447
+Saccharomycotina	Pez_core	106	2269
+Spombe	Saitoella+Neolecta	88	1152
+Basidio	Saccharomycotina	86	1889
+Basidio	Pez_core	77	2007
+Basidio	Pez_early(Pyronema,Orbilia)	68	2137
+Taphrinomycetes	Saitoella+Neolecta	57	672
+Mucor	Pez_core	46	1419
+Alith	Saitoella+Neolecta	44	662
+Mucor	Saccharomycotina	43	1377
+Mucor	Pez_early(Pyronema,Orbilia)	39	1511
+Basidio	Taphrinomycetes	33	467
+Mucor	Spombe	31	691
+Spombe	Saccharomycotina	26	785
+Basidio	Spombe	22	816
+Alith	Pez_early(Pyronema,Orbilia)	20	579
+Alith	Saccharomycotina	19	460
+Mucor	Taphrinomycetes	16	342
+Taphrinomycetes	Pez_core	16	507
+Alith	Pez_core	15	521
+Taphrinomycetes	Spombe	13	257
+Spombe	Pez_early(Pyronema,Orbilia)	13	818
+Taphrinomycetes	Pez_early(Pyronema,Orbilia)	12	520
+Spombe	Pez_core	12	792
+Alith	Basidio	9	426
+Taphrinomycetes	Saccharomycotina	7	444
+Alith	Mucor	4	272
+Alith	Spombe	3	165
+Alith	Taphrinomycetes	1	121
