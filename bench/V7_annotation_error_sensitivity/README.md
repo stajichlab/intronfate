@@ -40,4 +40,4 @@ Terminal-branch Dollo losses, observed vs. after undoing the missed introns (mea
   Do not read the `ceiling` column (both corrections) for losses; its false-intron half raises losses by deleting carriers.
 
 Limits: Sn and Pr are RefSeq-relative and measured at V2/V6 genes; missed introns are assumed to hide terminal losses or to be distributed like annotated ones;
-independent draws per family and taxon; Sn/Pr of the outgroup *S. punctatus* are `nan` (not scored by V4 at these genes), so it is left uncorrected.
+independent draws per family and taxon; *S. cerevisiae* Sn/Pr rest on 39-46 introns in tier A (noisy; its losses barely move either way); in tier C *S. punctatus* has no genes, so it is uncorrected there.
