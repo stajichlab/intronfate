@@ -10,7 +10,7 @@
 //! copy anything they retain past the next [`GffReader::next_record`] call.
 //!
 //! ```
-//! use intron_core::gff::GffReader;
+//! use intronfate_core::gff::GffReader;
 //! let gff = b"I\ttest\tCDS\t100\t114\t.\t+\t0\tID=c1;Parent=t1;protein_id=P1\n\
 //!            I\ttest\tCDS\t200\t221\t.\t+\t1\tID=c2;Parent=t1;protein_id=P1\n";
 //! let mut reader = GffReader::new(&gff[..], "mem".into());

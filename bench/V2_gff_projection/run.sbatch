@@ -14,7 +14,7 @@ REPO=$(cd ../.. && pwd)
 # cluster; cargo would then skip the rebuild and run a stale binary. Touch the sources first.
 find "$REPO/crates" -name '*.rs' -exec touch {} +
 ( cd "$REPO" && cargo build --release --locked )
-export INTRON_PROJECTOR=$REPO/target/release/intron-projector
+export INTRONFATE=$REPO/target/release/intronfate
 . ./config.sh
 ./prepare.sh
 # BUSCO per genome, up to 2 at a time (4 cpus each); skips genomes already done.

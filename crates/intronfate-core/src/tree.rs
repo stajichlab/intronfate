@@ -473,7 +473,7 @@ impl Tree {
     /// Parse a Newick string.
     ///
     /// ```
-    /// use intron_core::tree::Tree;
+    /// use intronfate_core::tree::Tree;
     /// let t = Tree::from_newick("((human,chimp)homo,(gorilla)gorilla)root;").unwrap();
     /// assert_eq!(t.n_tips(), 3);
     /// assert_eq!(t.tip_index("chimp"), Some(t.tip_index("chimp").unwrap()));

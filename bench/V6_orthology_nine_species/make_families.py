@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tiered ortholog families for intron-projector from OrthoFinder (+ orthoSynAssign) results.
+"""Tiered ortholog families for intronfate from OrthoFinder (+ orthoSynAssign) results.
 
 Tiers (S = number of species, MIN = least species a family may span; every family has at most one protein per species, and a species
 without a protein is simply absent from the family, which the tool reads as missing data and never as an intron loss):

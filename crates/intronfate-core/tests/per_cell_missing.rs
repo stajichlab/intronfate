@@ -7,14 +7,16 @@ use std::fs;
 use std::io::Cursor;
 use std::path::Path;
 
-use intron_core::matrix::{Cell, SiteMatrix};
-use intron_core::model::{AnnotatedIntron, Strand, TranscriptAnnotation};
-use intron_core::msa::Alignment;
-use intron_core::project::{join_annotations, project_into_alignment, JoinOptions, ProjectOptions};
-use intron_core::score::{prepare, score_dollo, score_mp};
-use intron_core::seqio::ProteinSet;
-use intron_core::tables::matrix_table;
-use intron_core::tree::Tree;
+use intronfate_core::matrix::{Cell, SiteMatrix};
+use intronfate_core::model::{AnnotatedIntron, Strand, TranscriptAnnotation};
+use intronfate_core::msa::Alignment;
+use intronfate_core::project::{
+    join_annotations, project_into_alignment, JoinOptions, ProjectOptions,
+};
+use intronfate_core::score::{prepare, score_dollo, score_mp};
+use intronfate_core::seqio::ProteinSet;
+use intronfate_core::tables::matrix_table;
+use intronfate_core::tree::Tree;
 
 fn tx(protein: &str, offsets: &[u32]) -> TranscriptAnnotation {
     TranscriptAnnotation {
@@ -359,7 +361,7 @@ fn an_annotated_intronless_protein_is_not_reported_as_unannotated() {
 
 #[test]
 fn clamp_does_not_pile_non_tail_sites_onto_the_last_column() {
-    use intron_core::project::TailPolicy;
+    use intronfate_core::project::TailPolicy;
     // The row covers only residues 4.. (Stockholm-style window); a site before the window is not a
     // tail overhang and must be dropped, not snapped to the C-terminal column.
     let mut ps = ProteinSet::new();
@@ -389,9 +391,9 @@ fn clamp_does_not_pile_non_tail_sites_onto_the_last_column() {
 
 #[test]
 fn an_internal_node_labelled_root_is_not_mistaken_for_the_real_root() {
-    use intron_core::matrix::{Bitset, Site};
-    use intron_core::project::PhaseMode;
-    use intron_core::tables::tree_with_gain_counts;
+    use intronfate_core::matrix::{Bitset, Site};
+    use intronfate_core::project::PhaseMode;
+    use intronfate_core::tables::tree_with_gain_counts;
     // Rooting `(A,B,(C,D)cd)root;` on A makes the old root an ordinary internal node that is still
     // labelled "root". B and C carry the site, so the gain belongs on that node, not on the new root.
     let taxa: Vec<String> = ["A", "B", "C", "D"].iter().map(|s| s.to_string()).collect();
@@ -459,7 +461,7 @@ fn gap_beside_the_site(opts: ProjectOptions) -> SiteMatrix {
 
 #[test]
 fn ignore_phase_does_not_turn_a_gap_into_a_loss() {
-    use intron_core::project::PhaseMode;
+    use intronfate_core::project::PhaseMode;
     // Strict: the phase-1 window covers columns 4-6, B is gapped at 6 -> `?`.
     let strict = gap_beside_the_site(ProjectOptions::default());
     let s = site_index(&strict, 5, 1);
@@ -481,7 +483,7 @@ fn ignore_phase_does_not_turn_a_gap_into_a_loss() {
 
 #[test]
 fn ignore_phase_keeps_a_carrier_that_strict_keeps() {
-    use intron_core::project::PhaseMode;
+    use intronfate_core::project::PhaseMode;
     // flank 0: a phase-1 carrier only needs its own residue. Under --ignore-phase the carrier must
     // not be dropped because the merged site is (wrongly) treated as a phase-0 boundary needing column c-1.
     let mut ps = ProteinSet::new();
@@ -514,7 +516,7 @@ fn ignore_phase_keeps_a_carrier_that_strict_keeps() {
 
 #[test]
 fn clamped_sites_survive_the_default_flank() {
-    use intron_core::project::TailPolicy;
+    use intronfate_core::project::TailPolicy;
     // A's row ends at column 5 (`MKVLGA--`): an intron anchored to residue 6 lies beyond it and is
     // clamped onto column 5. Its right-hand flank is past the row by construction, so the default
     // flank must not mask it.
@@ -566,8 +568,8 @@ fn isoforms_with_nested_intron_sets_are_flagged() {
 
 #[test]
 fn taxon_names_with_commas_or_spaces_survive_the_matrix_file() {
-    use intron_core::matrix::{Bitset, Site};
-    use intron_core::project::PhaseMode;
+    use intronfate_core::matrix::{Bitset, Site};
+    use intronfate_core::project::PhaseMode;
     let taxa: Vec<String> = ["s,1", "has space", "ok"]
         .iter()
         .map(|s| s.to_string())
@@ -601,9 +603,9 @@ fn taxon_names_with_commas_or_spaces_survive_the_matrix_file() {
 
 #[test]
 fn duplicate_taxon_names_and_huge_columns_are_rejected_not_mangled() {
-    use intron_core::malin::{from_malin, to_malin};
-    use intron_core::matrix::{Bitset, Site};
-    use intron_core::project::PhaseMode;
+    use intronfate_core::malin::{from_malin, to_malin};
+    use intronfate_core::matrix::{Bitset, Site};
+    use intronfate_core::project::PhaseMode;
     let dir = std::env::temp_dir().join(format!("ip_dup_{}", std::process::id()));
     fs::create_dir_all(&dir).unwrap();
     let p = dir.join("dup.tsv");
@@ -636,7 +638,7 @@ fn duplicate_taxon_names_and_huge_columns_are_rejected_not_mangled() {
 
 #[test]
 fn duplicate_rows_in_matrix_tsv_and_malin_merge_without_losing_introns() {
-    use intron_core::malin::from_malin;
+    use intronfate_core::malin::from_malin;
     let dir = std::env::temp_dir().join(format!("ip_dupmerge_{}", std::process::id()));
     fs::create_dir_all(&dir).unwrap();
     // Two rows for site 5:0: A present in the first, B present in the second -> both carry it.
@@ -665,7 +667,7 @@ fn duplicate_rows_in_matrix_tsv_and_malin_merge_without_losing_introns() {
 
 #[test]
 fn clamp_applies_to_the_first_residue_past_the_end_and_not_before() {
-    use intron_core::project::TailPolicy;
+    use intronfate_core::project::TailPolicy;
     // Row covers residues 0-5. Offset 18 is codon 6 (the first one past the end): clamped to the last
     // covered column. Offset 15 is codon 5 (the last covered residue): placed normally, not clamped.
     let mut ps = ProteinSet::new();
@@ -692,9 +694,9 @@ fn clamp_applies_to_the_first_residue_past_the_end_and_not_before() {
 
 #[test]
 fn counts_report_missing_separately_for_unannotated_taxa() {
-    use intron_core::matrix::{Bitset, Site};
-    use intron_core::project::PhaseMode;
-    use intron_core::score::score_counts;
+    use intronfate_core::matrix::{Bitset, Site};
+    use intronfate_core::project::PhaseMode;
+    use intronfate_core::score::score_counts;
     let (mut p, mut o) = (Bitset::new(4), Bitset::new(4));
     p.set(0);
     o.set(0);
@@ -720,8 +722,8 @@ fn counts_report_missing_separately_for_unannotated_taxa() {
 
 #[test]
 fn streaming_the_annotation_into_the_join_equals_collecting_it_first() {
-    use intron_core::annotation::{AnnotationSource, GffSource};
-    use intron_core::project::JoiningSink;
+    use intronfate_core::annotation::{AnnotationSource, GffSource};
+    use intronfate_core::project::JoiningSink;
     let dir = std::env::temp_dir().join(format!("ip_stream_join_{}", std::process::id()));
     fs::create_dir_all(&dir).unwrap();
     let mut paths = Vec::new();

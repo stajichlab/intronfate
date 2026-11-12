@@ -1,4 +1,4 @@
-//! # intron-core
+//! # intronfate-core
 //!
 //! Project intron positions from genome annotation into **protein space**, then into
 //! **multiple-sequence-alignment (MSA) columns**, and score how those positions are shared

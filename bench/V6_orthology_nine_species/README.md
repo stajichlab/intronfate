@@ -1,6 +1,6 @@
 # V6: orthology for the nine-species set (OrthoFinder, synteny refinement, tiered families)
 
-Goal: ortholog families that are as single-copy as possible, for `intron-projector analyze --taxon-map`. Same nine species as V2 except
+Goal: ortholog families that are as single-copy as possible, for `intronfate analyze --taxon-map`. Same nine species as V2 except
 *S. cerevisiae* is the reference strain S288C (BFD `Saccharomyces_cerevisiae_S288C`; V2 uses AMP_1a, which has no RefSeq annotation to score).
 Everything runs on the HPCC; the laptop only holds the scripts and the small summaries in `reports/`. Purgeable on the HPCC:
 `data/ proteomes/ bed/ results/ refined/ families/ alignments/ results_projection/ logs/`.

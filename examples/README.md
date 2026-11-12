@@ -3,7 +3,7 @@
 Three small, runnable, hand-checkable examples. Each folder has:
 
 - the input files,
-- `run.sh` — runs the tool (set `INTRON_PROJECTOR` to the binary, or have it on `PATH`; output goes to `out/`),
+- `run.sh` — runs the tool (set `INTRONFATE` to the binary, or have it on `PATH`; output goes to `out/`),
 - `expected/` — the committed output, which `cargo test` re-generates and compares byte for byte,
 - a `README.md` with the numbers worked out by hand.
 
@@ -15,5 +15,5 @@ Three small, runnable, hand-checkable examples. Each folder has:
 
 ```sh
 cargo build --release
-INTRON_PROJECTOR=$PWD/target/release/intron-projector examples/01_quickstart/run.sh
+INTRONFATE=$PWD/target/release/intronfate examples/01_quickstart/run.sh
 ```

@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"; . ./config.sh
 REPO=$(cd ../.. && pwd)
-BIN=${INTRON_PROJECTOR:-$REPO/target/release/intron-projector}
+BIN=${INTRONFATE:-$REPO/target/release/intronfate}
 OUT=results/projection; rm -rf "$OUT"; mkdir -p "$OUT"
 labels=$(grep -v '^#' genomes.tsv | cut -f1)
 gffs=(); prots=()

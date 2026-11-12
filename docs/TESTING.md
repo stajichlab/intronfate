@@ -11,10 +11,10 @@ python3 -I scripts/test_malin_to_matrix.py  # the Python converter's fixture tes
 
 | Layer | Where | What it proves |
 |---|---|---|
-| Unit | `crates/intron-core/src/*.rs` (`#[cfg(test)]`) | Coordinate model, GFF parsing, CDS merging on both strands, 5'-partial CDS, frame/phase checks, Newick, bitsets, MALIN parsing. |
+| Unit | `crates/intronfate-core/src/*.rs` (`#[cfg(test)]`) | Coordinate model, GFF parsing, CDS merging on both strands, 5'-partial CDS, frame/phase checks, Newick, bitsets, MALIN parsing. |
 | Brute-force | `score.rs` tests | Dollo DP and Fitch/Hartigan are compared with exhaustive search over every `{present, absent, missing}` tip pattern on eight tree shapes, polytomies included. Reconstructions must realise exactly the reported step count. |
-| Pipeline integration | `crates/intron-core/tests/per_cell_missing.rs` | Join → project → matrix → file → score on tiny hand-built families: a gap scores `?` and no loss, the same taxon aligned through scores one loss, `?` survives `matrix.tsv`, adding an all-missing taxon changes no score, trimmed alignment rows are rejected. |
-| CLI end to end | `crates/intron-cli/tests/cli.rs` | The real binary: golden output for every example, hand-calculated values, `matrix`+`score` = `analyze`, gzip input, exit codes, error messages, output-folder collisions. |
+| Pipeline integration | `crates/intronfate-core/tests/per_cell_missing.rs` | Join → project → matrix → file → score on tiny hand-built families: a gap scores `?` and no loss, the same taxon aligned through scores one loss, `?` survives `matrix.tsv`, adding an all-missing taxon changes no score, trimmed alignment rows are rejected. |
+| CLI end to end | `crates/intronfate-cli/tests/cli.rs` | The real binary: golden output for every example, hand-calculated values, `matrix`+`score` = `analyze`, gzip input, exit codes, error messages, output-folder collisions. |
 | Examples | `examples/*/` | Each has `run.sh` and a committed `expected/`; the CLI test re-runs them and requires byte-identical output. Their READMEs list the hand-checked numbers. |
 | Randomised vs reference | `matrix.rs`, `annotation.rs`, `tree.rs`, `score.rs` tests | Random CDS layouts on both strands (with 5'-partial skips and exon rows) against a naive per-base model; random matrices through `matrix.tsv` and MALIN; random trees for `mrca`, Dollo and Fitch against brute force; weighted Dollo against brute force with missing tips; the parallel pairwise code against the per-pair reference; the `ambiguous` flag against an exhaustive count of optimal labellings. |
 | Cross-implementation | `scripts/test_malin_to_matrix.py` vs `malin.rs` tests | Two independent MALIN importers agree on the same fixture (`tests/data/malin_tiny.table`). |
@@ -38,7 +38,7 @@ hand-calculated values and the randomised reference tests above.
 - New parsing behaviour: a unit test next to the code with the smallest failing input.
 - New science (a scoring rule, observability rule): a hand-built family in
   `per_cell_missing.rs`, and if it is a DP, extend the brute-force check.
-- New example: copy an `examples/` folder, keep `run.sh` self-contained (`INTRON_PROJECTOR` env var,
+- New example: copy an `examples/` folder, keep `run.sh` self-contained (`INTRONFATE` env var,
   relative output dir `out`), generate `expected/` with `./run.sh out && rm -rf expected && mv out expected`,
   **check the numbers by hand**, add the name to the list in `every_example_reproduces_its_expected_output_exactly`.
 

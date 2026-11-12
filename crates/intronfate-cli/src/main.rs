@@ -1,13 +1,13 @@
-//! `intron-projector` — project annotated intron positions into protein alignments and score them.
+//! `intronfate` — project annotated intron positions into protein alignments and score them.
 //!
 //! Three composable steps, so an expensive projection runs once and cheap re-scoring can sweep
 //! parameters or topologies:
 //!
 //! ```text
-//! intron-projector project --gff a.gff.gz -p a.faa                    # introns -> protein space
-//! intron-projector matrix  --gff a.gff.gz -p a.faa --msa family.faa   # protein space -> columns
-//! intron-projector score   --matrix out/family/matrix.tsv -t tree.nwk # columns -> Dollo / MP
-//! intron-projector analyze --gff a.gff.gz -p a.faa --msa family.faa -t tree.nwk
+//! intronfate project --gff a.gff.gz -p a.faa                    # introns -> protein space
+//! intronfate matrix  --gff a.gff.gz -p a.faa --msa family.faa   # protein space -> columns
+//! intronfate score   --matrix out/family/matrix.tsv -t tree.nwk # columns -> Dollo / MP
+//! intronfate analyze --gff a.gff.gz -p a.faa --msa family.faa -t tree.nwk
 //! ```
 
 use std::path::{Path, PathBuf};
@@ -15,22 +15,22 @@ use std::time::{Duration, Instant};
 
 use anyhow::{bail, Context, Result};
 use clap::{Args, Parser, Subcommand};
-use intron_core::annotation::{AnnotationSet, AnnotationSource, GffOptions, GffSource};
-use intron_core::matrix::SiteMatrix;
-use intron_core::msa::Alignment;
-use intron_core::project::{
+use intronfate_core::annotation::{AnnotationSet, AnnotationSource, GffOptions, GffSource};
+use intronfate_core::matrix::SiteMatrix;
+use intronfate_core::msa::Alignment;
+use intronfate_core::project::{
     join_annotations, project_into_alignment, AlignmentProjection, JoinOptions, JoiningSink,
     PhaseMode, ProjectOptions, Projection, TailPolicy,
 };
-use intron_core::report::Diagnostics;
-use intron_core::score::{self, Method, PrepareReport, ScoringData};
-use intron_core::seqio::ProteinSet;
-use intron_core::tables;
-use intron_core::tree::Tree;
+use intronfate_core::report::Diagnostics;
+use intronfate_core::score::{self, Method, PrepareReport, ScoringData};
+use intronfate_core::seqio::ProteinSet;
+use intronfate_core::tables;
+use intronfate_core::tree::Tree;
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "intron-projector",
+    name = "intronfate",
     version,
     about = "Project intron positions from annotation into protein alignments, then score how they are shared.",
     long_about = "Project intron positions from GFF3/GTF annotation into protein space, map them onto \
@@ -632,7 +632,7 @@ fn build_matrices(
             tables::counts_table(&score::score_counts(&m)).write(dir.join("counts_sites.tsv"))?;
             std::fs::write(
                 dir.join("characters.nex"),
-                intron_core::matrix::characters_nexus(&m),
+                intronfate_core::matrix::characters_nexus(&m),
             )
             .with_context(|| format!("could not write {}", dir.join("characters.nex").display()))?;
 
@@ -737,7 +737,7 @@ fn cmd_convert(a: &ConvertArgs) -> Result<()> {
             .and_then(|s| s.to_str())
             .unwrap_or("malin")
             .to_string();
-        let matrices = intron_core::malin::from_malin(&text, &stem)
+        let matrices = intronfate_core::malin::from_malin(&text, &stem)
             .with_context(|| format!("could not parse {}", table.display()))?;
         let mut used = std::collections::HashSet::new();
         for m in &matrices {
@@ -765,8 +765,8 @@ fn cmd_convert(a: &ConvertArgs) -> Result<()> {
         })
         .collect::<Result<Vec<_>>>()?;
     let refs: Vec<&SiteMatrix> = matrices.iter().collect();
-    let text = intron_core::malin::to_malin(&refs)?;
-    intron_core::util::write_atomic(&a.out, text.as_bytes())?;
+    let text = intronfate_core::malin::to_malin(&refs)?;
+    intronfate_core::util::write_atomic(&a.out, text.as_bytes())?;
     println!(
         "{} alignment(s), {} sites -> {}",
         matrices.len(),
@@ -916,14 +916,14 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         eprintln!(
             "warn: {} matrix taxon(s) are not tips of the tree and were not scored: {}",
             report.taxa_not_in_tree.len(),
-            intron_core::util::ellipsis(&report.taxa_not_in_tree.join(", "), 200)
+            intronfate_core::util::ellipsis(&report.taxa_not_in_tree.join(", "), 200)
         );
     }
     if !report.tree_tip_without_data.is_empty() {
         eprintln!(
             "warn: {} tree tip(s) have no matrix row and are scored as missing (?): {}",
             report.tree_tip_without_data.len(),
-            intron_core::util::ellipsis(&report.tree_tip_without_data.join(", "), 200)
+            intronfate_core::util::ellipsis(&report.tree_tip_without_data.join(", "), 200)
         );
     }
     if data.tree.looks_unrooted() && o.outgroups.is_empty() {

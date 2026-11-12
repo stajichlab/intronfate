@@ -29,7 +29,7 @@ taxa (see `docs/HANDOFF.md`, performance backlog). Compare runs on the same node
 before trusting a difference smaller than ~10 %. Peak RSS is `/usr/bin/time` max resident set.
 
 The tool prints stage timers only with `-v`; they go to stderr as `[time] <stage>\t<seconds>` and
-`[size] <name>\t<value>`, one per line (tested in `crates/intron-cli/tests/cli.rs`).
+`[size] <name>\t<value>`, one per line (tested in `crates/intronfate-cli/tests/cli.rs`).
 
 ## Baseline result (2026-11-11, job 32025162, `highclock` node hz01, `REPORT.2026-11-11.before.txt`)
 

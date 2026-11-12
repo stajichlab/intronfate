@@ -1,4 +1,4 @@
-//! End-to-end tests that run the real `intron-projector` binary.
+//! End-to-end tests that run the real `intronfate` binary.
 //!
 //! The `examples/` directories double as the golden-output suite: each has a `run.sh` and an
 //! `expected/` folder, and the first test below re-runs every example and requires byte-identical
@@ -9,7 +9,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-const BIN: &str = env!("CARGO_BIN_EXE_intron-projector");
+const BIN: &str = env!("CARGO_BIN_EXE_intronfate");
 
 fn repo() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -83,7 +83,7 @@ fn every_example_reproduces_its_expected_output_exactly() {
         let st = Command::new("sh")
             .arg("run.sh")
             .arg("out")
-            .env("INTRON_PROJECTOR", BIN)
+            .env("INTRONFATE", BIN)
             .current_dir(&work)
             .output()
             .unwrap();

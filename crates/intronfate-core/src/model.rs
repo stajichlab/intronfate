@@ -56,7 +56,7 @@ pub type Phase = u8;
 /// value is self-describing in tables and APIs.
 ///
 /// ```
-/// use intron_core::model::ProteinSite;
+/// use intronfate_core::model::ProteinSite;
 /// // 15 coding bases before the intron -> exactly after complete codon 5, boundary intron.
 /// let s = ProteinSite::from_cds_offset(15);
 /// assert_eq!(s.phase, 0);

@@ -1,4 +1,6 @@
-# intron_projector
+# intronfate
+
+*Formerly `intron-projector`.* Working folders on the laptop and the HPCC are still named `intron_projector`; only the repository, crates, binary and environment variable (`INTRONFATE`) changed name.
 
 Project annotated intron positions into protein sequences and alignment columns, then score whether
 those positions are **shared** across orthologs — under Dollo parsimony, maximum parsimony, or plain
@@ -26,14 +28,14 @@ into codon + phase, looked up in the protein alignment.
 ## Install / build
 
 ```sh
-cargo build --release          # binary at target/release/intron-projector
+cargo build --release          # binary at target/release/intronfate
 cargo test --workspace         # full suite, see docs/TESTING.md
 ```
 
 ## Try it
 
 ```sh
-cargo run -p intron-cli -- demo -o intron_demo
+cargo run -p intronfate-cli -- demo -o intron_demo
 ```
 
 Writes a worked five-species example (inputs + every table) and prints the interesting ones:
@@ -66,15 +68,15 @@ species2/species3 stem. The annotated tree shows where the origins were placed:
 
 ```sh
 # 1. intron positions in protein space (no alignment needed yet)
-intron-projector project --gff species.gff.gz -p species.faa -o out
+intronfate project --gff species.gff.gz -p species.faa -o out
 
 # 2. project onto an ortholog alignment and build the matrices
-intron-projector matrix --gff a.gff.gz --gff b.gff.gz \
+intronfate matrix --gff a.gff.gz --gff b.gff.gz \
                         -p a.faa -p b.faa \
                         --msa family.fasta -o out
 
 # 3. score sharing on a tree
-intron-projector score --matrix out/family/matrix.tsv \
+intronfate score --matrix out/family/matrix.tsv \
                        --tree family.nwk --outgroup Species_x \
                        --methods dollo,mp -o out/family
 ```
@@ -114,8 +116,8 @@ generates (`demo.gff3`, `demo.faa`, `demo.aln.fasta`, `demo.nwk`).
 ## Layout
 
 ```
-crates/intron-core/   library: gff, annotation, seqio, msa, project, matrix, tree, score, tables
-crates/intron-cli/    the `intron-projector` binary
+crates/intronfate-core/  library: gff, annotation, seqio, msa, project, matrix, tree, score, tables
+crates/intronfate-cli/   the `intronfate` binary
 docs/                 USAGE, OUTPUTS, TESTING, SPEC (design + references), HANDOFF (state)
 examples/             three runnable examples with committed expected output
 tests/data/           tiny synthetic fixtures

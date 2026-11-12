@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# V1: validate intron-projector against MALIN's own published test data.
+# V1: validate intronfate against MALIN's own published test data.
 #
 # Runs on the HPCC (see run.sbatch). Reads the MALIN distribution's test files, never writes outside
 # its own results/ folder, and is purgeable: `rm -rf results` removes everything it makes.
@@ -7,12 +7,12 @@
 #   SMOKE=1 ./validate.sh      tiny synthetic fixtures (tests/data, examples/03_malin); seconds, any machine
 #   ./validate.sh              Malin/test/{rogozin_introns_table,Rogozin-ecdysozoa.tre,Chromo23.*}
 #
-# Environment: INTRON_PROJECTOR (binary), MALIN_TEST (directory holding the MALIN test files).
+# Environment: INTRONFATE (binary), MALIN_TEST (directory holding the MALIN test files).
 set -euo pipefail
 cd "$(dirname "$0")"
 HERE=$PWD
 REPO=$(cd ../.. && pwd)
-BIN=${INTRON_PROJECTOR:-$REPO/target/release/intron-projector}
+BIN=${INTRONFATE:-$REPO/target/release/intronfate}
 OUT=${RESULTS:-$HERE/results}
 rm -rf "$OUT"; mkdir -p "$OUT"
 TIMES="$OUT/timings.tsv"; printf 'step\tseconds\n' > "$TIMES"

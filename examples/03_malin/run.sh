@@ -1,9 +1,9 @@
 #!/bin/sh
 # Example 3: MALIN intron tables in, scored here, and back out unchanged.
-# Usage: run.sh [output-dir]      (set INTRON_PROJECTOR to the binary if it is not on PATH)
+# Usage: run.sh [output-dir]      (set INTRONFATE to the binary if it is not on PATH)
 set -eu
 cd "$(dirname "$0")"
-BIN="${INTRON_PROJECTOR:-intron-projector}"
+BIN="${INTRONFATE:-intronfate}"
 OUT="${1:-out}"
 rm -rf "$OUT"
 # One matrix.tsv per alignment named in the table's #MAP lines.

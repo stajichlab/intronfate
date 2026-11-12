@@ -1,5 +1,5 @@
 [package]
-name = "intron-core"
+name = "intronfate-core"
 description = "Project genome-annotated intron positions into protein/MSA space and score their sharing with parsimony frameworks."
 version.workspace = true
 edition.workspace = true
@@ -19,5 +19,5 @@ thiserror = { workspace = true }
 [dev-dependencies]
 
 [lib]
-name = "intron_core"
+name = "intronfate_core"
 path = "src/lib.rs"

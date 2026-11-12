@@ -3,7 +3,7 @@
 #SBATCH --job-name=V6_tiers
 #SBATCH --output=logs/V6_tiers.%j.log
 
-# Tiered families from the OrthoFinder results -> MAFFT -> intron-projector analyze, per tier (A_strict, B_partial, C_hog, D_synteny).
+# Tiered families from the OrthoFinder results -> MAFFT -> intronfate analyze, per tier (A_strict, B_partial, C_hog, D_synteny).
 # Needs results/$VARIANT (run_orthofinder.sbatch) and refined/$VARIANT/Refined_SOGs.w$WINDOW.tsv (run_refine.sbatch).
 # Submit:  sbatch -p highclock --export=ALL,VARIANT=plain run_tiers.sbatch
 # Purgeable: families/, alignments/, results_projection/ in this folder. Absolute path, not dirname "$0" (Slurm copies the script).
@@ -16,7 +16,7 @@ module load rust >/dev/null 2>&1 || true
 module load mafft >/dev/null 2>&1 || true
 find "$REPO/crates" -name '*.rs' -exec touch {} +      # rsync keeps laptop mtimes; make cargo rebuild
 ( cd "$REPO" && cargo build --release --locked )
-BIN=$REPO/target/release/intron-projector
+BIN=$REPO/target/release/intronfate
 python3 -m pytest -q tests >/dev/null 2>&1 || python3 tests/test_make_families.py     # the fixture test first
 
 rm -rf families; python3 make_families.py --of "results/$VARIANT" --data data --min "$MIN" --out families \

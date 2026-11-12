@@ -22,4 +22,4 @@ Without the missing-data rule both variants would report one loss.
 
 Try `--flank 0`, which needs only the intron's own residue: the result for this example does not change
 because D has no residue in column 5 at all. A taxon gapped only in a *neighbouring* column would
-change from `?` to `0` — see `crates/intron-core/tests/per_cell_missing.rs`.
+change from `?` to `0` — see `crates/intronfate-core/tests/per_cell_missing.rs`.

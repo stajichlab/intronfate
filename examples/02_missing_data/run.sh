@@ -4,10 +4,10 @@
 # A, B and C share a phase-1 intron inside residue 6 (column 5). Taxon D either
 #   gapped: has no residues in columns 4-5, so it cannot show that intron  -> `?`, no loss
 #   full:   is aligned straight through column 5 and has no intron there   -> `0`, one loss
-# Usage: run.sh [output-dir]      (set INTRON_PROJECTOR to the binary if it is not on PATH)
+# Usage: run.sh [output-dir]      (set INTRONFATE to the binary if it is not on PATH)
 set -eu
 cd "$(dirname "$0")"
-BIN="${INTRON_PROJECTOR:-intron-projector}"
+BIN="${INTRONFATE:-intronfate}"
 OUT="${1:-out}"
 rm -rf "$OUT"
 for variant in gapped full; do

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Run `intron-projector project` on the genomes listed in a TSV (label, gff, proteins, bytes) and record
+# Run `intronfate project` on the genomes listed in a TSV (label, gff, proteins, bytes) and record
 # wall time, peak RSS, the tool's own [time]/[size] stage lines, and the sizes of what it wrote.
 # Usage: run_one.sh <list.tsv> <tag> [threads]      (writes results/<tag>/)
 set -euo pipefail
 cd "$(dirname "$0")"
 list=$1; tag=$2; threads=${3:-}
 REPO=$(cd ../.. && pwd)
-BIN=${INTRON_PROJECTOR:-$REPO/target/release/intron-projector}
+BIN=${INTRONFATE:-$REPO/target/release/intronfate}
 out=results/$tag; rm -rf "$out"; mkdir -p "$out"
 args=()
 while IFS=$'\t' read -r label gff prot bytes; do args+=(--gff "$gff" -p "$prot"); done < "$list"

@@ -3,7 +3,7 @@
 #SBATCH --job-name=V1_malin_validation
 #SBATCH --output=logs/V1_malin_validation.%j.log
 
-# V1: validate intron-projector against MALIN's published test data (read-only inputs, purgeable output).
+# V1: validate intronfate against MALIN's published test data (read-only inputs, purgeable output).
 # Submit from ~/projects/intron_projector/bench/V1_malin_validation/ :
 #     mkdir -p logs && MALIN_TEST=/path/to/Malin/test sbatch --export=ALL run.sbatch
 set -euo pipefail
@@ -12,5 +12,5 @@ REPO=$(cd ../.. && pwd)
 find "$REPO/crates" -name '*.rs' -exec touch {} +   # see bench/V2_gff_projection/run.sbatch
 ( cd "$REPO" && cargo build --release --locked )
 : "${MALIN_TEST:?set MALIN_TEST}"
-export INTRON_PROJECTOR=$REPO/target/release/intron-projector
+export INTRONFATE=$REPO/target/release/intronfate
 ./validate.sh

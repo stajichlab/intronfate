@@ -12,7 +12,7 @@ Design rationale lives in [`SPEC.md`](SPEC.md). This file is state only.
 
 ## Second pass (same day): towards a usable tool
 
-Added: native MALIN import/export (`convert`, `crates/intron-core/src/malin.rs`), `--min-observed`, the
+Added: native MALIN import/export (`convert`, `crates/intronfate-core/src/malin.rs`), `--min-observed`, the
 `n_both_observable` pairwise column, atomic table writes, `rooting outgroup:` in `summary_score.tsv`, exit
 code 1 for run failures (2 stays clap's usage error), the CLI `--transcript-attrs` default aligned with the
 library (`Parent` first — the earlier fix had not reached the CLI), three runnable examples with committed
@@ -29,7 +29,7 @@ headline changes:
    bitsets; `Cell {Present, Absent, Missing}`; `cell_observable()` applies MALIN's flank rule
    (`--flank`, default 1); `matrix.tsv` is `format=2` with `?` cells and an `n_observable` column;
    `score` reads `?` back; counts report `n_missing`; NEXUS writes `?`. Acceptance tests:
-   `crates/intron-core/tests/per_cell_missing.rs`.
+   `crates/intronfate-core/tests/per_cell_missing.rs`.
 2. **Scoring correctness**: Fitch now handles polytomies (Hartigan counting); Dollo and Fitch are
    checked against brute force over every `{0,1,missing}` pattern; weighted Dollo uses 64-bit costs;
    `min_taxa` counts scored carriers; Dollo `monophyletic` ignores unobserved tips.
@@ -114,8 +114,8 @@ multi-family run (now one informational record per alignment). Results: `bench/V
 ```sh
 cargo test --workspace && cargo clippy --workspace --all-targets && cargo fmt --check
 python3 -I scripts/test_malin_to_matrix.py
-cargo run -p intron-cli -- demo -o /tmp/ip     # expect 3 sites, 3 gains, 2 losses, 3 MP steps
-cargo build --release && INTRON_PROJECTOR=$PWD/target/release/intron-projector examples/01_quickstart/run.sh
+cargo run -p intronfate-cli -- demo -o /tmp/ip     # expect 3 sites, 3 gains, 2 losses, 3 MP steps
+cargo build --release && INTRONFATE=$PWD/target/release/intronfate examples/01_quickstart/run.sh
 ```
 
 ## Settled — do not relitigate without a reason

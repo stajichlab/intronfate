@@ -1,4 +1,4 @@
-# intron-projector — design specification
+# intronfate — design specification
 
 Version 0.1 · Nov 2026 · status: projection + Dollo/MP/count scoring implemented and tested;
 database sources and model-based scoring planned.
@@ -124,7 +124,7 @@ Consequences worth knowing:
 
 - A gap at the shared intron's column gives `?`, so Dollo reports **no loss** on that branch; the same taxon
   aligned through the site gives `0` and one loss. This pair is pinned by
-  `crates/intron-core/tests/per_cell_missing.rs`.
+  `crates/intronfate-core/tests/per_cell_missing.rs`.
 - An annotated intron whose taxon is *not* aligned around it is **not** kept as presence. It becomes `?` and
   is counted in `masked_present` (and reported as `present_not_observable`). Keeping presence while
   discarding absence in poorly aligned regions would bias the matrix towards gains.
@@ -251,8 +251,8 @@ in-memory sink; `MemorySource` is the cached source, which also makes fixtures c
 | `tables`        | TSV/NEXUS serialisation of everything                                   |
 | `report`        | diagnostics with counts, capped retained rows                          |
 
-Workspace: `crates/intron-core` (the library, publishable) and `crates/intron-cli` (the
-`intron-projector` binary). Dependencies are deliberately few: `rayon`, `flate2`, `rustc-hash`,
+Workspace: `crates/intronfate-core` (the library, publishable) and `crates/intronfate-cli` (the
+`intronfate` binary). Dependencies are deliberately few: `rayon`, `flate2`, `rustc-hash`,
 `thiserror`, plus `clap`/`anyhow` in the CLI. Parsers are hand-written because the formats are
 line-oriented and control over tolerance/performance matters more than reuse.
 
@@ -485,12 +485,12 @@ schemes never re-parses a GFF.
 ## 8. CLI
 
 ```
-intron-projector project --gff sp.gff.gz -p sp.faa -o out                 # protein space only
-intron-projector matrix  --gff sp.gff.gz -p sp.faa --msa fam.faa -o out   # + alignment matrices
-intron-projector score   --matrix out/fam/matrix.tsv -t fam.nwk --outgroup SP_X
-intron-projector analyze --gff ... -p ... --msa ... -t ... --reconstructions
-intron-projector convert  --from-malin t.table -o dir                      # MALIN table <-> matrix.tsv
-intron-projector demo     -o intron_demo                                   # built-in worked example
+intronfate project --gff sp.gff.gz -p sp.faa -o out                 # protein space only
+intronfate matrix  --gff sp.gff.gz -p sp.faa --msa fam.faa -o out   # + alignment matrices
+intronfate score   --matrix out/fam/matrix.tsv -t fam.nwk --outgroup SP_X
+intronfate analyze --gff ... -p ... --msa ... -t ... --reconstructions
+intronfate convert  --from-malin t.table -o dir                      # MALIN table <-> matrix.tsv
+intronfate demo     -o intron_demo                                   # built-in worked example
 ```
 
 Multiple `--gff` / `--proteins` / `--msa` values are accepted for multi-species runs; ids must be
@@ -503,7 +503,7 @@ Dollo/MP values are asserted by the test suite.
 
 ## 9. Correctness strategy
 
-230 tests pass (174 core unit, 23 core integration in `crates/intron-core/tests/per_cell_missing.rs`, 10 CLI unit, 20 CLI end-to-end in `crates/intron-cli/tests/cli.rs`, 3 doc) plus 3 Python converter tests (`scripts/test_malin_to_matrix.py`); last verified 2026-11-11. The layers are described in [`TESTING.md`](TESTING.md). Layers:
+230 tests pass (174 core unit, 23 core integration in `crates/intronfate-core/tests/per_cell_missing.rs`, 10 CLI unit, 20 CLI end-to-end in `crates/intronfate-cli/tests/cli.rs`, 3 doc) plus 3 Python converter tests (`scripts/test_malin_to_matrix.py`); last verified 2026-11-11. The layers are described in [`TESTING.md`](TESTING.md). Layers:
 
 1. **Property/consistency tests on the coordinate model.** `cds_offset == codon_index0*3 + phase` for
    every offset; every derived view agrees with the emitted table columns.

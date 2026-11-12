@@ -1,6 +1,6 @@
 [package]
-name = "intron-cli"
-description = "CLI front-end for intron-core: intron position projection, sharing matrices, Dollo and maximum parsimony scoring."
+name = "intronfate-cli"
+description = "CLI front-end for intronfate-core: intron position projection, sharing matrices, Dollo and maximum parsimony scoring."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,13 +10,13 @@ repository.workspace = true
 publish = false
 
 [[bin]]
-name = "intron-projector"
+name = "intronfate"
 path = "src/main.rs"
 
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
-intron-core = { workspace = true }
+intronfate-core = { workspace = true }
 rayon = { workspace = true }
 
 [dev-dependencies]

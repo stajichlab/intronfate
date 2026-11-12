@@ -1,4 +1,4 @@
-# intron-projector — user guide
+# intronfate — user guide
 
 How to run the tool, what it needs, how to read what it writes, and what to do when something looks
 wrong. For *why* it is designed this way see [`SPEC.md`](SPEC.md); for every output column see
@@ -16,7 +16,7 @@ codon), looks up the alignment column of that codon in each ortholog, and builds
 ## 2. Install
 
 ```sh
-cargo build --release            # binary: target/release/intron-projector
+cargo build --release            # binary: target/release/intronfate
 cargo test --workspace           # the full suite (see TESTING.md)
 ```
 
@@ -55,12 +55,12 @@ the first complete codon. Both strands, gzip, CRLF and stray Latin-1 bytes are f
 ## 4. Commands
 
 ```
-intron-projector project  --gff a.gff3 -p a.faa -o out                    # introns -> protein space
-intron-projector matrix   --gff a.gff3 -p a.faa --msa fam.aln -o out      # -> alignment columns, site x taxon
-intron-projector score    --matrix out/fam/matrix.tsv -t fam.nwk          # -> Dollo / MP / counts
-intron-projector analyze  --gff ... -p ... --msa ... -t ...               # all of the above in one pass
-intron-projector convert  --from-malin t.table -o dir | --to-malin m.tsv... -o t.table
-intron-projector demo     -o intron_demo                                  # built-in worked example
+intronfate project  --gff a.gff3 -p a.faa -o out                    # introns -> protein space
+intronfate matrix   --gff a.gff3 -p a.faa --msa fam.aln -o out      # -> alignment columns, site x taxon
+intronfate score    --matrix out/fam/matrix.tsv -t fam.nwk          # -> Dollo / MP / counts
+intronfate analyze  --gff ... -p ... --msa ... -t ...               # all of the above in one pass
+intronfate convert  --from-malin t.table -o dir | --to-malin m.tsv... -o t.table
+intronfate demo     -o intron_demo                                  # built-in worked example
 ```
 
 `project` does not need an alignment. `matrix` writes everything up to the matrix; `score` re-reads a
@@ -135,9 +135,9 @@ scores 0 losses when gapped and 1 when aligned straight through.
 one character per intron site. `convert` moves between the two:
 
 ```sh
-intron-projector convert --from-malin Chromo23.table -o matrices      # one matrices/<aln>/matrix.tsv each
-intron-projector score   --matrix matrices/KOG0004/matrix.tsv -t tree.nwk
-intron-projector convert --to-malin out/*/matrix.tsv -o ours.table    # taxa must be identical
+intronfate convert --from-malin Chromo23.table -o matrices      # one matrices/<aln>/matrix.tsv each
+intronfate score   --matrix matrices/KOG0004/matrix.tsv -t tree.nwk
+intronfate convert --to-malin out/*/matrix.tsv -o ours.table    # taxa must be identical
 ```
 
 A MALIN site is `(column, phase) = (alipos / 3, alipos % 3)`; phase digits are `3`=phase 0, `1`, `2`.
@@ -179,7 +179,7 @@ taxon_map.tsv       Smaydis_g123-T1<TAB>Smaydis   Scerevisiae_g88-T1<TAB>Scerevi
 ```
 
 ```sh
-intron-projector analyze --gff sp1.gff3.gz --gff sp2.gff3.gz ... -p sp1.faa.gz -p sp2.faa.gz ... \
+intronfate analyze --gff sp1.gff3.gz --gff sp2.gff3.gz ... -p sp1.faa.gz -p sp2.faa.gz ... \
     $(for f in alignments/*.aln.fasta; do echo --msa $f; done) \
     --taxon-map taxon_map.tsv -t species.nwk -o out
 ```

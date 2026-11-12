@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/intron-core", "crates/intron-cli"]
+members = ["crates/intronfate-core", "crates/intronfate-cli"]
 
 [workspace.package]
 version = "0.1.0"
@@ -8,7 +8,7 @@ edition = "2021"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
 authors = ["Chris Stajich"]
-repository = "https://github.com/stajichlab/intron_projector"
+repository = "https://github.com/stajichlab/intronfate"
 categories = ["science", "bio-informatics"]
 
 [workspace.dependencies]
@@ -19,7 +19,7 @@ rayon = "1"
 rustc-hash = "2"
 thiserror = "2"
 
-intron-core = { path = "crates/intron-core", version = "0.1.0" }
+intronfate-core = { path = "crates/intronfate-core", version = "0.1.0" }
 
 [profile.release]
 lto = "thin"

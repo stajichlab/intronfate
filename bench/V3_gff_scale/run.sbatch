@@ -12,7 +12,7 @@ module load rust >/dev/null 2>&1 || true
 REPO=$(cd ../.. && pwd)
 find "$REPO/crates" -name '*.rs' -exec touch {} +      # rsync keeps laptop mtimes: force the rebuild
 ( cd "$REPO" && cargo build --release --locked )
-export INTRON_PROJECTOR=$REPO/target/release/intron-projector
+export INTRONFATE=$REPO/target/release/intronfate
 . ./config.sh
 mkdir -p data results
 if [ ! -s data/gff_sizes.tsv ]; then       # one slow pass over the shared filesystem, then cached
