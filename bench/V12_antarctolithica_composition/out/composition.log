@@ -1,0 +1,52 @@
+genomes with a missing amino-acid / codon frequency (filled with 0): 437 0
+472 genomes; 6 Antarctolithica strains
+
+Scalar traits: Alith strains (median over strains) and percentile within each group (0 = below all, 100 = above all):
+  genome_mb     Alith 7.82-10.47 | Basid median 26.38 pct 2; Mucor median 27.48 pct 0; Peziz median 33.50 pct 0; Sacch median 14.62 pct 2; Taphr median 12.97 pct 17
+  gc_pct        Alith 48.93-49.62 | Basid median 52.02 pct 39; Mucor median 41.95 pct 100; Peziz median 49.29 pct 54; Sacch median 42.46 pct 93; Taphr median 46.16 pct 61
+  gc3           Alith 52.01-53.66 | Basid median 60.98 pct 35; Mucor median 42.38 pct 100; Peziz median 57.83 pct 27; Sacch median 42.23 pct 81; Taphr median 47.53 pct 67
+  n_genes       Alith 4232.00-5668.00 | Basid median 8724.00 pct 4; Mucor median 10308.50 pct 0; Peziz median 10294.00 pct 0; Sacch median 5923.00 pct 9; Taphr median 5550.00 pct 50
+  genes_per_mb  Alith 541.34-572.43 | Basid median 323.28 pct 100; Mucor median 374.92 pct 100; Peziz median 311.53 pct 100; Sacch median 399.65 pct 99; Taphr median 462.36 pct 100
+  masked_pct    Alith 5.04-5.90 | Basid median 12.17 pct 2; Mucor median 11.25 pct 12; Peziz median 10.39 pct 4; Sacch median 13.07 pct 9; Taphr median 10.54 pct 0
+
+Nearest non-Alith genomes (strain Alith_52.25 if present, else first strain):
+  aa_clr        [('Taphrina_Taphrina_', 'Taphri', 0.24), ('Bifiguratus_Bifigu', 'Mucoro', 0.249), ('Taphrina_Taphrina_', 'Taphri', 0.254), ('Tdeformans', 'Taphri', 0.256), ('Taphrina', 'Taphri', 0.266), ('Calcarisporiella_C', 'Calcar', 0.274)]
+  codon_clr     [('Lobaria_Lobaria_pu', 'Pezizo', 0.877), ('Astrothelium_Astro', 'Pezizo', 0.973), ('Arthonia_Arthonia_', 'Pezizo', 1.015), ('Xylographa_Xylogra', 'Pezizo', 1.044), ('Trapeliopsis_Trape', 'Pezizo', 1.046), ('Xylographa_Xylogra', 'Pezizo', 1.048)]
+  pfam_jaccard  [('Saitoella_Saitoell', 'Taphri', 0.22), ('Dipodascopsis', 'Saccha', 0.223), ('Kockiozyma', 'Saccha', 0.223), ('Babjevia', 'Saccha', 0.224), ('Saitoella', 'Taphri', 0.224), ('Blastobotrys_Blast', 'Saccha', 0.225)]
+
+Isolation (distance to the nearest genome outside the own order/class; Alith strains vs all other genomes):
+       space level  alith_nn  pct_of_genomes_with_larger_nn  median_nn  q95_nn  alith_strain_spread
+      aa_clr order     0.237                           27.9      0.169   0.355                0.027
+      aa_clr class     0.237                           35.0      0.195   0.401                0.027
+   codon_clr order     0.874                           62.9      1.064   2.530                0.128
+   codon_clr class     0.874                           72.1      1.215   2.593                0.128
+pfam_jaccard order     0.236                            1.5      0.116   0.204                0.085
+pfam_jaccard class     0.236                            3.9      0.137   0.228                0.085
+       space level                                                                                                                                                                                                                     most_isolated
+      aa_clr order      Clavariadelphus_Clavariadelphus_pistilla_F0014F4F(0.69), Hyaloraphidium_Hyaloraphidium_curvatum_S_F5655B54(0.51), Geosiphon_Geosiphon_pyriformis_uo1_FC303ED2(0.51), Lobulomyces_Lobulomyces_angularis_JEL052_FF74C8A6(0.50)
+      aa_clr class           Clavariadelphus_Clavariadelphus_pistilla_F0014F4F(0.74), Hyaloraphidium_Hyaloraphidium_curvatum_S_F5655B54(0.51), Geosiphon_Geosiphon_pyriformis_uo1_FC303ED2(0.51), Gigaspora_Gigaspora_margarita_BEG34_FA186146(0.50)
+   codon_clr order                                                  Neoaidaea(3.73), Malassezia_Malassezia_furfur_CBS14141_F6181437(3.33), Malassezia_Malassezia_furfur_PM315_F314DFAC(3.33), Golubevia_Golubevia_pallescens_JCM_5230_F515BB27(3.21)
+   codon_clr class                                                  Neoaidaea(3.73), Malassezia_Malassezia_furfur_CBS14141_F6181437(3.33), Malassezia_Malassezia_furfur_PM315_F314DFAC(3.33), Golubevia_Golubevia_pallescens_JCM_5230_F515BB27(3.21)
+pfam_jaccard order Phlyctochytrium_Phlyctochytrium_bullatum_FF5E1F04(0.46), Pneumocystis_Pneumocystis_jirovecii_SE8_F8968241(0.31), Pneumocystis_Pneumocystis_wakefieldiae_2_FADCB796(0.30), Hyaloraphidium_Hyaloraphidium_curvatum_S_F5655B54(0.29)
+pfam_jaccard class Phlyctochytrium_Phlyctochytrium_bullatum_FF5E1F04(0.48), Pneumocystis_Pneumocystis_jirovecii_SE8_F8968241(0.31), Pneumocystis_Pneumocystis_wakefieldiae_2_FADCB796(0.30), Hyaloraphidium_Hyaloraphidium_curvatum_S_F5655B54(0.29)
+
+RF (aa + codon + scalars) leave-order-out accuracy:
+                    mean  size
+true                         
+Basidiomycota     0.924   132
+Chytridiomycota   0.000    16
+Glomeromycota     0.833    12
+Kickxellomycota   0.000     6
+Mucoromycota      0.750     8
+Pezizomycotina    0.986   215
+Saccharomycotina  0.860    43
+Taphrinomycotina  0.056    18
+Alith RF probabilities:
+         strain  Basidiomycota  Chytridiomycota  Glomeromycota  Kickxellomycota  Mucoromycota  Pezizomycotina  Saccharomycotina  Taphrinomycotina
+0  Alith_14.71          0.080            0.042          0.003            0.046         0.037           0.245             0.188             0.359
+1  Alith_17.30          0.086            0.044          0.002            0.069         0.031           0.262             0.171             0.335
+2  Alith_52.25          0.085            0.043          0.002            0.071         0.037           0.266             0.167             0.329
+3  Alith_55.28          0.085            0.049          0.002            0.080         0.031           0.265             0.164             0.324
+4  Alith_62.17          0.088            0.043          0.002            0.066         0.029           0.267             0.169             0.336
+5   Alith_82.9          0.082            0.042          0.002            0.071         0.036           0.263             0.170             0.334
+6         mean          0.084            0.044          0.002            0.067         0.034           0.261             0.172             0.336
