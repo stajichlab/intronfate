@@ -140,8 +140,9 @@ These are validation and first-use results, not a finished biological study.
 | [V8](bench/V8_antarctolithica_placement/README.md), [V9](bench/V9_antarctolithica_expanded/README.md) | Do intron positions support the placement of an unplaced Antarctic ascomycete (31, then 42 genomes)? | Whole-matrix parsimony and Dollo are miscalibrated for an intron-poor lineage; a calibrated clade-specific retention test places it outside Pezizomycotina, Saccharomycotina and Taphrinomycetes, without resolving its deeper position. |
 | [V10](bench/V10_antarctolithica_domains/README.md) | Pfam domain composition (472 genomes): PCoA, random forest, signature test | A normal fungal repertoire; between the yeasts and the Pezizomycotina, nearest to early-diverging yeast lineages. |
 | [V11](bench/V11_antarctolithica_topology_tests/README.md) | Likelihood tests of nine candidate placements (IQ-TREE, RAxML-NG cross-check; C60 PMSF, site removal, recoding) | Same best tree in every variant; the gap to the alternative published placement narrows with a better model but does not close. |
+| [V12](bench/V12_antarctolithica_composition/README.md) | Genome traits, amino-acid / codon / Pfam composition, isolation test, random forest | Compact yeast-like genome; composition does not mark a separate group, only the Pfam repertoire is isolated (as reduced-genome lineages are). |
 
-Summary of V4-V11 and what they do and do not show: [`docs/ANTARCTOLITHICA_PLACEMENT.md`](docs/ANTARCTOLITHICA_PLACEMENT.md).
+Summary of V4-V12 and what they do and do not show: [`docs/ANTARCTOLITHICA_PLACEMENT.md`](docs/ANTARCTOLITHICA_PLACEMENT.md).
 
 **A worked result.** On the 1,106 single-copy families (nine fungal genomes; 15,697 inferred intron gains and 14,316 losses in total) the largest
 terminal-branch loss counts are in *Mycosarcoma maydis* (4,055), *M. mucedo* (1,516), *S. cerevisiae* (1,447) and *C. neoformans* (1,091). For
