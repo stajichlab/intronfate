@@ -1,0 +1,73 @@
+# 1208 sites in 614 families; 1000 family-bootstrap replicates; carrier filter: Alith
+tree	group	n_tips_below	tips_below	mp_steps	steps_over_best	dollo_losses	mp_best_in_fraction_of_replicates	dollo_best_in_fraction_of_replicates	tied_with
+place_18	Taphrinomycotina	1	Neolecta	3778	0	4434	1.000	0.000	
+place_69	outgroup_Basidiomycota	1	Cneoformans	3904	126	5041	0.000	0.000	
+place_55	Saccharomycotina	1	Lipomyces	3909	131	5330	0.000	0.000	
+place_23	Orbiliomycetes	1	Orbilia	3914	136	4793	0.000	0.000	
+place_51	Saccharomycotina	1	Babjevia	3917	139	5039	0.000	0.000	
+place_32	Geoglossomycetes	1	Geoglossum	3927	149	5458	0.000	0.000	
+place_33	Lichinomycetes	1	Lichina	3933	155	5458	0.000	0.000	
+place_54	Saccharomycotina	4	Kockiozyma,Limtongia,Lipomyces,Myxozyma	3936	158	5041	0.000	0.000	
+place_56	Saccharomycotina	3	Kockiozyma,Limtongia,Myxozyma	3936	158	5330	0.000	0.000	
+place_31	mixed(Geoglossomycetes+Lichinomycetes)	2	Geoglossum,Lichina	3940	162	5174	0.000	0.000	
+place_58	Saccharomycotina	2	Kockiozyma,Myxozyma	3953	175	5667	0.000	0.000	
+place_57	Saccharomycotina	1	Limtongia	3956	178	5667	0.000	0.000	
+place_22	Pezizomycetes	1	Pyronema	3963	185	4794	0.000	0.000	
+place_01	outgroup_Mucoromycota	1	Mmucedo	3979	201	5052	0.000	0.000	place_02
+place_02	mixed(Arthoniomycetes+Dothideomycetes+Eurotiomycetes+Geoglossomycetes+Lecanoromycetes+Leotiomycetes+Lichinomycetes+Orbiliomycetes+Pezizomycetes+Saccharomycotina+Sordariomycetes+Taphrinomycotina+outgroup_Basidiomycota)	35	Alloascoidea,Anidulans,Antarctomyces,Arthonia,Babjevia,Botrytis,Cladonia,Cneoformans,Cryomyces,Dipodascopsis,Exophiala,Geoglossum,Geotrichum,Hortaea,Kockiozyma,Lichina,Limtongia,Lipomyces,Myxozyma,Ncrassa,Neoaidaea,Neolecta,Orbilia,Protomyces,Pyronema,Saitoella,Savitreella,Sjaponicus,Smaydis,Spombe,Taphrina,Tdeformans,Trigonopsis,Yarrowia,Zymoseptoria	3979	201	4773	0.000	0.000	place_01
+place_60	Saccharomycotina	1	Myxozyma	3980	202	6040	0.000	0.000	
+place_59	Saccharomycotina	1	Kockiozyma	3980	202	6039	0.000	0.000	
+place_52	Saccharomycotina	5	Dipodascopsis,Kockiozyma,Limtongia,Lipomyces,Myxozyma	3985	207	4762	0.000	0.000	
+place_53	Saccharomycotina	1	Dipodascopsis	3986	208	5046	0.000	0.000	
+place_49	Saccharomycotina	2	Babjevia,Neoaidaea	3987	209	4767	0.000	0.000	
+place_50	Saccharomycotina	1	Neoaidaea	3993	215	5039	0.000	0.000	
+place_38	Eurotiomycetes	1	Anidulans	3996	218	6269	0.000	0.000	
+place_21	mixed(Orbiliomycetes+Pezizomycetes)	2	Orbilia,Pyronema	4000	222	4551	0.000	0.000	
+place_30	mixed(Arthoniomycetes+Dothideomycetes+Eurotiomycetes+Geoglossomycetes+Lecanoromycetes+Lichinomycetes)	9	Anidulans,Arthonia,Cladonia,Cryomyces,Exophiala,Geoglossum,Hortaea,Lichina,Zymoseptoria	4000	222	4862	0.000	0.000	
+place_34	mixed(Arthoniomycetes+Dothideomycetes+Eurotiomycetes+Lecanoromycetes)	7	Anidulans,Arthonia,Cladonia,Cryomyces,Exophiala,Hortaea,Zymoseptoria	4001	223	5175	0.000	0.000	
+place_39	Lecanoromycetes	1	Cladonia	4004	226	5882	0.000	0.000	
+place_48	Saccharomycotina	7	Babjevia,Dipodascopsis,Kockiozyma,Limtongia,Lipomyces,Myxozyma,Neoaidaea	4008	230	4538	0.000	0.000	
+place_35	mixed(Eurotiomycetes+Lecanoromycetes)	3	Anidulans,Cladonia,Exophiala	4012	234	5555	0.000	0.000	
+place_36	Eurotiomycetes	2	Anidulans,Exophiala	4013	235	5882	0.000	0.000	
+place_20	mixed(Arthoniomycetes+Dothideomycetes+Eurotiomycetes+Geoglossomycetes+Lecanoromycetes+Leotiomycetes+Lichinomycetes+Orbiliomycetes+Pezizomycetes+Sordariomycetes)	14	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomyces,Exophiala,Geoglossum,Hortaea,Lichina,Ncrassa,Orbilia,Pyronema,Zymoseptoria	4016	238	4344	0.000	0.000	
+place_40	mixed(Arthoniomycetes+Dothideomycetes)	4	Arthonia,Cryomyces,Hortaea,Zymoseptoria	4017	239	5554	0.000	0.000	
+place_37	Eurotiomycetes	1	Exophiala	4019	241	6269	0.000	0.000	
+place_24	mixed(Arthoniomycetes+Dothideomycetes+Eurotiomycetes+Geoglossomycetes+Lecanoromycetes+Leotiomycetes+Lichinomycetes+Sordariomycetes)	12	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomyces,Exophiala,Geoglossum,Hortaea,Lichina,Ncrassa,Zymoseptoria	4025	247	4553	0.000	0.000	
+place_68	outgroup_Basidiomycota	2	Cneoformans,Smaydis	4030	252	4768	0.000	0.000	
+place_03	mixed(Arthoniomycetes+Dothideomycetes+Eurotiomycetes+Geoglossomycetes+Lecanoromycetes+Leotiomycetes+Lichinomycetes+Orbiliomycetes+Pezizomycetes+Saccharomycotina+Sordariomycetes+Taphrinomycotina)	33	Alloascoidea,Anidulans,Antarctomyces,Arthonia,Babjevia,Botrytis,Cladonia,Cryomyces,Dipodascopsis,Exophiala,Geoglossum,Geotrichum,Hortaea,Kockiozyma,Lichina,Limtongia,Lipomyces,Myxozyma,Ncrassa,Neoaidaea,Neolecta,Orbilia,Protomyces,Pyronema,Saitoella,Savitreella,Sjaponicus,Spombe,Taphrina,Tdeformans,Trigonopsis,Yarrowia,Zymoseptoria	4032	254	4534	0.000	0.000	
+place_28	Leotiomycetes	1	Botrytis	4033	255	5750	0.000	0.000	
+place_17	Taphrinomycotina	1	Saitoella	4035	257	4455	0.000	0.000	
+place_25	mixed(Leotiomycetes+Sordariomycetes)	3	Antarctomyces,Botrytis,Ncrassa	4035	257	4865	0.000	0.000	
+place_16	Taphrinomycotina	2	Neolecta,Saitoella	4036	258	4347	0.000	0.000	
+place_70	outgroup_Basidiomycota	1	Smaydis	4040	262	5048	0.000	0.000	
+place_47	Saccharomycotina	11	Alloascoidea,Babjevia,Dipodascopsis,Geotrichum,Kockiozyma,Limtongia,Lipomyces,Myxozyma,Neoaidaea,Trigonopsis,Yarrowia	4042	264	4350	0.000	0.000	
+place_27	Leotiomycetes	2	Antarctomyces,Botrytis	4048	270	5308	0.000	0.000	
+gene_tree	(gene tree)			4049	271	4294	0.000	1.000	place_19
+place_19	mixed(Arthoniomycetes+Dothideomycetes+Eurotiomycetes+Geoglossomycetes+Lecanoromycetes+Leotiomycetes+Lichinomycetes+Orbiliomycetes+Pezizomycetes+Saccharomycotina+Sordariomycetes)	25	Alloascoidea,Anidulans,Antarctomyces,Arthonia,Babjevia,Botrytis,Cladonia,Cryomyces,Dipodascopsis,Exophiala,Geoglossum,Geotrichum,Hortaea,Kockiozyma,Lichina,Limtongia,Lipomyces,Myxozyma,Ncrassa,Neoaidaea,Orbilia,Pyronema,Trigonopsis,Yarrowia,Zymoseptoria	4049	271	4294	0.000	1.000	gene_tree
+place_29	Leotiomycetes	1	Antarctomyces	4052	274	5750	0.000	0.000	
+place_26	Sordariomycetes	1	Ncrassa	4053	275	5308	0.000	0.000	
+place_61	Saccharomycotina	4	Alloascoidea,Geotrichum,Trigonopsis,Yarrowia	4055	277	4549	0.000	0.000	
+place_15	mixed(Arthoniomycetes+Dothideomycetes+Eurotiomycetes+Geoglossomycetes+Lecanoromycetes+Leotiomycetes+Lichinomycetes+Orbiliomycetes+Pezizomycetes+Saccharomycotina+Sordariomycetes+Taphrinomycotina)	27	Alloascoidea,Anidulans,Antarctomyces,Arthonia,Babjevia,Botrytis,Cladonia,Cryomyces,Dipodascopsis,Exophiala,Geoglossum,Geotrichum,Hortaea,Kockiozyma,Lichina,Limtongia,Lipomyces,Myxozyma,Ncrassa,Neoaidaea,Neolecta,Orbilia,Pyronema,Saitoella,Trigonopsis,Yarrowia,Zymoseptoria	4065	287	4355	0.000	0.000	
+place_62	Saccharomycotina	1	Trigonopsis	4072	294	4972	0.000	0.000	
+place_43	Dothideomycetes	1	Cryomyces	4079	301	6042	0.000	0.000	
+place_44	Dothideomycetes	2	Hortaea,Zymoseptoria	4081	303	6042	0.000	0.000	place_42
+place_42	Dothideomycetes	3	Cryomyces,Hortaea,Zymoseptoria	4081	303	6041	0.000	0.000	place_44
+place_41	Arthoniomycetes	1	Arthonia	4082	304	6042	0.000	0.000	
+place_04	Taphrinomycotina	6	Protomyces,Savitreella,Sjaponicus,Spombe,Taphrina,Tdeformans	4083	305	4544	0.000	0.000	
+place_06	Taphrinomycotina	1	Sjaponicus	4094	316	5408	0.000	0.000	
+place_05	Taphrinomycotina	2	Sjaponicus,Spombe	4095	317	4963	0.000	0.000	
+place_63	Saccharomycotina	3	Alloascoidea,Geotrichum,Yarrowia	4095	317	4973	0.000	0.000	
+place_07	Taphrinomycotina	1	Spombe	4100	322	5409	0.000	0.000	
+place_67	Saccharomycotina	1	Geotrichum	4103	325	5779	0.000	0.000	
+place_64	Saccharomycotina	1	Alloascoidea	4106	328	5389	0.000	0.000	
+place_65	Saccharomycotina	2	Geotrichum,Yarrowia	4115	337	5389	0.000	0.000	
+place_08	Taphrinomycotina	4	Protomyces,Savitreella,Taphrina,Tdeformans	4126	348	4966	0.000	0.000	
+place_46	Dothideomycetes	1	Hortaea	4128	350	6585	0.000	0.000	
+place_45	Dothideomycetes	1	Zymoseptoria	4130	352	6585	0.000	0.000	
+place_66	Saccharomycotina	1	Yarrowia	4137	359	5779	0.000	0.000	
+place_10	Taphrinomycotina	2	Taphrina,Tdeformans	4149	371	6063	0.000	0.000	
+place_11	Taphrinomycotina	1	Tdeformans	4152	374	6630	0.000	0.000	
+place_12	Taphrinomycotina	1	Taphrina	4153	375	6630	0.000	0.000	
+place_13	Taphrinomycotina	1	Protomyces	4161	383	6063	0.000	0.000	
+place_09	Taphrinomycotina	3	Protomyces,Taphrina,Tdeformans	4166	388	5517	0.000	0.000	
+place_14	Taphrinomycotina	1	Savitreella	4180	402	5517	0.000	0.000	

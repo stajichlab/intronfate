@@ -1,0 +1,59 @@
+# 29085 sites with at least one carrier; groups: Alith=6 genomes; Mucor=1 genomes; Basidio=2 genomes; Taphrinomycetes=4 genomes; Schizosaccharomyces=2 genomes; Saitoella+Neolecta=2 genomes; Lipomycetes=7 genomes; Sacch_other=4 genomes; Pez_early(Pyronema,Orbilia)=2 genomes; Pez_core=12 genomes
+group	sites_carried	sites_carried_by_this_group_only
+Alith	1208	549
+Mucor	5121	1982
+Basidio	9021	4924
+Taphrinomycetes	1755	1126
+Schizosaccharomyces	2160	585
+Saitoella+Neolecta	7718	2745
+Lipomycetes	6421	1974
+Sacch_other	3195	709
+Pez_early(Pyronema,Orbilia)	5693	1464
+Pez_core	8464	4391
+
+group_a	group_b	sites_exclusive_to_the_two	sites_carried_by_both_and_possibly_others
+Pez_early(Pyronema,Orbilia)	Pez_core	763	3248
+Mucor	Basidio	567	2053
+Basidio	Saitoella+Neolecta	363	2658
+Lipomycetes	Sacch_other	292	2058
+Saitoella+Neolecta	Lipomycetes	226	2802
+Mucor	Saitoella+Neolecta	167	1922
+Lipomycetes	Pez_core	94	2198
+Saitoella+Neolecta	Pez_early(Pyronema,Orbilia)	91	2343
+Schizosaccharomyces	Saitoella+Neolecta	88	1163
+Lipomycetes	Pez_early(Pyronema,Orbilia)	88	2354
+Saitoella+Neolecta	Pez_core	81	2176
+Basidio	Lipomycetes	70	1970
+Basidio	Pez_core	48	1559
+Mucor	Lipomycetes	45	1526
+Basidio	Pez_early(Pyronema,Orbilia)	41	1645
+Sacch_other	Pez_core	32	1271
+Saitoella+Neolecta	Sacch_other	29	1463
+Alith	Saitoella+Neolecta	27	475
+Mucor	Schizosaccharomyces	25	686
+Taphrinomycetes	Saitoella+Neolecta	25	456
+Mucor	Pez_core	23	1173
+Basidio	Schizosaccharomyces	23	846
+Basidio	Sacch_other	22	1082
+Mucor	Pez_early(Pyronema,Orbilia)	19	1248
+Schizosaccharomyces	Lipomycetes	19	958
+Sacch_other	Pez_early(Pyronema,Orbilia)	18	1327
+Schizosaccharomyces	Pez_core	14	758
+Basidio	Taphrinomycetes	13	331
+Alith	Lipomycetes	12	411
+Mucor	Taphrinomycetes	11	265
+Taphrinomycetes	Schizosaccharomyces	10	237
+Taphrinomycetes	Pez_core	10	347
+Schizosaccharomyces	Pez_early(Pyronema,Orbilia)	8	780
+Alith	Basidio	7	329
+Alith	Pez_early(Pyronema,Orbilia)	7	378
+Mucor	Sacch_other	6	927
+Taphrinomycetes	Sacch_other	6	290
+Schizosaccharomyces	Sacch_other	6	719
+Alith	Pez_core	5	342
+Taphrinomycetes	Lipomycetes	5	380
+Taphrinomycetes	Pez_early(Pyronema,Orbilia)	5	354
+Alith	Mucor	3	226
+Alith	Schizosaccharomyces	3	148
+Alith	Sacch_other	1	218
+Alith	Taphrinomycetes	0	88

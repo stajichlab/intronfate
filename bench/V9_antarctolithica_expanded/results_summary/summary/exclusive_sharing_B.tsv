@@ -1,0 +1,59 @@
+# 17252 sites with at least one carrier; groups: Alith=6 genomes; Mucor=1 genomes; Basidio=2 genomes; Taphrinomycetes=4 genomes; Schizosaccharomyces=2 genomes; Saitoella+Neolecta=2 genomes; Lipomycetes=7 genomes; Sacch_other=4 genomes; Pez_early(Pyronema,Orbilia)=2 genomes; Pez_core=12 genomes
+group	sites_carried	sites_carried_by_this_group_only
+Alith	770	411
+Mucor	1468	729
+Basidio	4464	3088
+Taphrinomycetes	1334	926
+Schizosaccharomyces	808	283
+Saitoella+Neolecta	3748	1638
+Lipomycetes	3827	1454
+Sacch_other	1576	378
+Pez_early(Pyronema,Orbilia)	3483	1069
+Pez_core	5404	3035
+
+group_a	group_b	sites_exclusive_to_the_two	sites_carried_by_both_and_possibly_others
+Pez_early(Pyronema,Orbilia)	Pez_core	570	1923
+Lipomycetes	Sacch_other	212	1033
+Saitoella+Neolecta	Lipomycetes	157	1266
+Basidio	Saitoella+Neolecta	146	842
+Mucor	Basidio	122	413
+Lipomycetes	Pez_early(Pyronema,Orbilia)	84	1346
+Lipomycetes	Pez_core	61	1263
+Saitoella+Neolecta	Pez_early(Pyronema,Orbilia)	57	1083
+Saitoella+Neolecta	Pez_core	56	1042
+Mucor	Saitoella+Neolecta	49	383
+Basidio	Lipomycetes	42	730
+Schizosaccharomyces	Saitoella+Neolecta	39	335
+Taphrinomycetes	Saitoella+Neolecta	31	284
+Basidio	Pez_core	27	617
+Saitoella+Neolecta	Sacch_other	19	571
+Mucor	Lipomycetes	18	384
+Basidio	Taphrinomycetes	18	160
+Basidio	Pez_early(Pyronema,Orbilia)	15	633
+Schizosaccharomyces	Lipomycetes	15	328
+Sacch_other	Pez_core	14	646
+Mucor	Pez_core	13	302
+Alith	Pez_early(Pyronema,Orbilia)	12	236
+Basidio	Schizosaccharomyces	12	211
+Alith	Saitoella+Neolecta	10	223
+Basidio	Sacch_other	9	344
+Sacch_other	Pez_early(Pyronema,Orbilia)	9	663
+Schizosaccharomyces	Pez_core	8	270
+Alith	Lipomycetes	7	238
+Taphrinomycetes	Pez_core	7	224
+Alith	Pez_core	6	224
+Mucor	Schizosaccharomyces	6	139
+Mucor	Pez_early(Pyronema,Orbilia)	5	278
+Taphrinomycetes	Schizosaccharomyces	5	98
+Taphrinomycetes	Pez_early(Pyronema,Orbilia)	5	222
+Schizosaccharomyces	Sacch_other	4	218
+Mucor	Taphrinomycetes	3	78
+Taphrinomycetes	Sacch_other	3	153
+Schizosaccharomyces	Pez_early(Pyronema,Orbilia)	3	268
+Alith	Mucor	2	58
+Alith	Basidio	2	117
+Alith	Schizosaccharomyces	2	52
+Taphrinomycetes	Lipomycetes	2	256
+Alith	Taphrinomycetes	1	44
+Alith	Sacch_other	1	98
+Mucor	Sacch_other	1	241
