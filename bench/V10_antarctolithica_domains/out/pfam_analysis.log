@@ -1,0 +1,59 @@
+rf_group
+Pezizomycotina            215
+Basidiomycota             132
+Saccharomycotina           43
+Taphrinomycotina           18
+Chytridiomycota            16
+Glomeromycota              12
+Mucoromycota                8
+unassigned                  6
+Kickxellomycota             6
+Antarctolithica             6
+Blastocladiomycota          3
+Mortierellomycota           3
+Zoopagomycota               2
+Calcarisporiellomycota      1
+Monoblepharomycota          1
+472 genomes, 10642 Pfams; Alith strains: 6 families/genome [3590.0, 4069.0, 4056.0, 3945.0, 4095.0, 4078.0]
+braycurtis variance explained PC1-5: [27.4, 12.6, 7.6, 6.0, 3.9]
+jaccard variance explained PC1-5: [29.1, 11.1, 9.1, 3.4, 3.0]
+RF leave-order-out accuracy by group:
+                    mean  size
+true                         
+Basidiomycota     1.000   132
+Chytridiomycota   0.938    16
+Glomeromycota     1.000    12
+Kickxellomycota   0.667     6
+Mucoromycota      1.000     8
+Pezizomycotina    1.000   215
+Saccharomycotina  1.000    43
+Taphrinomycotina  1.000    18
+genomes with an Alith-sized repertoire (3051-4709 families): n=296 accuracy 0.993
+                   mean  size
+true                         
+Basidiomycota     1.000   132
+Chytridiomycota   1.000     9
+Glomeromycota     1.000    12
+Kickxellomycota   0.667     6
+Mucoromycota      1.000     4
+Pezizomycotina    1.000    72
+Saccharomycotina  1.000    43
+Taphrinomycotina  1.000    18
+Alith RF probabilities:
+         strain  Basidiomycota  Chytridiomycota  Glomeromycota  Kickxellomycota  Mucoromycota  Pezizomycotina  Saccharomycotina  Taphrinomycotina
+0  Alith_14.71          0.225            0.011          0.005            0.023         0.007           0.154             0.217             0.358
+1  Alith_17.30          0.141            0.002          0.002            0.008         0.004           0.168             0.240             0.435
+2  Alith_52.25          0.147            0.002          0.005            0.009         0.004           0.163             0.235             0.435
+3  Alith_55.28          0.170            0.003          0.010            0.012         0.005           0.159             0.215             0.426
+4  Alith_62.17          0.155            0.004          0.005            0.008         0.003           0.254             0.204             0.367
+5   Alith_82.9          0.156            0.003          0.006            0.008         0.005           0.173             0.233             0.416
+6         mean          0.166            0.004          0.006            0.011         0.005           0.178             0.224             0.406
+Pfam signature carried fraction (members / non-members / Alith):
+  Chytridiomycota        sig  286 | members 0.40-0.97 (n=16, median 0.94) | non-members 0.00-0.80 (median 0.00, above Alith: 270/450) | Alith 0.00
+  Glomeromycota          sig  194 | members 0.71-0.98 (n=12, median 0.90) | non-members 0.00-0.66 (median 0.01, above Alith: 150/454) | Alith 0.02
+  Kickxellomycota        sig   89 | members 0.74-0.98 (n=6, median 0.86) | non-members 0.00-0.82 (median 0.00, above Alith: 167/460) | Alith 0.01
+  Mucoromycota           sig  210 | members 0.72-0.97 (n=8, median 0.94) | non-members 0.00-0.78 (median 0.01, above Alith: 76/458) | Alith 0.02
+  Pezizomycotina         sig  138 | members 0.65-1.00 (n=215, median 0.95) | non-members 0.00-0.92 (median 0.01, above Alith: 12/251) | Alith 0.11
+  Saccharomycotina       sig   35 | members 0.53-1.00 (n=43, median 0.94) | non-members 0.00-0.26 (median 0.00, above Alith: 11/423) | Alith 0.14
+core Pfams (>=95 % of other genomes): 2500; Alith carries [0.887, 0.978, 0.973, 0.948, 0.975, 0.977]; all other genomes: median 0.994, 1st percentile 0.904
+  genomes with similar repertoire size: n=307, median core carried 0.990
