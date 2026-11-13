@@ -1,0 +1,238 @@
+asmid	class	verdict	pasa_status	n
+GCF_000011425.1_ASM1142v1	different_structure	bfd_right	PASA_has_bfd	21
+GCF_000011425.1_ASM1142v1	different_structure	bfd_right	PASA_lacks_bfd	8
+GCF_000011425.1_ASM1142v1	different_structure	mixed		3
+GCF_000011425.1_ASM1142v1	different_structure	no_junction_support		156
+GCF_000011425.1_ASM1142v1	different_structure	ref_right	PASA_has_ref	1
+GCF_000011425.1_ASM1142v1	different_structure	ref_right	PASA_lacks_ref	4
+GCF_000011425.1_ASM1142v1	end_difference	bfd_right	PASA_has_bfd	55
+GCF_000011425.1_ASM1142v1	end_difference	bfd_right	PASA_lacks_bfd	5
+GCF_000011425.1_ASM1142v1	end_difference	no_junction_support		295
+GCF_000011425.1_ASM1142v1	end_difference	ref_right	PASA_has_ref	2
+GCF_000011425.1_ASM1142v1	end_difference	ref_right	PASA_lacks_ref	2
+GCF_000011425.1_ASM1142v1	exon_difference	bfd_right	PASA_has_bfd	291
+GCF_000011425.1_ASM1142v1	exon_difference	bfd_right	PASA_lacks_bfd	31
+GCF_000011425.1_ASM1142v1	exon_difference	mixed		7
+GCF_000011425.1_ASM1142v1	exon_difference	no_junction_support		1292
+GCF_000011425.1_ASM1142v1	exon_difference	ref_right	PASA_has_ref	1
+GCF_000011425.1_ASM1142v1	exon_difference	ref_right	PASA_lacks_ref	7
+GCF_000011425.1_ASM1142v1	merged	bfd_right	PASA_has_bfd	17
+GCF_000011425.1_ASM1142v1	merged	bfd_right	PASA_lacks_bfd	6
+GCF_000011425.1_ASM1142v1	merged	mixed		1
+GCF_000011425.1_ASM1142v1	merged	no_junction_support		123
+GCF_000011425.1_ASM1142v1	merged	ref_right	PASA_has_ref	1
+GCF_000011425.1_ASM1142v1	retained_intron	bfd_right	PASA_has_bfd	61
+GCF_000011425.1_ASM1142v1	retained_intron	bfd_right	PASA_lacks_bfd	9
+GCF_000011425.1_ASM1142v1	retained_intron	mixed		1
+GCF_000011425.1_ASM1142v1	retained_intron	no_junction_support		541
+GCF_000011425.1_ASM1142v1	retained_intron	ref_right	PASA_lacks_ref	6
+GCF_000011425.1_ASM1142v1	shifted_boundary	bfd_right	PASA_has_bfd	176
+GCF_000011425.1_ASM1142v1	shifted_boundary	bfd_right	PASA_lacks_bfd	15
+GCF_000011425.1_ASM1142v1	shifted_boundary	mixed		2
+GCF_000011425.1_ASM1142v1	shifted_boundary	no_junction_support		478
+GCF_000011425.1_ASM1142v1	shifted_boundary	ref_right	PASA_has_ref	2
+GCF_000011425.1_ASM1142v1	split	bfd_right	PASA_has_bfd	8
+GCF_000011425.1_ASM1142v1	split	bfd_right	PASA_lacks_bfd	2
+GCF_000011425.1_ASM1142v1	split	mixed		4
+GCF_000011425.1_ASM1142v1	split	no_junction_support		145
+GCF_000011425.1_ASM1142v1	split	ref_right	PASA_has_ref	9
+GCF_000011425.1_ASM1142v1	split	ref_right	PASA_lacks_ref	5
+GCF_000219625.1_MYCGR_v2.0	different_structure	bfd_right	PASA_has_bfd	81
+GCF_000219625.1_MYCGR_v2.0	different_structure	bfd_right	PASA_lacks_bfd	32
+GCF_000219625.1_MYCGR_v2.0	different_structure	mixed		2
+GCF_000219625.1_MYCGR_v2.0	different_structure	no_junction_support		635
+GCF_000219625.1_MYCGR_v2.0	different_structure	ref_right	PASA_has_ref	2
+GCF_000219625.1_MYCGR_v2.0	different_structure	ref_right	PASA_lacks_ref	4
+GCF_000219625.1_MYCGR_v2.0	end_difference	bfd_right	PASA_has_bfd	122
+GCF_000219625.1_MYCGR_v2.0	end_difference	bfd_right	PASA_lacks_bfd	29
+GCF_000219625.1_MYCGR_v2.0	end_difference	no_junction_support		438
+GCF_000219625.1_MYCGR_v2.0	end_difference	ref_right	PASA_lacks_ref	4
+GCF_000219625.1_MYCGR_v2.0	exon_difference	bfd_right	PASA_has_bfd	186
+GCF_000219625.1_MYCGR_v2.0	exon_difference	bfd_right	PASA_lacks_bfd	47
+GCF_000219625.1_MYCGR_v2.0	exon_difference	mixed		11
+GCF_000219625.1_MYCGR_v2.0	exon_difference	no_junction_support		869
+GCF_000219625.1_MYCGR_v2.0	exon_difference	ref_right	PASA_has_ref	3
+GCF_000219625.1_MYCGR_v2.0	exon_difference	ref_right	PASA_lacks_ref	15
+GCF_000219625.1_MYCGR_v2.0	merged	bfd_right	PASA_has_bfd	33
+GCF_000219625.1_MYCGR_v2.0	merged	bfd_right	PASA_lacks_bfd	7
+GCF_000219625.1_MYCGR_v2.0	merged	mixed		1
+GCF_000219625.1_MYCGR_v2.0	merged	no_junction_support		151
+GCF_000219625.1_MYCGR_v2.0	retained_intron	bfd_right	PASA_has_bfd	78
+GCF_000219625.1_MYCGR_v2.0	retained_intron	bfd_right	PASA_lacks_bfd	13
+GCF_000219625.1_MYCGR_v2.0	retained_intron	mixed		2
+GCF_000219625.1_MYCGR_v2.0	retained_intron	no_junction_support		1047
+GCF_000219625.1_MYCGR_v2.0	retained_intron	ref_right	PASA_lacks_ref	9
+GCF_000219625.1_MYCGR_v2.0	shifted_boundary	bfd_right	PASA_has_bfd	81
+GCF_000219625.1_MYCGR_v2.0	shifted_boundary	bfd_right	PASA_lacks_bfd	20
+GCF_000219625.1_MYCGR_v2.0	shifted_boundary	mixed		6
+GCF_000219625.1_MYCGR_v2.0	shifted_boundary	no_junction_support		169
+GCF_000219625.1_MYCGR_v2.0	shifted_boundary	ref_right	PASA_lacks_ref	2
+GCF_000219625.1_MYCGR_v2.0	split	bfd_right	PASA_has_bfd	9
+GCF_000219625.1_MYCGR_v2.0	split	bfd_right	PASA_lacks_bfd	5
+GCF_000219625.1_MYCGR_v2.0	split	mixed		5
+GCF_000219625.1_MYCGR_v2.0	split	no_junction_support		248
+GCF_000219625.1_MYCGR_v2.0	split	ref_right	PASA_has_ref	15
+GCF_000219625.1_MYCGR_v2.0	split	ref_right	PASA_lacks_ref	13
+GCF_000146045.2_R64	different_structure	no_junction_support		38
+GCF_000146045.2_R64	end_difference	no_junction_support		22
+GCF_000146045.2_R64	end_difference	ref_right	PASA_lacks_ref	1
+GCF_000146045.2_R64	exon_difference	bfd_right	PASA_has_bfd	4
+GCF_000146045.2_R64	exon_difference	no_junction_support		39
+GCF_000146045.2_R64	exon_difference	ref_right	PASA_has_ref	1
+GCF_000146045.2_R64	exon_difference	ref_right	PASA_lacks_ref	1
+GCF_000146045.2_R64	merged	bfd_right	PASA_has_bfd	3
+GCF_000146045.2_R64	merged	no_junction_support		44
+GCF_000146045.2_R64	retained_intron	no_junction_support		2
+GCF_000146045.2_R64	shifted_boundary	bfd_right	PASA_has_bfd	1
+GCF_000146045.2_R64	shifted_boundary	mixed		1
+GCF_000146045.2_R64	shifted_boundary	no_junction_support		3
+GCF_000146045.2_R64	split	no_junction_support		2
+GCF_001661235.1_Picme2	different_structure	bfd_right	PASA_lacks_bfd	2
+GCF_001661235.1_Picme2	different_structure	no_junction_support		161
+GCF_001661235.1_Picme2	end_difference	bfd_right	PASA_has_bfd	3
+GCF_001661235.1_Picme2	end_difference	bfd_right	PASA_lacks_bfd	6
+GCF_001661235.1_Picme2	end_difference	no_junction_support		74
+GCF_001661235.1_Picme2	end_difference	ref_right	PASA_lacks_ref	3
+GCF_001661235.1_Picme2	exon_difference	bfd_right	PASA_has_bfd	1
+GCF_001661235.1_Picme2	exon_difference	bfd_right	PASA_lacks_bfd	1
+GCF_001661235.1_Picme2	exon_difference	no_junction_support		135
+GCF_001661235.1_Picme2	exon_difference	ref_right	PASA_lacks_ref	3
+GCF_001661235.1_Picme2	merged	bfd_right	PASA_has_bfd	2
+GCF_001661235.1_Picme2	merged	bfd_right	PASA_lacks_bfd	2
+GCF_001661235.1_Picme2	merged	no_junction_support		413
+GCF_001661235.1_Picme2	merged	ref_right	PASA_lacks_ref	6
+GCF_001661235.1_Picme2	retained_intron	no_junction_support		381
+GCF_001661235.1_Picme2	shifted_boundary	no_junction_support		24
+GCF_001661235.1_Picme2	split	no_junction_support		65
+GCF_000143535.2_ASM14353v4	different_structure	bfd_right	PASA_has_bfd	4
+GCF_000143535.2_ASM14353v4	different_structure	bfd_right	PASA_lacks_bfd	5
+GCF_000143535.2_ASM14353v4	different_structure	mixed		2
+GCF_000143535.2_ASM14353v4	different_structure	no_junction_support		134
+GCF_000143535.2_ASM14353v4	different_structure	ref_right	PASA_lacks_ref	4
+GCF_000143535.2_ASM14353v4	end_difference	bfd_right	PASA_has_bfd	16
+GCF_000143535.2_ASM14353v4	end_difference	bfd_right	PASA_lacks_bfd	9
+GCF_000143535.2_ASM14353v4	end_difference	no_junction_support		206
+GCF_000143535.2_ASM14353v4	end_difference	ref_right	PASA_has_ref	2
+GCF_000143535.2_ASM14353v4	end_difference	ref_right	PASA_lacks_ref	6
+GCF_000143535.2_ASM14353v4	exon_difference	bfd_right	PASA_has_bfd	110
+GCF_000143535.2_ASM14353v4	exon_difference	bfd_right	PASA_lacks_bfd	20
+GCF_000143535.2_ASM14353v4	exon_difference	mixed		11
+GCF_000143535.2_ASM14353v4	exon_difference	no_junction_support		468
+GCF_000143535.2_ASM14353v4	exon_difference	ref_right	PASA_has_ref	3
+GCF_000143535.2_ASM14353v4	exon_difference	ref_right	PASA_lacks_ref	11
+GCF_000143535.2_ASM14353v4	merged	bfd_right	PASA_has_bfd	4
+GCF_000143535.2_ASM14353v4	merged	bfd_right	PASA_lacks_bfd	1
+GCF_000143535.2_ASM14353v4	merged	no_junction_support		46
+GCF_000143535.2_ASM14353v4	merged	ref_right	PASA_lacks_ref	1
+GCF_000143535.2_ASM14353v4	retained_intron	bfd_right	PASA_has_bfd	1
+GCF_000143535.2_ASM14353v4	retained_intron	no_junction_support		102
+GCF_000143535.2_ASM14353v4	retained_intron	ref_right	PASA_lacks_ref	5
+GCF_000143535.2_ASM14353v4	shifted_boundary	bfd_right	PASA_has_bfd	21
+GCF_000143535.2_ASM14353v4	shifted_boundary	bfd_right	PASA_lacks_bfd	3
+GCF_000143535.2_ASM14353v4	shifted_boundary	mixed		9
+GCF_000143535.2_ASM14353v4	shifted_boundary	no_junction_support		137
+GCF_000143535.2_ASM14353v4	shifted_boundary	ref_right	PASA_has_ref	1
+GCF_000143535.2_ASM14353v4	shifted_boundary	ref_right	PASA_lacks_ref	1
+GCF_000143535.2_ASM14353v4	split	bfd_right	PASA_has_bfd	2
+GCF_000143535.2_ASM14353v4	split	bfd_right	PASA_lacks_bfd	1
+GCF_000143535.2_ASM14353v4	split	mixed		2
+GCF_000143535.2_ASM14353v4	split	no_junction_support		17
+GCF_000143535.2_ASM14353v4	split	ref_right	PASA_has_ref	3
+GCF_000143535.2_ASM14353v4	split	ref_right	PASA_lacks_ref	3
+GCF_000182925.2_NC12	different_structure	bfd_right	PASA_has_bfd	3
+GCF_000182925.2_NC12	different_structure	bfd_right	PASA_lacks_bfd	8
+GCF_000182925.2_NC12	different_structure	mixed		1
+GCF_000182925.2_NC12	different_structure	no_junction_support		168
+GCF_000182925.2_NC12	different_structure	ref_right	PASA_lacks_ref	10
+GCF_000182925.2_NC12	end_difference	bfd_right	PASA_has_bfd	18
+GCF_000182925.2_NC12	end_difference	bfd_right	PASA_lacks_bfd	13
+GCF_000182925.2_NC12	end_difference	no_junction_support		244
+GCF_000182925.2_NC12	end_difference	ref_right	PASA_has_ref	7
+GCF_000182925.2_NC12	end_difference	ref_right	PASA_lacks_ref	22
+GCF_000182925.2_NC12	exon_difference	bfd_right	PASA_has_bfd	53
+GCF_000182925.2_NC12	exon_difference	bfd_right	PASA_lacks_bfd	22
+GCF_000182925.2_NC12	exon_difference	mixed		9
+GCF_000182925.2_NC12	exon_difference	no_junction_support		539
+GCF_000182925.2_NC12	exon_difference	ref_right	PASA_has_ref	7
+GCF_000182925.2_NC12	exon_difference	ref_right	PASA_lacks_ref	22
+GCF_000182925.2_NC12	merged	bfd_right	PASA_has_bfd	4
+GCF_000182925.2_NC12	merged	bfd_right	PASA_lacks_bfd	6
+GCF_000182925.2_NC12	merged	no_junction_support		80
+GCF_000182925.2_NC12	retained_intron	bfd_right	PASA_has_bfd	7
+GCF_000182925.2_NC12	retained_intron	bfd_right	PASA_lacks_bfd	2
+GCF_000182925.2_NC12	retained_intron	no_junction_support		149
+GCF_000182925.2_NC12	retained_intron	ref_right	PASA_has_ref	1
+GCF_000182925.2_NC12	retained_intron	ref_right	PASA_lacks_ref	6
+GCF_000182925.2_NC12	shifted_boundary	bfd_right	PASA_has_bfd	12
+GCF_000182925.2_NC12	shifted_boundary	bfd_right	PASA_lacks_bfd	5
+GCF_000182925.2_NC12	shifted_boundary	mixed		5
+GCF_000182925.2_NC12	shifted_boundary	no_junction_support		113
+GCF_000182925.2_NC12	split	bfd_right	PASA_has_bfd	1
+GCF_000182925.2_NC12	split	mixed		3
+GCF_000182925.2_NC12	split	no_junction_support		76
+GCF_000182925.2_NC12	split	ref_right	PASA_has_ref	4
+GCF_000182925.2_NC12	split	ref_right	PASA_lacks_ref	5
+GCF_000149245.1_CNA3	different_structure	bfd_right	PASA_has_bfd	4
+GCF_000149245.1_CNA3	different_structure	bfd_right	PASA_lacks_bfd	2
+GCF_000149245.1_CNA3	different_structure	mixed		3
+GCF_000149245.1_CNA3	different_structure	no_junction_support		69
+GCF_000149245.1_CNA3	different_structure	ref_right	PASA_lacks_ref	7
+GCF_000149245.1_CNA3	end_difference	bfd_right	PASA_has_bfd	14
+GCF_000149245.1_CNA3	end_difference	bfd_right	PASA_lacks_bfd	18
+GCF_000149245.1_CNA3	end_difference	no_junction_support		97
+GCF_000149245.1_CNA3	end_difference	ref_right	PASA_has_ref	2
+GCF_000149245.1_CNA3	end_difference	ref_right	PASA_lacks_ref	10
+GCF_000149245.1_CNA3	exon_difference	bfd_right	PASA_has_bfd	29
+GCF_000149245.1_CNA3	exon_difference	bfd_right	PASA_lacks_bfd	30
+GCF_000149245.1_CNA3	exon_difference	mixed		12
+GCF_000149245.1_CNA3	exon_difference	no_junction_support		310
+GCF_000149245.1_CNA3	exon_difference	ref_right	PASA_has_ref	5
+GCF_000149245.1_CNA3	exon_difference	ref_right	PASA_lacks_ref	22
+GCF_000149245.1_CNA3	merged	bfd_right	PASA_has_bfd	5
+GCF_000149245.1_CNA3	merged	bfd_right	PASA_lacks_bfd	5
+GCF_000149245.1_CNA3	merged	mixed		2
+GCF_000149245.1_CNA3	merged	no_junction_support		61
+GCF_000149245.1_CNA3	merged	ref_right	PASA_has_ref	1
+GCF_000149245.1_CNA3	retained_intron	bfd_right	PASA_has_bfd	1
+GCF_000149245.1_CNA3	retained_intron	mixed		1
+GCF_000149245.1_CNA3	retained_intron	no_junction_support		83
+GCF_000149245.1_CNA3	retained_intron	ref_right	PASA_has_ref	2
+GCF_000149245.1_CNA3	retained_intron	ref_right	PASA_lacks_ref	13
+GCF_000149245.1_CNA3	shifted_boundary	bfd_right	PASA_has_bfd	16
+GCF_000149245.1_CNA3	shifted_boundary	bfd_right	PASA_lacks_bfd	8
+GCF_000149245.1_CNA3	shifted_boundary	mixed		9
+GCF_000149245.1_CNA3	shifted_boundary	no_junction_support		130
+GCF_000149245.1_CNA3	shifted_boundary	ref_right	PASA_has_ref	1
+GCF_000149245.1_CNA3	shifted_boundary	ref_right	PASA_lacks_ref	6
+GCF_000149245.1_CNA3	split	bfd_right	PASA_has_bfd	2
+GCF_000149245.1_CNA3	split	mixed		5
+GCF_000149245.1_CNA3	split	no_junction_support		33
+GCF_000149245.1_CNA3	split	ref_right	PASA_has_ref	4
+GCF_000149245.1_CNA3	split	ref_right	PASA_lacks_ref	14
+GCF_000002945.2_ASM294v3	different_structure	bfd_right	PASA_has_bfd	1
+GCF_000002945.2_ASM294v3	different_structure	no_junction_support		22
+GCF_000002945.2_ASM294v3	different_structure	ref_right	PASA_lacks_ref	3
+GCF_000002945.2_ASM294v3	end_difference	bfd_right	PASA_has_bfd	2
+GCF_000002945.2_ASM294v3	end_difference	bfd_right	PASA_lacks_bfd	1
+GCF_000002945.2_ASM294v3	end_difference	no_junction_support		41
+GCF_000002945.2_ASM294v3	end_difference	ref_right	PASA_lacks_ref	11
+GCF_000002945.2_ASM294v3	exon_difference	bfd_right	PASA_has_bfd	10
+GCF_000002945.2_ASM294v3	exon_difference	bfd_right	PASA_lacks_bfd	2
+GCF_000002945.2_ASM294v3	exon_difference	mixed		1
+GCF_000002945.2_ASM294v3	exon_difference	no_junction_support		69
+GCF_000002945.2_ASM294v3	exon_difference	ref_right	PASA_has_ref	2
+GCF_000002945.2_ASM294v3	exon_difference	ref_right	PASA_lacks_ref	6
+GCF_000002945.2_ASM294v3	merged	bfd_right	PASA_has_bfd	5
+GCF_000002945.2_ASM294v3	merged	bfd_right	PASA_lacks_bfd	1
+GCF_000002945.2_ASM294v3	merged	mixed		1
+GCF_000002945.2_ASM294v3	merged	no_junction_support		17
+GCF_000002945.2_ASM294v3	merged	ref_right	PASA_has_ref	1
+GCF_000002945.2_ASM294v3	retained_intron	no_junction_support		30
+GCF_000002945.2_ASM294v3	retained_intron	ref_right	PASA_lacks_ref	1
+GCF_000002945.2_ASM294v3	shifted_boundary	bfd_right	PASA_has_bfd	1
+GCF_000002945.2_ASM294v3	shifted_boundary	bfd_right	PASA_lacks_bfd	2
+GCF_000002945.2_ASM294v3	shifted_boundary	no_junction_support		14
+GCF_000002945.2_ASM294v3	shifted_boundary	ref_right	PASA_has_ref	1
+GCF_000002945.2_ASM294v3	split	no_junction_support		6
+GCF_000002945.2_ASM294v3	split	ref_right	PASA_has_ref	1
+GCF_000002945.2_ASM294v3	split	ref_right	PASA_lacks_ref	1

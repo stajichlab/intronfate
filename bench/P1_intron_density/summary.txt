@@ -1,0 +1,54 @@
+genomes 23448
+density per kb CDS quantiles 1/5/25/50/75/95/99%: [0.04, 0.05, 0.3, 1.22, 1.44, 3.56, 4.06]
+genomes <0.5: 6241  <1: 7426  <2: 19957  >=4: 274
+annotation_status: [('annotated', 23448)]
+
+CLASS: 30 groups with n>=20; lowest 12 by median, then highest 5
+  Microsporidia                               n=  133 median= 0.05 range= 0.00- 8.85
+  Ascomycota     Saccharomycetes              n= 2576 median= 0.05 range= 0.03- 9.78
+  Ascomycota     Pichiomycetes                n= 2932 median= 0.09 range= 0.05- 2.90
+  Ascomycota     Dipodascomycetes             n=  393 median= 0.24 range= 0.01- 1.19
+  Basidiomycota  Ustilaginomycetes            n=  133 median= 0.27 range= 0.20- 1.18
+  Kickxellomycot Kickxellomycetes             n=  171 median= 0.36 range= 0.14- 1.43
+  Ascomycota     Taphrinomycetes              n=   22 median= 0.59 range= 0.17- 0.64
+  Basidiomycota  Malasseziomycetes            n=   84 median= 0.65 range= 0.28- 1.83
+  Ascomycota     Schizosaccharomycetes        n=   67 median= 0.72 range= 0.71- 0.79
+  Ascomycota     Dothideomycetes              n= 2723 median= 1.14 range= 0.59- 3.70
+  Ascomycota     Sordariomycetes              n= 5995 median= 1.20 range= 0.61- 8.41
+  Ascomycota                                  n=   46 median= 1.33 range= 0.05- 4.14
+  Glomeromycota  Glomeromycetes               n=   59 median= 3.00 range= 2.69- 3.98
+  Basidiomycota  Pucciniomycetes              n=  117 median= 3.11 range= 1.06- 8.46
+  Basidiomycota  Microbotryomycetes           n=  318 median= 3.19 range= 0.33- 5.03
+  Basidiomycota  Tremellomycetes              n=  558 median= 3.33 range= 1.56- 6.48
+  Basidiomycota  Agaricomycetes               n= 1849 median= 3.56 range= 1.12-13.23
+  groups with median <1.0: 9 of 30; <2.0: 20
+
+ORDER: 89 groups with n>=10; lowest 12 by median, then highest 5
+  Ascomycota     Saccharomycetales            n= 2245 median= 0.05 range= 0.03- 9.78
+  Microsporidia                               n=  133 median= 0.05 range= 0.00- 8.85
+  Ascomycota     Serinales                    n= 2346 median= 0.08 range= 0.05- 2.90
+  Ascomycota     Saccharomycodales            n=   65 median= 0.08 range= 0.03- 3.14
+  Ascomycota     Pichiales                    n=  566 median= 0.10 range= 0.05- 1.13
+  Ascomycota     Ascoideales                  n=   79 median= 0.13 range= 0.08- 1.06
+  Ascomycota     Alaninales                   n=   20 median= 0.14 range= 0.13- 0.61
+  Ascomycota     Phaffomycetales              n=  185 median= 0.20 range= 0.11- 0.98
+  Ascomycota     Dipodascales                 n=  393 median= 0.24 range= 0.01- 1.19
+  Basidiomycota  Ustilaginales                n=  127 median= 0.27 range= 0.20- 1.07
+  Ascomycota     Trigonopsidales              n=   16 median= 0.33 range= 0.10- 1.09
+  Kickxellomycot Kickxellales                 n=  171 median= 0.36 range= 0.14- 1.43
+  Ascomycota     Pneumocystales               n=   11 median= 3.64 range= 3.42- 4.10
+  Basidiomycota  Polyporales                  n=  198 median= 3.66 range= 1.12- 5.85
+  Basidiomycota  Cantharellales               n=   99 median= 3.90 range= 2.40- 4.66
+  Basidiomycota  Cystofilobasidiales          n=   42 median= 4.38 range= 3.65- 6.48
+  Basidiomycota  Kriegeriales                 n=   10 median= 4.54 range= 4.04- 5.03
+  groups with median <1.0: 22 of 89; <2.0: 58
+
+Orders with largest within-order density range (n>=10):
+  Basidiomycota  Boletales                    n=  507 range= 1.65-13.23
+  Ascomycota     Saccharomycetales            n= 2245 range= 0.03- 9.78
+  Microsporidia                               n=  133 range= 0.00- 8.85
+  Ascomycota     Hypocreales                  n= 3521 range= 0.82- 8.41
+  Basidiomycota  Pucciniales                  n=  117 range= 1.06- 8.46
+  Ascomycota     Pezizales                    n=  172 range= 0.02- 6.75
+  Entomophthorom Entomophthorales             n=   11 range= 1.29- 6.94
+  Basidiomycota  Polyporales                  n=  198 range= 1.12- 5.85

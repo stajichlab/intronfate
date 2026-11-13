@@ -1,0 +1,28 @@
+outgroup Chytridiomycota: 36 tips; forms one branch: True
+
+=== threshold < 0.3/kb, core tips only (unknown tips: 55); outgroup tips reduced: 1 of 36
+  tie-break 'stay': minimum changes 24; root state 0; reductions (0->1) 14; re-expansions (1->0) 10
+  tie-break 'change': minimum changes 24; root state 0; reductions (0->1) 11; re-expansions (1->0) 13
+
+=== threshold < 0.5/kb, core tips only (unknown tips: 55); outgroup tips reduced: 1 of 36
+  tie-break 'stay': minimum changes 22; root state 0; reductions (0->1) 14; re-expansions (1->0) 8
+  tie-break 'change': minimum changes 22; root state 0; reductions (0->1) 13; re-expansions (1->0) 9
+  reduction events (late-change reconstruction), clade size and classes:
+     clade of  132 tips (119 reduced): {'Pichiomycetes': 66, 'Saccharomycetes': 42, 'Dipodascomycetes': 22} {'Ascomycota': 132}
+     clade of   29 tips ( 17 reduced): {'(none)': 29} {'Microsporidia': 29}
+     clade of   13 tips ( 13 reduced): {'Ustilaginomycetes': 12, 'Malasseziomycetes': 1} {'Basidiomycota': 13}
+     clade of    2 tips (  2 reduced): {'Kickxellomycetes': 2} {'Kickxellomycota': 2}
+     clade of    1 tips (  1 reduced): {'Caulochytriomycetes': 1} {'Chytridiomycota': 1}
+     clade of    1 tips (  1 reduced): {'Dimargaritomycetes': 1} {'Kickxellomycota': 1}
+     clade of    1 tips (  1 reduced): {'(none)': 1} {'Kickxellomycota': 1}
+     clade of    1 tips (  1 reduced): {'Kickxellomycetes': 1} {'Kickxellomycota': 1}
+     clade of    1 tips (  1 reduced): {'(none)': 1} {'Microsporidia': 1}
+     clade of    1 tips (  1 reduced): {'Microbotryomycetes': 1} {'Basidiomycota': 1}
+     clade of    1 tips (  1 reduced): {'Exobasidiomycetes': 1} {'Basidiomycota': 1}
+     clade of    1 tips (  1 reduced): {'Taphrinomycetes': 1} {'Ascomycota': 1}
+     clade of    1 tips (  1 reduced): {'Taphrinomycetes': 1} {'Ascomycota': 1}
+     clade of    1 tips (  1 reduced): {'Trigonopsidomycetes': 1} {'Ascomycota': 1}
+
+=== threshold < 1.0/kb, core tips only (unknown tips: 55); outgroup tips reduced: 1 of 36
+  tie-break 'stay': minimum changes 40; root state 0; reductions (0->1) 34; re-expansions (1->0) 6
+  tie-break 'change': minimum changes 40; root state 0; reductions (0->1) 27; re-expansions (1->0) 13

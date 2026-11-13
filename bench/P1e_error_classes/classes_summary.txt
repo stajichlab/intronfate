@@ -1,0 +1,76 @@
+GENE-LEVEL CLASS (% of reference genes); rows genome/annotation
+genome ann n               identic ends_on shifted exon_di retaine end_dif differe   split  merged opposit missing   other
+A.nidulans      cur 10516     52.4     3.8     6.4    15.5     5.9     3.4     1.8     1.6     1.4     0.6     7.1     0.0
+A.nidulans      pre 10516     31.6     3.2     2.7    11.6     5.7     6.6     8.9     4.8     0.7     0.4    23.8     0.0
+B.cinerea       cur 11698     80.0     5.6     1.5     5.3     0.9     2.0     1.3     0.2     0.4     0.2     2.4     0.0
+B.cinerea       pre 11698     37.7     4.7     0.6     7.7     3.3     7.1     8.3     5.6     0.1     0.3    24.5     0.0
+C.neoformans    cur  6975     75.2     6.3     2.4     5.8     1.4     2.0     1.2     0.8     1.1     0.2     3.4     0.0
+C.neoformans    pre  6975     64.8     7.5     2.7    11.0     1.2     2.7     2.2     0.4     3.6     0.4     3.4     0.0
+GCF_0001516(Pez cur  7420      0.5     0.1     0.1     3.0     0.5     0.2    26.3     0.0     2.3     5.4    61.5     0.0
+GCF_0001516(Pez pre  7420     22.2     3.2     8.1    19.6    15.6     4.4     4.4     1.7     3.8     1.1    15.9     0.0
+N.crassa        cur  9757     67.7     7.4     1.4     6.7     1.7     3.1     1.9     0.9     0.9     0.4     7.9     0.0
+N.crassa        pre  9757     11.7     3.2     0.0     8.7     6.1    12.1    12.7     9.5     0.0     0.5    35.4     0.0
+Picme2(Pichio)  cur  5542     54.6    14.1     0.4     2.5     6.9     1.6     2.9     1.2     7.6     0.4     7.8     0.0
+S.cerevisiae    cur  6027     84.0     4.6     0.1     0.7     0.0     0.4     0.6     0.0     0.8     0.7     8.0     0.0
+S.cerevisiae    pre  6027     77.3     6.7     0.1     0.6     0.0     1.3     0.9     0.1     0.2     0.7    12.1     0.0
+S.pombe         cur  5156     86.9     4.2     0.3     1.7     0.6     1.1     0.5     0.2     0.5     0.3     3.7     0.0
+S.pombe         pre  5156     75.2     5.7     0.2     1.6     0.6     2.9     1.1     0.3     0.9     0.3    11.2     0.0
+Z.tritici       cur 10941     40.6    13.6     2.5    10.3    10.5     5.4     6.9     2.7     1.8     0.9     4.8     0.0
+Z.tritici       pre 10941     22.9     9.2     0.7     9.5    11.0     7.2    10.3     5.1     1.2     0.7    22.2     0.0
+
+AMINO ACIDS for genes with an overlapping BFD gene and not identical: median missing aa / extra aa; % of ref aa missing (mean over all matched genes); genes losing >=10% of aa
+  A.nidulans cur             matched= 9709 nonident= 4196  med missing aa= 16.0 extra aa= 19.0 | mean % ref aa missing= 4.84 | >=10% lost: 13.2% | >=50% lost:  2.3%
+  A.nidulans pre             matched= 7966 nonident= 4638  med missing aa=112.0 extra aa=  9.0 | mean % ref aa missing=17.21 | >=10% lost: 38.3% | >=50% lost: 14.9%
+  B.cinerea cur              matched=11392 nonident= 2028  med missing aa= 17.0 extra aa=  5.0 | mean % ref aa missing= 2.00 | >=10% lost:  5.9% | >=50% lost:  0.7%
+  B.cinerea pre              matched= 8793 nonident= 4380  med missing aa=160.0 extra aa=  1.0 | mean % ref aa missing=17.65 | >=10% lost: 40.1% | >=50% lost: 14.9%
+  C.neoformans cur           matched= 6721 nonident= 1477  med missing aa= 19.0 extra aa=  8.0 | mean % ref aa missing= 2.81 | >=10% lost:  7.6% | >=50% lost:  1.5%
+  C.neoformans pre           matched= 6709 nonident= 2188  med missing aa= 28.0 extra aa= 10.0 | mean % ref aa missing= 4.67 | >=10% lost: 12.9% | >=50% lost:  2.4%
+  GCF_0001516(Pez cur        matched= 2458 nonident= 2420  med missing aa=390.0 extra aa= 23.0 | mean % ref aa missing=70.86 | >=10% lost: 96.9% | >=50% lost: 83.9%
+  GCF_0001516(Pez pre        matched= 6159 nonident= 4511  med missing aa= 27.0 extra aa= 21.0 | mean % ref aa missing=10.13 | >=10% lost: 29.7% | >=50% lost:  4.1%
+  N.crassa cur               matched= 8952 nonident= 2343  med missing aa= 42.0 extra aa=  1.0 | mean % ref aa missing= 4.69 | >=10% lost: 13.1% | >=50% lost:  2.3%
+  N.crassa pre               matched= 6251 nonident= 5110  med missing aa=181.5 extra aa=  1.0 | mean % ref aa missing=31.69 | >=10% lost: 71.8% | >=50% lost: 27.1%
+  Picme2(Pichio) cur         matched= 5089 nonident= 2061  med missing aa=  0.0 extra aa= 53.0 | mean % ref aa missing= 3.22 | >=10% lost:  9.6% | >=50% lost:  1.2%
+  S.cerevisiae cur           matched= 5501 nonident=  439  med missing aa= 15.0 extra aa=  0.0 | mean % ref aa missing= 1.12 | >=10% lost:  2.6% | >=50% lost:  0.6%
+  S.cerevisiae pre           matched= 5260 nonident=  600  med missing aa= 35.0 extra aa=  0.0 | mean % ref aa missing= 2.04 | >=10% lost:  5.3% | >=50% lost:  1.1%
+  S.pombe cur                matched= 4949 nonident=  468  med missing aa= 17.0 extra aa=  6.0 | mean % ref aa missing= 1.25 | >=10% lost:  3.4% | >=50% lost:  0.6%
+  S.pombe pre                matched= 4565 nonident=  689  med missing aa= 49.0 extra aa=  0.0 | mean % ref aa missing= 2.88 | >=10% lost:  7.9% | >=50% lost:  1.5%
+  Z.tritici cur              matched=10318 nonident= 5878  med missing aa=  0.0 extra aa= 45.0 | mean % ref aa missing= 6.24 | >=10% lost: 14.9% | >=50% lost:  3.8%
+  Z.tritici pre              matched= 8435 nonident= 5931  med missing aa= 62.0 extra aa= 21.0 | mean % ref aa missing=16.88 | >=10% lost: 39.3% | >=50% lost: 13.4%
+
+BY CLASS: median missing aa / extra aa (current only, pooled over genomes)
+  identical              n= 43779  missing aa median=  0.0  extra aa median=  0.0  mean ref aa=  497
+  ends_only              n=  4984  missing aa median=  0.0  extra aa median=  4.0  mean ref aa=  488
+  shifted_boundary       n=  1485  missing aa median=  3.0  extra aa median=  4.0  mean ref aa=  551
+  exon_difference        n=  4939  missing aa median= 27.0  extra aa median= 15.0  mean ref aa=  544
+  retained_intron        n=  2592  missing aa median=  0.0  extra aa median= 48.0  mean ref aa=  631
+  end_difference         n=  1817  missing aa median=  7.0  extra aa median=  4.0  mean ref aa=  492
+  different_structure    n=  3549  missing aa median=276.0  extra aa median= 48.0  mean ref aa=  499
+  split                  n=   719  missing aa median=277.0  extra aa median=  9.0  mean ref aa=  762
+  merged                 n=  1225  missing aa median= 13.0  extra aa median=399.0  mean ref aa=  466
+  opposite_strand_only   n=   724  missing aa median=196.5  extra aa median=  0.0  mean ref aa=  294
+  missing_gene           n=  8219  missing aa median=186.0  extra aa median=  0.0  mean ref aa=  283
+
+INTRON EVENTS in genes NOT identical (current): count and %
+  outside_span                  9278  22.3%
+  intron_differs                9241  22.2%
+  extra_noncoding               8324  20.0%
+  splices_out_ref_coding        7966  19.1%
+  retained                      3815   9.2%
+  shifted                       3004   7.2%
+
+REFERENCE introns >=200 bp absent from BFD: what happened (current), by genome
+  A.nidulans           >=200bp: retained=38 shifted=13 intron_di=671 outside_s=414 | <200bp: retained=734 shifted=1336 intron_di=1337 outside_s=1260
+  Z.tritici            >=200bp: retained=200 shifted=8 intron_di=862 outside_s=837 | <200bp: retained=1418 shifted=530 intron_di=738 outside_s=1126
+  S.cerevisiae         >=200bp: retained=0 shifted=3 intron_di=12 outside_s=14     | <200bp: retained=2 shifted=3 intron_di=5 outside_s=10
+  Picme2(Pichio)       >=200bp: retained=105 shifted=6 intron_di=120 outside_s=46  | <200bp: retained=547 shifted=24 intron_di=73 outside_s=77
+  GCF_0001516(Pezizo)  >=200bp: retained=5 shifted=6 intron_di=132 outside_s=132   | <200bp: retained=268 shifted=338 intron_di=3712 outside_s=3759
+  B.cinerea            >=200bp: retained=1 shifted=11 intron_di=61 outside_s=30    | <200bp: retained=124 shifted=218 intron_di=295 outside_s=269
+  N.crassa             >=200bp: retained=30 shifted=15 intron_di=262 outside_s=150 | <200bp: retained=183 shifted=188 intron_di=437 outside_s=522
+  C.neoformans         >=200bp: retained=0 shifted=2 intron_di=54 outside_s=28     | <200bp: retained=124 shifted=281 intron_di=406 outside_s=491
+  S.pombe              >=200bp: retained=0 shifted=3 intron_di=11 outside_s=5      | <200bp: retained=36 shifted=19 intron_di=53 outside_s=108
+
+class of genes with a missed >=200 bp ref intron (current, all genomes pooled): [('exon_difference', 1679), ('different_structure', 839), ('split', 748), ('retained_intron', 509), ('end_difference', 314), ('merged', 133)]
+
+PRE vs CUR event mix (all genomes pooled): reference introns missing
+  pre: outside_span 55% (24781)  intron_differs 24% (10784)  retained 15% (6643)  shifted 6% (2880)
+  cur: outside_span 37% (9278)  intron_differs 36% (9241)  retained 15% (3815)  shifted 12% (3004)

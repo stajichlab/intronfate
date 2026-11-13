@@ -1,0 +1,121 @@
+rows 695 errors 0
+genomes with >=200 reference introns: 660
+
+cur_prec by version
+  v1.9.0-rc.4    n= 22 p10/p50/p90=0.69/0.85/0.89
+  v1.9.0-rc.5    n= 60 p10/p50/p90=0.54/0.87/0.91
+  v1.9.0-rc.6    n=517 p10/p50/p90=0.54/0.84/0.91
+  v1.9.1-beta.2  n= 61 p10/p50/p90=0.46/0.83/0.92
+
+cur_rec by version
+  v1.9.0-rc.4    n= 22 p10/p50/p90=0.71/0.81/0.88
+  v1.9.0-rc.5    n= 60 p10/p50/p90=0.61/0.84/0.90
+  v1.9.0-rc.6    n=517 p10/p50/p90=0.55/0.83/0.91
+  v1.9.1-beta.2  n= 61 p10/p50/p90=0.62/0.80/0.91
+
+cur_rec_ge200 by version
+  v1.9.0-rc.4    n= 22 p10/p50/p90=0.14/0.35/0.54
+  v1.9.0-rc.5    n= 59 p10/p50/p90=0.19/0.33/0.63
+  v1.9.0-rc.6    n=516 p10/p50/p90=0.16/0.36/0.66
+  v1.9.1-beta.2  n= 60 p10/p50/p90=0.11/0.33/0.68
+
+cur_none_frac by version
+  v1.9.0-rc.4    n= 22 p10/p50/p90=0.07/0.13/0.17
+  v1.9.0-rc.5    n= 60 p10/p50/p90=0.06/0.11/0.25
+  v1.9.0-rc.6    n=517 p10/p50/p90=0.05/0.13/0.37
+  v1.9.1-beta.2  n= 61 p10/p50/p90=0.07/0.14/0.32
+
+cur_mrna_ratio by version
+  v1.9.0-rc.4    n= 22 p10/p50/p90=0.84/0.98/1.12
+  v1.9.0-rc.5    n= 60 p10/p50/p90=0.87/0.97/1.05
+  v1.9.0-rc.6    n=517 p10/p50/p90=0.88/0.97/1.09
+  v1.9.1-beta.2  n= 61 p10/p50/p90=0.90/0.99/1.09
+
+by PASA training output present (has_pasa_gff3)
+ pasa=1: rec n=263 p10/p50/p90=0.58/0.83/0.91 | prec n=263 p10/p50/p90=0.52/0.84/0.91
+ pasa=0: rec n=397 p10/p50/p90=0.55/0.82/0.91 | prec n=397 p10/p50/p90=0.55/0.84/0.91
+
+version x has_pasa: median recall
+  v1.9.0-rc.4    pasa=1 n= 13 median rec=0.80
+  v1.9.0-rc.4    pasa=0 n=  9 median rec=0.82
+  v1.9.0-rc.5    pasa=1 n= 34 median rec=0.84
+  v1.9.0-rc.5    pasa=0 n= 26 median rec=0.83
+  v1.9.0-rc.6    pasa=1 n=160 median rec=0.83
+  v1.9.0-rc.6    pasa=0 n=357 median rec=0.82
+  v1.9.1-beta.2  pasa=1 n= 56 median rec=0.79
+  v1.9.1-beta.2  pasa=0 n=  5 median rec=0.87
+
+by class (n>=15): median rec / prec / rec>=200 / none_frac
+  Eurotiomycetes         n=176 rec=0.85 prec=0.87 rec200=0.35 none=0.11
+  Sordariomycetes        n=154 rec=0.80 prec=0.84 rec200=0.34 none=0.14
+  Dothideomycetes        n= 76 rec=0.82 prec=0.84 rec200=0.30 none=0.14
+  Pichiomycetes          n= 46 rec=0.31 prec=0.38 rec200=0.30 none=0.65
+  Agaricomycetes         n= 44 rec=0.80 prec=0.80 rec200=0.24 none=0.14
+  Tremellomycetes        n= 31 rec=0.92 prec=0.93 rec200=0.69 none=0.04
+  Leotiomycetes          n= 18 rec=0.86 prec=0.88 rec200=0.46 none=0.10
+  Saccharomycetes        n= 17 rec=0.49 prec=0.32 rec200=0.52 none=0.46
+
+worst 25 genomes by recall (current): asm, version, class, rec, prec, rec>=200, none_frac, pasa
+  GCF_020536065.1_ASM2053606v1 v1.9.0-rc.6    Pichiomycetes    rec=0.01 prec=0.02 r200=0.00 none=0.99 pasa=0
+  GCF_000151645.1_ASM15164v1   v1.9.0-rc.5    Pezizomycetes    rec=0.02 prec=0.03 r200=0.02 none=0.95 pasa=0
+  GCF_019207285.1_ASM1920728v1 v1.9.1-beta.2  Pichiomycetes    rec=0.02 prec=0.03 r200=0.02 none=0.98 pasa=1
+  GCF_001983325.1_ASM198332v1  v1.9.1-beta.2  Pichiomycetes    rec=0.05 prec=0.18 r200=0.04 none=0.94 pasa=1
+  GCF_036630325.1_ASM3663032v1 v1.9.0-rc.5                     rec=0.07 prec=0.02 r200=0.05 none=0.90 pasa=0
+  GCF_019049425.1_ASM1904942v1 v1.9.0-rc.6    Pichiomycetes    rec=0.10 prec=0.21 r200=0.08 none=0.87 pasa=0
+  GCF_000209165.1_ASM20916v1   v1.9.0-rc.6    Pichiomycetes    rec=0.11 prec=0.52 r200=0.35 none=0.84 pasa=1
+  GCF_011074865.1_ASM1107486v2 v1.9.0-rc.6    Pichiomycetes    rec=0.12 prec=0.22 r200=0.05 none=0.86 pasa=0
+  GCF_001661235.1_Picme2       v1.9.1-beta.2  Pichiomycetes    rec=0.13 prec=0.23 r200=0.21 none=0.83 pasa=1
+  GCF_002251995.1_ASM225199v2  v1.9.0-rc.6    Dipodascomycetes rec=0.13 prec=0.10 r200=0.03 none=0.84 pasa=0
+  GCF_001661345.1_Ascru1       v1.9.0-rc.6    Saccharomycetes  rec=0.15 prec=0.18 r200=0.19 none=0.82 pasa=0
+  GCF_001664035.1_Metbi1       v1.9.0-rc.6    Pichiomycetes    rec=0.17 prec=0.27 r200=0.19 none=0.80 pasa=1
+  GCF_023343755.2_ASM2334375v2 v1.9.0-rc.6    Pichiomycetes    rec=0.17 prec=0.14 r200=0.10 none=0.79 pasa=0
+  GCF_001661415.1_Canta1       v1.9.0-rc.6    Pichiomycetes    rec=0.21 prec=0.37 r200=0.28 none=0.74 pasa=0
+  GCF_002104995.1_Linpe1       v1.9.0-rc.6    Kickxellomycetes rec=0.23 prec=0.26 r200=0.37 none=0.58 pasa=1
+  GCF_001661395.1_Hypbu1       v1.9.0-rc.5    Pichiomycetes    rec=0.23 prec=0.52 r200=0.19 none=0.73 pasa=1
+  GCF_001664045.1_Hanpo2       v1.9.0-rc.6    Pichiomycetes    rec=0.24 prec=0.20 r200=0.07 none=0.73 pasa=0
+  GCF_036884685.1_Schxyl1      v1.9.0-rc.6    Pichiomycetes    rec=0.24 prec=0.49 r200=0.34 none=0.69 pasa=0
+  GCF_000304475.1_Ka_CBS2517   v1.9.0-rc.6    Saccharomycetes  rec=0.25 prec=0.11 r200=0.55 none=0.75 pasa=0
+  GCF_024610275.1_ASM2461027v1 v1.9.0-rc.6    Pichiomycetes    rec=0.25 prec=0.28 r200=0.14 none=0.71 pasa=0
+  GCF_013402915.1_ASM1340291v1 v1.9.0-rc.6    Saccharomycetes  rec=0.25 prec=0.18 r200=0.45 none=0.73 pasa=0
+  GCF_000223485.1_Spathaspora_ v1.9.0-rc.6    Pichiomycetes    rec=0.25 prec=0.31 r200=0.29 none=0.72 pasa=0
+  GCF_030384665.1_ASM3038466v1 v1.9.0-rc.5    Pichiomycetes    rec=0.26 prec=0.32 r200=0.19 none=0.69 pasa=1
+  GCF_001640025.1_ASM164002v2  v1.9.0-rc.6    Dipodascomycetes rec=0.26 prec=0.02 r200=0.13 none=0.71 pasa=0
+  GCF_000313485.1_ASM31348v1   v1.9.0-rc.6    Saccharomycetes  rec=0.26 prec=0.13 r200=0.16 none=0.71 pasa=0
+
+PAIRED: genomes with a pre_rc6 prediction: 622
+pre_version counts: [('v1.9.0', 420), ('v1.8.17.dev263+g79b7f0f', 53), ('v1.8.17.dev197+g456b08d', 32), ('v1.8.17.dev181+gc797af4', 23), ('v1.8.17.dev243+gad5a05b', 19), ('v1.8.17', 12)]
+  rec        cur-pre: median +0.086  p10 +0.000  p90 +0.502  better 505 worse 31 same 86
+  prec       cur-pre: median +0.006  p10 -0.073  p90 +0.070  better 244 worse 214 same 164
+  rec_ge200  cur-pre: median +0.053  p10 -0.010  p90 +0.272  better 450 worse 50 same 122
+  none_frac  cur-pre: median -0.063  p10 -0.560  p90 -0.004  better 23 worse 503 same 96
+  by current version, median recall change:
+    v1.9.0-rc.4    n= 22 median +0.431
+    v1.9.0-rc.5    n= 60 median +0.413
+    v1.9.0-rc.6    n=499 median +0.073
+    v1.9.1-beta.2  n= 41 median +0.321
+
+  genomes where current is clearly worse than pre_rc6 (rec drop > 0.05):
+    GCF_000151645.1_ASM15164v1   v1.9.0-rc.5    pre=v1.9.0         rec pre 0.59->0.02 prec 0.43->0.03
+    GCF_000304475.1_Ka_CBS2517   v1.9.0-rc.6    pre=v1.8.17.dev263+g79b7f0f rec pre 0.50->0.25 prec 0.10->0.11
+    GCF_000091025.4_ASM9102v4    v1.9.0-rc.6    pre=v1.8.17.dev263+g79b7f0f rec pre 0.56->0.34 prec 0.22->0.18
+    GCF_001548555.1_ASM154855v1  v1.9.0-rc.6    pre=v1.9.0         rec pre 0.55->0.37 prec 0.24->0.30
+    GCF_011074865.1_ASM1107486v2 v1.9.0-rc.6    pre=v1.9.0         rec pre 0.29->0.12 prec 0.33->0.22
+    GCF_000235365.1_ASM23536v1   v1.9.0-rc.6    pre=v1.9.0         rec pre 0.46->0.30 prec 0.11->0.12
+    GCF_013402915.1_ASM1340291v1 v1.9.0-rc.6    pre=v1.8.17.dev263+g79b7f0f rec pre 0.41->0.25 prec 0.12->0.18
+    GCF_015039405.1_Cananz1      v1.9.0-rc.6    pre=v1.8.17.dev197+g456b08d rec pre 0.63->0.47 prec 0.51->0.44
+    GCF_000938715.1_LALA0        v1.9.0-rc.6    pre=v1.9.0         rec pre 0.45->0.33 prec 0.23->0.32
+    GCF_963989305.1_lodBeiA1     v1.9.0-rc.6    pre=v1.9.0         rec pre 0.40->0.32 prec 0.12->0.17
+    GCF_016758775.1_Suicli1      v1.9.0-rc.6    pre=v1.8.17.dev181+gc797af4 rec pre 0.81->0.74 prec 0.79->0.77
+    GCF_026319265.1_ASM2631926v1 v1.9.0-rc.6    pre=v1.8.17.dev263+g79b7f0f rec pre 0.87->0.81 prec 0.79->0.65
+    GCF_016647635.1_Suisub1      v1.9.0-rc.6    pre=v1.8.17.dev181+gc797af4 rec pre 0.72->0.67 prec 0.63->0.63
+    GCF_019915245.1_ASM1991524v1 v1.9.0-rc.6    pre=v1.8.17.dev243+gad5a05b rec pre 0.88->0.83 prec 0.80->0.68
+    GCF_016758755.1_Suidis1      v1.9.0-rc.6    pre=v1.8.17.dev197+g456b08d rec pre 0.76->0.70 prec 0.69->0.67
+
+the reference genomes (current vs pre_rc6): rec / prec / rec>=200
+  GCF_000011425.1_ASM1142v1  cur v1.9.1-beta.2  0.70/0.78/0.11   pre v1.9.0         0.38/0.84/0.06
+  GCF_000143535.2_ASM14353v4 cur v1.9.0-rc.6    0.92/0.94/0.80   pre v1.9.0         0.40/0.98/0.31
+  GCF_000149245.1_CNA3       cur v1.9.0-rc.6    0.95/0.97/0.64   pre v1.9.0         0.94/0.93/0.65
+  GCF_000182925.2_NC12       cur v1.9.0-rc.5    0.81/0.92/0.47   pre v1.9.0         0.03/0.99/0.02
+  GCF_000146045.2_R64        cur v1.9.0-rc.6    0.63/0.66/0.70   pre v1.9.0         0.13/0.65/0.21
+  GCF_000002945.2_ASM294v3   cur v1.9.1-beta.2  0.95/0.96/0.94   pre v1.9.0         0.78/0.98/0.75
+  GCF_000219625.1_MYCGR_v2.0 cur v1.9.0-rc.4    0.65/0.69/0.07   pre v1.9.0         0.26/0.79/0.03

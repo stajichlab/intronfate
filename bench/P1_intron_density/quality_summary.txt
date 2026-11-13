@@ -1,0 +1,78 @@
+genomes with density + assembly stats: 23448
+
+== Spearman correlations ==
+ALL                                n=23448  rho(dens,N50)=-0.05  rho(dens,contigs)=+0.30  rho(dens,CDSbp)=+0.53
+class Sordariomycetes              n= 5995  rho(dens,N50)=+0.11  rho(dens,contigs)=+0.01  rho(dens,CDSbp)=+0.52
+class Eurotiomycetes               n= 3206  rho(dens,N50)=-0.03  rho(dens,contigs)=+0.05  rho(dens,CDSbp)=+0.35
+class Pichiomycetes                n= 2932  rho(dens,N50)=-0.05  rho(dens,contigs)=+0.12  rho(dens,CDSbp)=+0.05
+class Dothideomycetes              n= 2723  rho(dens,N50)=-0.24  rho(dens,contigs)=+0.33  rho(dens,CDSbp)=+0.38
+class Saccharomycetes              n= 2576  rho(dens,N50)=-0.19  rho(dens,contigs)=+0.31  rho(dens,CDSbp)=+0.05
+class Agaricomycetes               n= 1849  rho(dens,N50)=+0.15  rho(dens,contigs)=-0.17  rho(dens,CDSbp)=-0.04
+class Tremellomycetes              n=  558  rho(dens,N50)=-0.22  rho(dens,contigs)=+0.16  rho(dens,CDSbp)=-0.20
+class Lecanoromycetes              n=  478  rho(dens,N50)=-0.10  rho(dens,contigs)=+0.16  rho(dens,CDSbp)=+0.12
+class Leotiomycetes                n=  429  rho(dens,N50)=+0.22  rho(dens,contigs)=-0.18  rho(dens,CDSbp)=+0.46
+class Dipodascomycetes             n=  393  rho(dens,N50)=-0.46  rho(dens,contigs)=+0.52  rho(dens,CDSbp)=+0.75
+class Microbotryomycetes           n=  318  rho(dens,N50)=-0.25  rho(dens,contigs)=+0.15  rho(dens,CDSbp)=+0.25
+class Mucoromycetes                n=  273  rho(dens,N50)=+0.07  rho(dens,contigs)=-0.06  rho(dens,CDSbp)=-0.03
+class                              n=  184  rho(dens,N50)=-0.10  rho(dens,contigs)=+0.58  rho(dens,CDSbp)=+0.64
+class Pezizomycetes                n=  172  rho(dens,N50)=-0.26  rho(dens,contigs)=+0.22  rho(dens,CDSbp)=-0.20
+class Kickxellomycetes             n=  171  rho(dens,N50)=-0.46  rho(dens,contigs)=+0.61  rho(dens,CDSbp)=-0.22
+class Ustilaginomycetes            n=  133  rho(dens,N50)=+0.21  rho(dens,contigs)=-0.18  rho(dens,CDSbp)=-0.16
+class Pucciniomycetes              n=  117  rho(dens,N50)=+0.68  rho(dens,contigs)=-0.18  rho(dens,CDSbp)=+0.73
+class Mortierellomycetes           n=  100  rho(dens,N50)=-0.43  rho(dens,contigs)=+0.40  rho(dens,CDSbp)=-0.44
+class Exobasidiomycetes            n=   92  rho(dens,N50)=-0.33  rho(dens,contigs)=+0.42  rho(dens,CDSbp)=+0.45
+class Malasseziomycetes            n=   84  rho(dens,N50)=+0.00  rho(dens,contigs)=+0.04  rho(dens,CDSbp)=-0.03
+class Chytridiomycetes             n=   82  rho(dens,N50)=-0.24  rho(dens,contigs)=+0.31  rho(dens,CDSbp)=+0.16
+class Orbiliomycetes               n=   67  rho(dens,N50)=+0.03  rho(dens,contigs)=-0.01  rho(dens,CDSbp)=-0.52
+class Schizosaccharomycetes        n=   67  rho(dens,N50)=+0.21  rho(dens,contigs)=+0.04  rho(dens,CDSbp)=+0.13
+class Glomeromycetes               n=   59  rho(dens,N50)=-0.32  rho(dens,contigs)=+0.29  rho(dens,CDSbp)=-0.47
+class Lipomycetes                  n=   59  rho(dens,N50)=-0.07  rho(dens,contigs)=+0.29  rho(dens,CDSbp)=+0.52
+class Wallemiomycetes              n=   51  rho(dens,N50)=-0.56  rho(dens,contigs)=+0.42  rho(dens,CDSbp)=-0.10
+
+== Outliers (class median + 3 scaled MAD, or >8/kb) ==
+
+high-density outliers: 1214 of 23448
+  N50 bp   median outliers=     233,770  non-outliers=     308,755
+  contigs  median outliers=         226  non-outliers=         225
+  CDS bp   median outliers=   8,670,011  non-outliers=  15,215,470
+  by class: [('Saccharomycetes', 483), ('Pichiomycetes', 228), ('Sordariomycetes', 167), ('Pucciniomycetes', 46), ('', 45), ('Tremellomycetes', 45)]
+
+low-density outliers: 705 of 23448
+  N50 bp   median outliers=     740,625  non-outliers=     308,755
+  contigs  median outliers=         128  non-outliers=         225
+  CDS bp   median outliers=  13,628,412  non-outliers=  15,215,470
+  by class: [('Eurotiomycetes', 247), ('Tremellomycetes', 121), ('Sordariomycetes', 118), ('Agaricomycetes', 42), ('Microbotryomycetes', 40), ('Lecanoromycetes', 24)]
+
+== Outlier rate and density spread by N50 bin (all genomes) ==
+  N50         0-     50,000: n= 3811 high= 9.6% low= 2.4% dens p5/p50/p95=0.06/1.30/3.72
+  N50    50,000-    200,000: n= 6035 high= 3.5% low= 2.0% dens p5/p50/p95=0.06/1.22/3.52
+  N50   200,000-  1,000,000: n= 7421 high= 4.4% low= 2.7% dens p5/p50/p95=0.04/1.14/3.34
+  N50 1,000,000-  5,000,000: n= 5414 high= 4.4% low= 4.9% dens p5/p50/p95=0.06/1.23/3.60
+  N50 5,000,000-1,000,000,000: n=  767 high= 9.9% low= 3.8% dens p5/p50/p95=1.05/1.28/5.42
+
+== Top 25 densities (genome, class, density, N50, contigs, CDS bp) ==
+  F36C489C Agaricomycetes      13.23 N50=     8,240 ctg=  3,808 cds=  1,029,440 Tylopilus aff. balloui
+  F113D02F Endogonomycetes     11.48 N50=     6,349 ctg= 29,420 cds= 12,028,123 Jimgerdemannia lactiflua
+  F2EBAB33 Saccharomycetes      9.78 N50=    12,302 ctg=    887 cds=     63,880 Saccharomyces kudriavzevii
+  F6238FAD Agaricomycetes       9.22 N50=     6,980 ctg=  4,246 cds=    760,543 Rubroboletus sp. TRTC157201
+  FBFB4B38                      8.85 N50= 1,444,059 ctg=     17 cds=    670,092 Hamiltosporidium tvaerminnensi
+  F2CAA5A4 Pucciniomycetes      8.46 N50=47,183,946 ctg=    350 cds= 57,720,882 Phakopsora pachyrhizi
+  F6AC4372 Sordariomycetes      8.41 N50=     3,016 ctg=  4,268 cds=  3,369,387 Fusarium oxysporum
+  FF0EACF6 Saccharomycetes      8.38 N50=    12,484 ctg=    933 cds=     14,431 Saccharomyces kudriavzevii
+  F13E60AB Agaricomycetes       8.02 N50=     7,187 ctg=  5,848 cds=    725,221 Boletus putidus
+  F58AA80D Agaricomycetes       7.73 N50=     6,184 ctg=  4,877 cds=    647,639 Boletaceae sp. TRTC168574
+  F4A2A445 Agaricomycetes       7.23 N50=     6,513 ctg=  6,880 cds=  1,957,922 Phylloporus sp. TRTC163509
+  FF1E50A8 Sordariomycetes      7.00 N50=     3,115 ctg=  5,018 cds=  3,839,774 Fusarium oxysporum
+  FCF75579 Entomophthoromycet   6.94 N50=   139,493 ctg= 19,691 cds=    241,123 Massospora cicadina
+  F2C21852 Pezizomycetes        6.75 N50= 1,810,163 ctg=    652 cds=  3,718,897 Tuber magnatum
+  F1766F9D Agaricomycetes       6.74 N50=     8,227 ctg=  5,385 cds=  2,087,963 Boletaceae sp. TRTC157249
+  F560E16E Tremellomycetes      6.48 N50=   571,807 ctg=     99 cds= 10,582,705 Tausonia pamirica
+  FC375F13 Pucciniomycetes      6.38 N50=   222,464 ctg=  7,464 cds= 63,188,192 Phakopsora pachyrhizi
+  F64AD3CA Saccharomycetes      6.25 N50=    12,307 ctg=  1,066 cds=    312,628 Saccharomyces kudriavzevii
+  F268574B Endogonomycetes      6.17 N50=    11,551 ctg= 26,180 cds= 28,912,671 Jimgerdemannia flammicorona
+  FCF521AA Agaricomycetes       6.16 N50=     8,148 ctg=  5,002 cds=  1,020,927 Boletaceae sp. KM206743
+  FF3347D2 Agaricomycetes       6.14 N50=     6,044 ctg=  6,399 cds=  1,272,010 Hemileccinum hortonii
+  FB0FE66E Agaricomycetes       6.09 N50=    10,173 ctg=  4,563 cds=    488,295 Xerocomus alliaceus
+  FD5C30B6 Agaricomycetes       6.00 N50=    10,245 ctg= 14,603 cds= 12,269,191 Leucocoprinus gongylophorus
+  FB2B1CC7 Pezizomycetes        5.93 N50=   337,377 ctg=  1,315 cds=  4,556,919 Tuber brumale
+  F8ADB3F0 Pucciniomycetes      5.88 N50=47,183,946 ctg=    350 cds= 89,515,027 Phakopsora pachyrhizi

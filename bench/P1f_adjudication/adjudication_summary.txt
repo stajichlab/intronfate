@@ -1,0 +1,75 @@
+INTRON LEVEL (introns lying inside a Trinity transcript span). % with exact transcript junction / conflicting junction / none
+genome        set       len         n  exact% conflict%  none%
+A.nidulans    shared    <200     6077     96%        2%     1%
+A.nidulans    shared    >=200      73     89%        0%    11%
+A.nidulans    bfd_only  <200     1377     88%        6%     6%
+A.nidulans    bfd_only  >=200      37     70%       22%     8%
+A.nidulans    ref_only  <200     1145      6%       53%    41%
+A.nidulans    ref_only  >=200     170      3%       54%    43%
+Z.tritici     shared    <200     4950     92%        2%     6%
+Z.tritici     shared    >=200      83     95%        1%     4%
+Z.tritici     bfd_only  <200     1966     81%        5%    14%
+Z.tritici     bfd_only  >=200      70     57%       14%    29%
+Z.tritici     ref_only  <200     1518      6%       26%    69%
+Z.tritici     ref_only  >=200     448      1%       29%    70%
+S.cerevisiae  shared    <200       62     92%        0%     8%
+S.cerevisiae  shared    >=200      43    100%        0%     0%
+S.cerevisiae  bfd_only  <200       23     17%        0%    83%
+S.cerevisiae  ref_only  <200       21     19%        0%    81%
+S.cerevisiae  ref_only  >=200      10     60%       30%    10%
+Picme2        shared    <200       20     85%       10%     5%
+Picme2        shared    >=200      33    100%        0%     0%
+Picme2        bfd_only  <200       17     53%        6%    41%
+Picme2        ref_only  <200      110      9%        4%    87%
+B.cinerea     shared    <200     8281     95%        2%     3%
+B.cinerea     shared    >=200     377     91%        2%     7%
+B.cinerea     bfd_only  <200      297     51%       10%    39%
+B.cinerea     bfd_only  >=200      37     54%       16%    30%
+B.cinerea     ref_only  <200      418     37%       34%    29%
+B.cinerea     ref_only  >=200      59     41%       46%    14%
+N.crassa      shared    <200     5163     96%        2%     2%
+N.crassa      shared    >=200     352     97%        2%     1%
+N.crassa      bfd_only  <200      193     57%        9%    34%
+N.crassa      bfd_only  >=200      49     67%       20%    12%
+N.crassa      ref_only  <200      364     39%       26%    35%
+N.crassa      ref_only  >=200      68     38%       43%    19%
+C.neoformans  shared    <200    14078     93%        4%     3%
+C.neoformans  shared    >=200     131     91%        5%     4%
+C.neoformans  bfd_only  <200      370     61%       18%    21%
+C.neoformans  bfd_only  >=200      23     35%       43%    22%
+C.neoformans  ref_only  <200      626     35%       35%    30%
+C.neoformans  ref_only  >=200      48     12%       50%    38%
+S.pombe       shared    <200     2164     93%        2%     6%
+S.pombe       shared    >=200     141     97%        1%     1%
+S.pombe       bfd_only  <200       45     38%       11%    51%
+S.pombe       ref_only  <200       89     48%        4%    47%
+
+GENE LEVEL (matched non-identical genes, classes other than ends_only/missing): verdict counts per genome
+genome        bfd_right ref_right   mixed  no_junction | among ref_right: PASA has ref (EVM overrode) / PASA lacks ref | among bfd_right: PASA has BFD / lacks
+A.nidulans          705        40      18         3030 | 16 / 24 | 629 / 76
+Z.tritici           743        67      27         3557 | 20 / 47 | 590 / 153
+S.cerevisiae          8         3       1          150 | 1 / 2 | 8 / 0
+Picme2               17        12       0         1253 | 0 / 12 | 6 / 11
+B.cinerea           197        40      24         1110 | 9 / 31 | 158 / 39
+N.crassa            154        84      18         1369 | 19 / 65 | 98 / 56
+C.neoformans        134        87      32          783 | 15 / 72 | 71 / 63
+S.pombe              25        27       2          199 | 5 / 22 | 19 / 6
+ALL                1983       360     122        11451 | 85 / 275 | 1579 / 404
+
+ref_right and bfd_right by class (all genomes pooled):
+  exon_difference      bfd_right=  837 ref_right= 109 mixed= 51 no_junction=  3721
+  retained_intron      bfd_right=  172 ref_right=  43 mixed=  4 no_junction=  2335
+  end_difference       bfd_right=  311 ref_right=  72 mixed=  0 no_junction=  1417
+  different_structure  bfd_right=  171 ref_right=  35 mixed= 11 no_junction=  1383
+  shifted_boundary     bfd_right=  361 ref_right=  14 mixed= 32 no_junction=  1068
+  merged               bfd_right=  101 ref_right=  10 mixed=  5 no_junction=   935
+  split                bfd_right=   30 ref_right=  77 mixed= 19 no_junction=   592
+
+ref_right by class and PASA status (pooled): where the correct (RNA-supported) reference structure was lost
+  different_structure  PASA_has_ref=  3 PASA_lacks_ref= 32
+  end_difference       PASA_has_ref= 13 PASA_lacks_ref= 59
+  exon_difference      PASA_has_ref= 22 PASA_lacks_ref= 87
+  merged               PASA_has_ref=  3 PASA_lacks_ref=  7
+  retained_intron      PASA_has_ref=  3 PASA_lacks_ref= 40
+  shifted_boundary     PASA_has_ref=  5 PASA_lacks_ref=  9
+  split                PASA_has_ref= 36 PASA_lacks_ref= 41

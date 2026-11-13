@@ -1,0 +1,150 @@
+genome	feature	category	ref_n	missed	recall
+A.nidulans FGSC A4	gene_intron_count	1-1	2863	965	0.663
+A.nidulans FGSC A4	gene_intron_count	11-inf	729	335	0.540
+A.nidulans FGSC A4	gene_intron_count	2-2	4721	1283	0.728
+A.nidulans FGSC A4	gene_intron_count	3-5	11377	3226	0.716
+A.nidulans FGSC A4	gene_intron_count	6-10	4751	1473	0.690
+A.nidulans FGSC A4	length	0-50	4383	1351	0.692
+A.nidulans FGSC A4	length	100-200	2988	2084	0.303
+A.nidulans FGSC A4	length	200-500	1547	1377	0.110
+A.nidulans FGSC A4	length	50-70	11550	1121	0.903
+A.nidulans FGSC A4	length	500-inf	164	153	0.067
+A.nidulans FGSC A4	length	70-100	3809	1196	0.686
+A.nidulans FGSC A4	position	first	6200	1688	0.728
+A.nidulans FGSC A4	position	last	6201	1870	0.698
+A.nidulans FGSC A4	position	middle	9177	2759	0.699
+A.nidulans FGSC A4	position	only	2863	965	0.663
+A.nidulans FGSC A4	bfd_length	0-50	4002	970	0.758
+A.nidulans FGSC A4	bfd_length	100-200	1148	244	0.787
+A.nidulans FGSC A4	bfd_length	200-500	287	117	0.592
+A.nidulans FGSC A4	bfd_length	50-70	13244	2815	0.787
+A.nidulans FGSC A4	bfd_length	500-inf	88	77	0.125
+A.nidulans FGSC A4	bfd_length	70-100	3310	697	0.789
+A.nidulans FGSC A4	bfd_position	first	5642	1245	0.779
+A.nidulans FGSC A4	bfd_position	last	5642	1150	0.796
+A.nidulans FGSC A4	bfd_position	middle	8140	1933	0.763
+A.nidulans FGSC A4	bfd_position	only	2655	592	0.777
+C.neoformans H99	gene_intron_count	1-1	630	192	0.695
+C.neoformans H99	gene_intron_count	11-inf	9346	406	0.957
+C.neoformans H99	gene_intron_count	2-2	1865	245	0.869
+C.neoformans H99	gene_intron_count	3-5	10618	648	0.939
+C.neoformans H99	gene_intron_count	6-10	14404	498	0.965
+C.neoformans H99	length	0-50	6200	295	0.952
+C.neoformans H99	length	100-200	1375	288	0.791
+C.neoformans H99	length	200-500	394	124	0.685
+C.neoformans H99	length	50-70	24862	901	0.964
+C.neoformans H99	length	500-inf	59	38	0.356
+C.neoformans H99	length	70-100	3973	343	0.914
+C.neoformans H99	position	first	6221	444	0.929
+C.neoformans H99	position	last	6263	445	0.929
+C.neoformans H99	position	middle	23749	908	0.962
+C.neoformans H99	position	only	630	192	0.695
+C.neoformans H99	bfd_length	0-50	6125	220	0.964
+C.neoformans H99	bfd_length	100-200	1234	147	0.881
+C.neoformans H99	bfd_length	200-500	346	76	0.780
+C.neoformans H99	bfd_length	50-70	24427	466	0.981
+C.neoformans H99	bfd_length	500-inf	60	39	0.350
+C.neoformans H99	bfd_length	70-100	3775	145	0.962
+C.neoformans H99	bfd_position	first	6048	292	0.952
+C.neoformans H99	bfd_position	last	6048	235	0.961
+C.neoformans H99	bfd_position	middle	23316	469	0.980
+C.neoformans H99	bfd_position	only	555	97	0.825
+N.crassa OR74A	gene_intron_count	1-1	3393	722	0.787
+N.crassa OR74A	gene_intron_count	11-inf	105	28	0.733
+N.crassa OR74A	gene_intron_count	2-2	4509	832	0.815
+N.crassa OR74A	gene_intron_count	3-5	6608	1234	0.813
+N.crassa OR74A	gene_intron_count	6-10	1313	196	0.851
+N.crassa OR74A	length	0-50	147	65	0.558
+N.crassa OR74A	length	100-200	2951	869	0.706
+N.crassa OR74A	length	200-500	1419	731	0.485
+N.crassa OR74A	length	50-70	6433	553	0.914
+N.crassa OR74A	length	500-inf	266	160	0.398
+N.crassa OR74A	length	70-100	4712	634	0.865
+N.crassa OR74A	position	first	4329	834	0.807
+N.crassa OR74A	position	last	4315	782	0.819
+N.crassa OR74A	position	middle	3891	674	0.827
+N.crassa OR74A	position	only	3393	722	0.787
+N.crassa OR74A	bfd_length	0-50	143	61	0.573
+N.crassa OR74A	bfd_length	100-200	2281	199	0.913
+N.crassa OR74A	bfd_length	200-500	847	159	0.812
+N.crassa OR74A	bfd_length	50-70	6198	318	0.949
+N.crassa OR74A	bfd_length	500-inf	285	179	0.372
+N.crassa OR74A	bfd_length	70-100	4324	246	0.943
+N.crassa OR74A	bfd_position	first	3797	284	0.925
+N.crassa OR74A	bfd_position	last	3797	304	0.920
+N.crassa OR74A	bfd_position	middle	3398	197	0.942
+N.crassa OR74A	bfd_position	only	3086	377	0.878
+S.cerevisiae S288C	gene_intron_count	1-1	309	107	0.654
+S.cerevisiae S288C	gene_intron_count	2-2	22	7	0.682
+S.cerevisiae S288C	gene_intron_count	3-5	5	5	0.000
+S.cerevisiae S288C	gene_intron_count	6-10	7	7	0.000
+S.cerevisiae S288C	length	0-50	51	51	0.000
+S.cerevisiae S288C	length	100-200	54	15	0.722
+S.cerevisiae S288C	length	200-500	101	22	0.782
+S.cerevisiae S288C	length	50-70	16	3	0.812
+S.cerevisiae S288C	length	500-inf	34	18	0.471
+S.cerevisiae S288C	length	70-100	87	17	0.805
+S.cerevisiae S288C	position	first	13	6	0.538
+S.cerevisiae S288C	position	last	13	5	0.615
+S.cerevisiae S288C	position	middle	8	8	0.000
+S.cerevisiae S288C	position	only	309	107	0.654
+S.cerevisiae S288C	bfd_length	0-50	36	36	0.000
+S.cerevisiae S288C	bfd_length	100-200	58	19	0.672
+S.cerevisiae S288C	bfd_length	200-500	101	22	0.782
+S.cerevisiae S288C	bfd_length	50-70	26	13	0.500
+S.cerevisiae S288C	bfd_length	500-inf	30	14	0.533
+S.cerevisiae S288C	bfd_length	70-100	78	8	0.897
+S.cerevisiae S288C	bfd_position	first	15	8	0.467
+S.cerevisiae S288C	bfd_position	last	15	6	0.600
+S.cerevisiae S288C	bfd_position	middle	2	2	0.000
+S.cerevisiae S288C	bfd_position	only	297	96	0.677
+S.pombe 972h-	gene_intron_count	1-1	1065	96	0.910
+S.pombe 972h-	gene_intron_count	11-inf	99	10	0.899
+S.pombe 972h-	gene_intron_count	2-2	1322	58	0.956
+S.pombe 972h-	gene_intron_count	3-5	2079	90	0.957
+S.pombe 972h-	gene_intron_count	6-10	528	23	0.956
+S.pombe 972h-	length	0-50	1843	135	0.927
+S.pombe 972h-	length	100-200	719	36	0.950
+S.pombe 972h-	length	200-500	293	15	0.949
+S.pombe 972h-	length	50-70	1577	59	0.963
+S.pombe 972h-	length	500-inf	23	5	0.783
+S.pombe 972h-	length	70-100	638	27	0.958
+S.pombe 972h-	position	first	1329	59	0.956
+S.pombe 972h-	position	last	1330	58	0.956
+S.pombe 972h-	position	middle	1369	64	0.953
+S.pombe 972h-	position	only	1065	96	0.910
+S.pombe 972h-	bfd_length	0-50	1756	48	0.973
+S.pombe 972h-	bfd_length	100-200	711	28	0.961
+S.pombe 972h-	bfd_length	200-500	312	34	0.891
+S.pombe 972h-	bfd_length	50-70	1554	36	0.977
+S.pombe 972h-	bfd_length	500-inf	28	10	0.643
+S.pombe 972h-	bfd_length	70-100	631	20	0.968
+S.pombe 972h-	bfd_position	first	1318	40	0.970
+S.pombe 972h-	bfd_position	last	1318	35	0.973
+S.pombe 972h-	bfd_position	middle	1335	42	0.969
+S.pombe 972h-	bfd_position	only	1021	59	0.942
+Z.tritici IPO323	gene_intron_count	1-1	3223	1116	0.654
+Z.tritici IPO323	gene_intron_count	11-inf	408	182	0.554
+Z.tritici IPO323	gene_intron_count	2-2	4202	1382	0.671
+Z.tritici IPO323	gene_intron_count	3-5	6957	2487	0.643
+Z.tritici IPO323	gene_intron_count	6-10	2582	956	0.630
+Z.tritici IPO323	length	0-50	887	296	0.666
+Z.tritici IPO323	length	100-200	2542	1692	0.334
+Z.tritici IPO323	length	200-500	1704	1561	0.084
+Z.tritici IPO323	length	50-70	9566	1101	0.885
+Z.tritici IPO323	length	500-inf	600	577	0.038
+Z.tritici IPO323	length	70-100	2073	896	0.568
+Z.tritici IPO323	position	first	4433	1473	0.668
+Z.tritici IPO323	position	last	4433	1570	0.646
+Z.tritici IPO323	position	middle	5283	1964	0.628
+Z.tritici IPO323	position	only	3223	1116	0.654
+Z.tritici IPO323	bfd_length	0-50	1142	551	0.518
+Z.tritici IPO323	bfd_length	100-200	1283	433	0.663
+Z.tritici IPO323	bfd_length	200-500	342	199	0.418
+Z.tritici IPO323	bfd_length	50-70	11733	3268	0.721
+Z.tritici IPO323	bfd_length	500-inf	201	178	0.114
+Z.tritici IPO323	bfd_length	70-100	1684	507	0.699
+Z.tritici IPO323	bfd_position	first	4106	1355	0.670
+Z.tritici IPO323	bfd_position	last	4106	1212	0.705
+Z.tritici IPO323	bfd_position	middle	4240	1044	0.754
+Z.tritici IPO323	bfd_position	only	3933	1525	0.612
