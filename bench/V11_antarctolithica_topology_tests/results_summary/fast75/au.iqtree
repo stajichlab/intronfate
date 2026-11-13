@@ -1,0 +1,211 @@
+IQ-TREE 2.2.2.6 COVID-edition built May 27 2023
+
+Input file name: variants/fast75.fasta
+Type of analysis: tree reconstruction
+Random seed number: 1
+
+REFERENCES
+----------
+
+To cite IQ-TREE please use:
+
+Bui Quang Minh, Heiko A. Schmidt, Olga Chernomor, Dominik Schrempf,
+Michael D. Woodhams, Arndt von Haeseler, and Robert Lanfear (2020)
+IQ-TREE 2: New models and efficient methods for phylogenetic inference
+in the genomic era. Mol. Biol. Evol., in press.
+https://doi.org/10.1093/molbev/msaa015
+
+SEQUENCE ALIGNMENT
+------------------
+
+Input data: 37 sequences with 50000 amino-acid sites
+Number of constant sites: 21313 (= 42.626% of all sites)
+Number of invariant (constant or ambiguous constant) sites: 21313 (= 42.626% of all sites)
+Number of parsimony informative sites: 15674
+Number of distinct site patterns: 25420
+
+SUBSTITUTION PROCESS
+--------------------
+
+Model of substitution: LG+F+G4
+
+State frequencies: (empirical counts from alignment)
+
+  pi(A) = 0.0694
+  pi(R) = 0.0694
+  pi(N) = 0.0361
+  pi(D) = 0.0623
+  pi(C) = 0.0164
+  pi(Q) = 0.0320
+  pi(E) = 0.0537
+  pi(G) = 0.0811
+  pi(H) = 0.0250
+  pi(I) = 0.0506
+  pi(L) = 0.1153
+  pi(K) = 0.0487
+  pi(M) = 0.0253
+  pi(F) = 0.0531
+  pi(P) = 0.0507
+  pi(S) = 0.0531
+  pi(T) = 0.0461
+  pi(W) = 0.0184
+  pi(Y) = 0.0358
+  pi(V) = 0.0578
+
+Model of rate heterogeneity: Gamma with 4 categories
+Gamma shape alpha: 1.4552
+
+ Category  Relative_rate  Proportion
+  1         0.2183         0.2500
+  2         0.5809         0.2500
+  3         1.0477         0.2500
+  4         2.1531         0.2500
+Relative rates are computed as MEAN of the portion of the Gamma distribution falling in the category.
+
+STARTING TREE
+-------------
+
+Log-likelihood of the tree: -549665.9100 (s.e. 1770.2926)
+Unconstrained log-likelihood (without tree): -403757.6754
+Number of free parameters (#branches + #model parameters): 91
+Akaike information criterion (AIC) score: 1099513.8200
+Corrected Akaike information criterion (AICc) score: 1099514.1555
+Bayesian information criterion (BIC) score: 1100316.4198
+
+Total tree length (sum of branch lengths): 1.3164
+Sum of internal branch lengths: 0.2758 (20.9544% of tree length)
+
+NOTE: Tree is UNROOTED although outgroup taxon 'Mmucedo' is drawn at root
+
++--------------------------------------Mmucedo
+|
+|             +--------------------------------Smaydis
++-------------|
+|             +-----------------------------------------Cneoformans
+|
+|                                   +------------------Spombe
+|            +----------------------|
+|            |                      +-------------------Sjaponicus
+|         +--|
+|         |  |                     +--Taphrina
+|         |  |              +------|
+|         |  |              |      +--Tdeformans
+|         |  |           +--|
+|         |  |           |  +-----------Protomyces
+|         |  +-----------|
+|         |              +-----------------------Savitreella
++---------|
+          |     +--------------Saitoella
+          |  +--|
+          |  |  +-----------------------Neolecta
+          +--|
+             |                  +-------------------------------Yarrowia
+             |               +--|
+             |               |  +--------------Geotrichum
+             |            +--|
+             |            |  +--------------------------Alloascoidea
+             |         +--|
+             |         |  +---------------------Trigonopsis
+             |     +---|
+             |     |   |        +---Lipomyces
+             |     |   |     +--|
+             |     |   |     |  |       +--Kockiozyma
+             |     |   |     |  |  +----|
+             |     |   |     |  |  |    +--Myxozyma
+             |     |   |     |  +--|
+             |     |   |     |     +------Limtongia
+             |     |   |  +--|
+             |     |   |  |  +------Dipodascopsis
+             |     |   +--|
+             |     |      |   +-----Babjevia
+             |     |      +---|
+             |     |          +------Neoaidaea
+             |  +--|
+             |  |  |      +------------Pyronema
+             |  |  |   +--|
+             |  |  |   |  +-----------Orbilia
+             |  |  +---|
+             |  |      |            +-------Cladonia
+             |  |      |         +--|
+             |  |      |         |  |  +-------Anidulans
+             |  |      |         |  +--|
+             |  |      |         |     +-------------Exophiala
+             |  |      |      +--|
+             |  |      |      |  |  +-------------------Arthonia
+             |  |      |      |  +--|
+             |  |      |      |     |  +------Cryomyces
+             |  |      |      |     +--|
+             |  |      |      |        |     +-----Zymoseptoria
+             |  |      |      |        +-----|
+             |  |      |      |              +-----Hortaea
+             |  |      |   +--|
+             |  |      |   |  |  +----------Lichina
+             |  |      |   |  +--|
+             |  |      |   |     +----Geoglossum
+             |  |      +---|
+             |  |          |     +----Botrytis
+             |  |          |  +--|
+             |  |          |  |  +-------Antarctomyces
+             |  |          +--|
+             |  |             +-------------Ncrassa
+             +--|
+                +-------------------------Alith
+
+Tree in newick format:
+
+(Mmucedo:0.0754109188,(Smaydis:0.0639445901,Cneoformans:0.0807787981):0.0287347444,(((Spombe:0.0383231847,Sjaponicus:0.0399480072):0.0447487482,(((Taphrina:0.0018654412,Tdeformans:0.0026548108):0.0153261080,Protomyces:0.0242574826):0.0055750854,Savitreella:0.0467500234):0.0243512259):0.0048643810,((Saitoella:0.0294192243,Neolecta:0.0463346650):0.0025517261,((((((Yarrowia:0.0614122753,Geotrichum:0.0304921039):0.0052800985,Alloascoidea:0.0519818101):0.0073175144,Trigonopsis:0.0437821375):0.0032535155,(((Lipomyces:0.0086982432,((Kockiozyma:0.0034297588,Myxozyma:0.0034692042):0.0105450629,Limtongia:0.0152846662):0.0021430267):0.0026361770,Dipodascopsis:0.0148805126):0.0055668026,(Babjevia:0.0128584223,Neoaidaea:0.0136135803):0.0085983176):0.0073672532):0.0086462475,((Pyronema:0.0267927289,Orbilia:0.0248688903):0.0025288623,((((Cladonia:0.0167078632,(Anidulans:0.0170475307,Exophiala:0.0269823222):0.0048219007):0.0015185917,(Arthonia:0.0394986662,(Cryomyces:0.0144335675,(Zymoseptoria:0.0127210512,Hortaea:0.0128909583):0.0129092883):0.0032097505):0.0046724421):0.0012378975,(Lichina:0.0218034153,Geoglossum:0.0109452677):0.0016805853):0.0004511958,((Botrytis:0.0108224241,Antarctomyces:0.0164859162):0.0032993274,Ncrassa:0.0276525875):0.0067163879):0.0079661284):0.0081342358):0.0020096199,Alith:0.0513109981):0.0058415603):0.0010933728):0.0202453435);
+
+
+USER TREES
+----------
+
+See var_fast75/au.trees for trees with branch lengths.
+
+Tree      logL    deltaL  bp-RELL    p-KH     p-SH    p-WKH    p-WSH       c-ELW       p-AU
+-------------------------------------------------------------------------------------------
+  1 -549652.7694 2.7381e-05   0.483 +  0.493 +  0.984 +  0.493 +  0.984 +     0.489 +    0.575 + 
+  2 -549787.3217  134.55       0 -      0 -  0.202 +      0 -      0 -  6.01e-17 - 5.05e-43 - 
+  3 -549652.7693       0   0.493 +  0.507 +      1 +  0.507 +  0.975 +     0.489 +    0.559 + 
+  4 -550417.9182  765.15       0 -      0 -      0 -      0 -      0 - 1.57e-220 - 1.78e-96 - 
+  5 -549795.2926  142.52       0 -      0 -  0.182 +      0 -      0 -  1.07e-22 - 7.13e-68 - 
+  6 -550412.5748  759.81       0 -      0 -      0 -      0 -      0 - 9.77e-214 - 3.68e-36 - 
+  7 -550466.2944  813.53       0 -      0 -      0 -      0 -      0 - 2.12e-257 - 9.29e-105 - 
+  8 -553271.4566  3618.7       0 -      0 -      0 -      0 -      0 -         0 - 1.95e-74 - 
+  9 -549690.9114  38.142  0.0234 - 0.0313 -  0.668 + 0.0313 -  0.121 +    0.0222 -   0.0325 - 
+
+deltaL  : logL difference from the maximal logl in the set.
+bp-RELL : bootstrap proportion using RELL method (Kishino et al. 1990).
+p-KH    : p-value of one sided Kishino-Hasegawa test (1989).
+p-SH    : p-value of Shimodaira-Hasegawa test (2000).
+p-WKH   : p-value of weighted KH test.
+p-WSH   : p-value of weighted SH test.
+c-ELW   : Expected Likelihood Weight (Strimmer & Rambaut 2002).
+p-AU    : p-value of approximately unbiased (AU) test (Shimodaira, 2002).
+
+Plus signs denote the 95% confidence sets.
+Minus signs denote significant exclusion.
+All tests performed 10000 resamplings using the RELL method.
+
+ALISIM COMMAND
+--------------
+To simulate an alignment of the same length as the original alignment, using the tree and model parameters estimated from this analysis, you can use the following command:
+
+--alisim simulated_MSA -t var_fast75/au.treefile -m "LG+F+G4{1.45525}" --length 50000
+
+To mimic the alignment used to produce this analysis, i.e. simulate an alignment of the same length as the original alignment, using the tree and model parameters estimated from this analysis *and* copying the same gap positions as the original alignment, you can use the following command:
+
+iqtree -s variants/fast75.fasta --alisim mimicked_MSA
+
+To simulate any number of alignments in either of the two commandlines above, use the --num-alignments options, for example mimic 100 alignments you would use the command line:
+
+iqtree -s variants/fast75.fasta --alisim mimicked_MSA --num-alignments 100
+
+For more information on using AliSim, please visit: www.iqtree.org/doc/AliSim
+
+TIME STAMP
+----------
+
+Date and time: Fri Nov 13 11:25:13 2026
+Total CPU time used: 24.2 seconds (0h:0m:24s)
+Total wall-clock time used: 7.03 seconds (0h:0m:7s)
+
