@@ -326,7 +326,10 @@ are inputs (`--error-rates`), not estimated: for one genome a miss and a termina
 likelihood is conditioned on at least one observed intron, with the position's own missing cells (ascertainment). The branch from
 the root to its larger child is fixed to "no change", because with two root branches the root probability and both branches are not
 separately identifiable; a branch with no observed tip below it is fixed the same way (its part of the likelihood is constant) and
-reported as having no data. Fitted by EM, with the never-seen positions as missing data (expected count `Z/(1−Z)` per observed
+reported as having no data; a node left with one informative child has its own branch fixed (only the product of the two branches
+is identified), and the root rule is applied through such nodes, descending while the effective root has a single informative
+child. At least 4 tips must have data (the ascertainment conditioning costs one degree of freedom; with 3 tips, 7 parameters face 6).
+E-steps are summed in fixed chunks in order, so fits are reproducible bit for bit. Fitted by EM, with the never-seen positions as missing data (expected count `Z/(1−Z)` per observed
 position), accelerated with SQUAREM (Varadhan & Roland 2008) under a never-decrease safeguard; it stops when a cycle changes the
 log-likelihood by less than 1e-6 and no parameter by more than 1e-7, because the gain direction is flat and a log-likelihood
 criterion alone stopped about 5 % short in total gains. A false-intron rate given as precision is converted inside the fit, with the
@@ -344,7 +347,9 @@ simulation recovery (losses within a few percent; with error modelled, the total
 simulation in which ignoring a 30 % miss rate raises that genome's terminal loss probability from 0.1 to above 0.3, while
 the error model recovers 0.1 (within 0.04). An independent review (a separate agent reading the code without the author's reasoning) checked the derivations
 and found two bugs (prior-only counts on branches with no data; the precision conversion ignoring never-seen positions) and a too
-loose stopping rule; all three are fixed and tested.
+loose stopping rule; all three are fixed and tested. A second review of the fixes found an effectively unary node left by the
+no-data fix (the split between two branches moved with the starting values) and run-to-run differences from the parallel sum;
+both are fixed and tested.
 
 ### 5.6 Planned
 

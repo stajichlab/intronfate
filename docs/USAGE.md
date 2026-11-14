@@ -300,7 +300,9 @@ Read with care:
 - **The root**: the branch from the root to its larger child is fixed to "no change" (`ml_fixed_root_branch`), so `root` means the
   ingroup ancestor and all change between outgroup and ingroup is on the outgroup's branch.
 - **Branches with no data**: a genome (or clade) with only `?` cells has a branch the data say nothing about. It is fixed at
-  no change, marked `has_data no` and left out of the totals; a note says how many there are.
+  no change (`fixed` = `no_data`) and left out of the totals; a note says how many there are. Its parent may then have a single
+  informative child; the parent's branch is fixed too (`unary`) and the change is put on the child's branch.
+- At least 4 genomes must have data: conditioning on positions being seen costs one degree of freedom.
 - No rate variation across positions yet; `--min-taxa` must be 1 (each position is conditioned on being seen at least once).
 - `--ml-bootstrap` resamples whole families when the matrix is combined (`<family>:<column>:<phase>` labels), single positions
   otherwise. Each replicate is a full EM fit, so 100 replicates take about 100 times as long as one fit.
