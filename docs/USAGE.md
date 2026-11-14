@@ -119,6 +119,9 @@ makes them so). Likewise each `-p` file is read in parallel and merged in the or
 | `--min-taxa N` | 1 | Skip sites carried by fewer than N scored taxa (`2` drops lineage-specific singletons). |
 | `--min-observed N` | 0 | Skip sites observed (`1` or `0`, not `?`) in fewer than N taxa. |
 | `--reconstructions` | off | Also write per-node ancestral states. |
+| `--error-rates FILE` | – | `-m likelihood`: per-taxon annotation error (§11). |
+| `--ml-bootstrap N` | 0 | `-m likelihood`: bootstrap replicates for intervals on gains, losses and presence. |
+| `--ml-max-iter N` | 10000 | `-m likelihood`: EM iteration limit. |
 
 ## 5. Reading the results
 
@@ -256,5 +259,44 @@ annotations you analyse alongside the results. A worked example, with measured n
 from the genome-wide rate), is in `bench/V4_annotation_accuracy/README.md`.
 
 CDS features define protein space; UTR introns are reported but never projected. One protein per id
-(isoforms are unioned and flagged). Likelihood-based gain/loss models and rate variation are not implemented (SPEC §5.5).
+(isoforms are unioned and flagged). The likelihood model (`-m likelihood`, §11) has no rate variation across positions yet (SPEC §5.6).
 Analyses on real genomes belong on a cluster: nothing here has been benchmarked at genome scale yet.
+
+## 11. Likelihood with annotation error (`-m likelihood`)
+
+Dollo and parsimony take every annotated `0` at face value, so a missed intron is counted as a loss. `-m likelihood` fits a
+probabilistic gain/loss model in which each genome sees the truth through its own annotation error, and reports *expected* gains,
+losses and ancestral presence (model: SPEC §5.5).
+
+```sh
+intronfate score --matrix out/combined/matrix.tsv -t species.nwk -m dollo,likelihood \
+    --error-rates errors.tsv --ml-bootstrap 100 -o out/ml
+```
+
+`errors.tsv` (tab-separated, one row per taxon; taxa not listed are error-free):
+
+```
+taxon        sensitivity  precision
+Ncrassa      0.99         0.99
+Anidulans    0.89         0.91
+```
+
+- `sensitivity`: the fraction of real introns the annotation finds (e.g. gffcompare intron Sn against a reference).
+- `precision` (fraction of annotated introns that are real), or `false_rate` directly: the probability that a genome shows an intron
+  at a position where it has none. From precision it is computed as `carried·(1 − precision) / (observed − carried·precision/sensitivity)`.
+- Error rates must be supplied: from the matrix alone a miss and a loss on the genome's own branch cannot be told apart. To see how
+  much they matter, rerun with a range of values.
+
+Outputs (OUTPUTS.md): `likelihood_branches.tsv` (per branch: gain/loss probability, expected gains, losses and positions present at
+the node below, with bootstrap intervals), `likelihood_tips.tsv` (expected misses and false introns per genome),
+`likelihood_sites.tsv` (log-likelihood per position, for comparing trees), and `ml_*` lines in `summary_score.tsv`.
+
+Read with care:
+- **Losses are well estimated; gains much less** once error is modelled. The number of gains trades off against the number of
+  positions never seen and the root probability. Use `--ml-bootstrap` and quote the interval.
+- **The root**: the branch from the root to its larger child is fixed to "no change" (`ml_fixed_root_branch`), so `root` means the
+  ingroup ancestor and all change between outgroup and ingroup is on the outgroup's branch.
+- No rate variation across positions yet; `--min-taxa` must be 1 (each position is conditioned on being seen at least once).
+- `--ml-bootstrap` resamples whole families when the matrix is combined (`<family>:<column>:<phase>` labels), single positions
+  otherwise. Each replicate is a full EM fit, so 100 replicates take about 100 times as long as one fit.
+

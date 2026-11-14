@@ -161,7 +161,7 @@ The other counts need the limits below before they are interpreted.
 - Annotation error is measured, not removed: V7 shows which loss counts survive it and which do not. Terminal gains are less certain than
   losses, because false introns move them in no consistent direction.
 - *S. cerevisiae* has so few introns that its scores rest on a few dozen introns and are noisy.
-- Nothing here validates the evolutionary model itself (Dollo parsimony assumes one gain per site). Likelihood scoring is not implemented.
+- Nothing here validates the evolutionary model itself (Dollo parsimony assumes one gain per site). A likelihood model with annotation error (`-m likelihood`) now exists but has not yet been run on these data, and has no rate variation across positions.
 
 ## Layout
 
@@ -179,9 +179,10 @@ scripts/              helpers for docs/HOWTO.md (one_protein_per_gene.py, make_f
 
 Implemented: GFF3/GTF ingestion with frame/exon/length cross-checks, protein-space projection,
 FASTA/Stockholm alignments, site × taxon matrices, pairwise sharing, Dollo (classic + weighted),
-Fitch MP with ancestral reconstruction, counts, TSV/NEXUS output, and a weighted Dollo sweep (`-m dollo_weighted`).
+Fitch MP with ancestral reconstruction, counts, TSV/NEXUS output, a weighted Dollo sweep (`-m dollo_weighted`), and a
+likelihood model with per-genome annotation error (`-m likelihood`, `--error-rates`; USAGE §11).
 
 Also: per-cell missing data (alignment gaps are `?`), MALIN import/export (`convert`), `--min-observed`.
 
-Not yet: SQL/Chado/Ensembl sources (the `AnnotationSource` seam is there), likelihood-based
-gain/loss models, benchmarks on real genomes (run those on the HPCC), stdin support.
+Not yet: SQL/Chado/Ensembl sources (the `AnnotationSource` seam is there), rate variation across positions
+in the likelihood model, benchmarks on real genomes (run those on the HPCC), stdin support.

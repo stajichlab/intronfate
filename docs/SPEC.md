@@ -317,12 +317,31 @@ No tree: per-site `n_present`, `n_absent`, frequency, carrier list; per-pair `sh
 denominator was found, so it is stated here as this tool's definition); the conservation
 spectrum (how many sites are shared by exactly *k* taxa).
 
-### 5.5 Planned
+### 5.5 Likelihood with annotation error (implemented, v1: `-m likelihood`, `likelihood.rs`)
 
-- **Continuous-time gain/loss likelihood** on branch lengths (ML, and a likelihood-ratio test of
-  "ancient intron" vs "convergent insertion"), which needs `Tree` branch lengths — already parsed.
-- **Rate heterogeneity across sites** (Γ over positions); intron gain rates vary strongly
-  between lineages [R5, R12], so a homogeneous model over-reads losses.
+Two-state model per position on the rooted tree, branch-specific transition probabilities (gain from absent, loss from present;
+MALIN's model without rate variation [R1]), root presence probability. Each tip observes the true state through its annotation
+error: P(annotated | present) = sensitivity, P(annotated | absent) = false-intron rate; `?` cells contribute nothing. Error rates
+are inputs (`--error-rates`), not estimated: for one genome a miss and a terminal loss give the same data. Each position's
+likelihood is conditioned on at least one observed intron, with the position's own missing cells (ascertainment). The branch from
+the root to its larger child is fixed to "no change", because with two root branches the root probability and both branches are not
+separately identifiable. Fitted by EM, with the never-seen positions as missing data (expected count `Z/(1−Z)` per observed
+position). Outputs posterior expected gains, losses and presence per branch/node, expected misses and false introns per tip,
+per-position conditional log-likelihoods, and optional bootstrap intervals (families resampled as blocks).
+
+Validated by: brute-force enumeration of the likelihood, the ascertainment term and all posterior node and pair expectations
+(with errors, missing cells, polytomies and unscored tips); conditional probabilities of all seen patterns summing to 1;
+simulation recovery (losses within a few percent; with error modelled, the total number of gains is weakly identified: fitted/true
+0.67-1.24 over three seeds of 60,000 positions, 0.97-1.04 at 1.5 million, so gains need the bootstrap interval); and a
+simulation in which ignoring a 30 % miss rate raises that genome's terminal loss probability from 0.1 to above 0.3, while
+the error model recovers 0.1 (within 0.04).
+
+### 5.6 Planned
+
+- **Rate heterogeneity across sites** (Γ over positions, MALIN's rate categories); intron gain and loss rates vary strongly
+  between positions and lineages [R5, R12], so a homogeneous model can misplace both. Needs a branch-length/rate
+  parameterisation instead of free per-branch probabilities, and a numerical M-step.
+- **A likelihood-ratio test** of "ancient intron" vs "convergent insertion" per position.
 - **Bias correction**: positions in poorly aligned or gappy columns are under-called. Plan:
   per-column observability from the alignment and an explicit "scorable site" set.
 - **Probabilistic projection**: propagate annotation uncertainty into the sharing matrix rather than
@@ -630,8 +649,8 @@ comparison the tool exists to make mechanically repeatable.
 3. **Benchmark + synthetic generator** — scale taxa/sites independently; time the GFF path on a real
    genome (§6).
 4. **`AnnotationSource` for SQL/Chado/Ensembl** — the seam exists; needs a schema decision.
-5. **Likelihood-based scoring** (gain/loss CTMC on branch lengths, LRT, rate heterogeneity),
-   validated against MALIN's `*.rates` output (§6b).
+5. **Likelihood-based scoring**: v1 done (§5.5: branch-specific probabilities, annotation error, ascertainment, EM, bootstrap).
+   Remaining: rate heterogeneity and branch lengths (§5.6), validation against MALIN's `*.rates` output (§6b).
 6. ~~Column observability~~ — done (§2: per-cell observability with a flank rule), as are `--min-observed` and
    the `n_both_observable` column in `pairwise.tsv`. Remaining: tuning the `--flank` default.
 7. **Stdin/stdout support** (`--gff -`, `-o -`) for pipeline composition.
@@ -665,7 +684,7 @@ Entries marked ✓ were checked against PubMed (title, authors, journal, year, D
 review brief but not found; none is cited here. A 2022 Communications Biology paper on maximum-likelihood
 intron mapping was seen only as a search snippet and is not cited.
 
-**Related methods worth reading when the likelihood models (§5.5) are built:** Roy & Gilbert 2005 EM
+**Related methods for the likelihood models (§5.5, §5.6):** Roy & Gilbert 2005 EM
 (PMID 15687506); Nguyen et al. 2005 (PMID 16389300); Csűrös, Holey & Rogozin 2007 (PMID 17646350);
 Stajich, Dietrich & Roy 2007 (PMID 17949488); Poverennaya et al. 2020 (PMID 33308147). PMIDs only, from the
 review agent, unchecked.

@@ -239,6 +239,19 @@ struct AnalyzeArgs {
     )]
     gain_loss_weights: Vec<String>,
 
+    /// Annotation error per taxon for `-m likelihood`: TSV with columns `taxon`, `sensitivity` and either `false_rate` or
+    /// `precision`. Taxa not listed are taken as error-free; without the file the model assumes no error.
+    #[arg(long, value_name = "FILE")]
+    error_rates: Option<PathBuf>,
+
+    /// Bootstrap replicates for `-m likelihood` (whole families are resampled when the matrix is combined). 0 = none.
+    #[arg(long, default_value = "0")]
+    ml_bootstrap: usize,
+
+    /// Maximum EM iterations for `-m likelihood`.
+    #[arg(long, default_value = "10000")]
+    ml_max_iter: usize,
+
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
     outgroups: Vec<String>,
@@ -301,6 +314,19 @@ struct ScoreArgs {
         default_value = "1:1,2:1,5:1,10:1"
     )]
     gain_loss_weights: Vec<String>,
+
+    /// Annotation error per taxon for `-m likelihood`: TSV with columns `taxon`, `sensitivity` and either `false_rate` or
+    /// `precision`. Taxa not listed are taken as error-free; without the file the model assumes no error.
+    #[arg(long, value_name = "FILE")]
+    error_rates: Option<PathBuf>,
+
+    /// Bootstrap replicates for `-m likelihood` (whole families are resampled when the matrix is combined). 0 = none.
+    #[arg(long, default_value = "0")]
+    ml_bootstrap: usize,
+
+    /// Maximum EM iterations for `-m likelihood`.
+    #[arg(long, default_value = "10000")]
+    ml_max_iter: usize,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -1075,6 +1101,11 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                 min_observed: a.min_observed,
                 reconstructions: a.reconstructions,
                 weights: resolve_weights(&a.gain_loss_weights)?,
+                ml: MlOpts {
+                    error_rates: a.error_rates.clone(),
+                    bootstrap: a.ml_bootstrap,
+                    max_iter: a.ml_max_iter,
+                },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
             verbose,
@@ -1099,6 +1130,11 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                 min_observed: a.min_observed,
                 reconstructions: a.reconstructions,
                 weights: resolve_weights(&a.gain_loss_weights)?,
+                ml: MlOpts {
+                    error_rates: a.error_rates.clone(),
+                    bootstrap: a.ml_bootstrap,
+                    max_iter: a.ml_max_iter,
+                },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
             verbose,
@@ -1143,6 +1179,11 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                 min_observed: a.min_observed,
                 reconstructions: a.reconstructions,
                 weights: resolve_weights(&a.gain_loss_weights)?,
+                ml: MlOpts {
+                    error_rates: a.error_rates.clone(),
+                    bootstrap: a.ml_bootstrap,
+                    max_iter: a.ml_max_iter,
+                },
                 matrix_label: format!("{} matrices combined", parts.len()),
             },
             verbose,
@@ -1198,6 +1239,11 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
             min_observed: a.min_observed,
             reconstructions: a.reconstructions,
             weights: resolve_weights(&a.gain_loss_weights)?,
+            ml: MlOpts {
+                error_rates: a.error_rates.clone(),
+                bootstrap: a.ml_bootstrap,
+                max_iter: a.ml_max_iter,
+            },
             matrix_label: matrix.display().to_string(),
         },
         verbose,
@@ -1223,7 +1269,16 @@ struct ScoreOpts {
     reconstructions: bool,
     /// Gain:loss weightings for `dollo_weighted`.
     weights: Vec<(u32, u32)>,
+    ml: MlOpts,
     matrix_label: String,
+}
+
+/// Options of `-m likelihood`.
+#[derive(Clone, Debug, Default)]
+struct MlOpts {
+    error_rates: Option<PathBuf>,
+    bootstrap: usize,
+    max_iter: usize,
 }
 
 /// Score one matrix; returns a one-line summary of what was computed.
@@ -1258,7 +1313,7 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
     let needs_tree = o.methods.iter().any(|x| {
         matches!(
             x,
-            Method::Dollo | Method::MaxParsimony | Method::DolloWeighted
+            Method::Dollo | Method::MaxParsimony | Method::DolloWeighted | Method::Likelihood
         )
     });
     if !needs_tree {
@@ -1266,7 +1321,7 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         return Ok(Some(format!("counts over {} sites", m.n_sites())));
     }
     let Some(tree_path) = &o.tree else {
-        bail!("--tree is required to score with dollo, mp or dollo_weighted (or select only --methods counts)");
+        bail!("--tree is required to score with dollo, mp, dollo_weighted or likelihood (or select only --methods counts)");
     };
     let tree = Tree::read(tree_path)
         .with_context(|| format!("could not read tree {}", tree_path.display()))?;
@@ -1406,6 +1461,95 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         notes.push(format!("dollo_weighted {} weighting(s)", runs.len()));
     }
 
+    if o.methods.contains(&Method::Likelihood) {
+        if o.min_taxa > 1 {
+            bail!(
+                "-m likelihood conditions each position on being seen at least once, so it needs --min-taxa 1 (got {})",
+                o.min_taxa
+            );
+        }
+        let err = read_error_rates(o.ml.error_rates.as_deref(), &data)?;
+        let opt = intronfate_core::likelihood::FitOptions {
+            max_iter: o.ml.max_iter,
+            ..Default::default()
+        };
+        let fit = intronfate_core::likelihood::fit(&data, &err, &opt)
+            .map_err(|e| anyhow::anyhow!("likelihood: {e}"))?;
+        if !fit.converged {
+            eprintln!(
+                "warn: likelihood: EM stopped after {} iterations without converging (raise --ml-max-iter)",
+                fit.iterations
+            );
+        }
+        let boot = if o.ml.bootstrap > 0 {
+            Some(
+                intronfate_core::likelihood::bootstrap(
+                    &data,
+                    &err,
+                    &opt,
+                    &fit.params,
+                    o.ml.bootstrap,
+                    1,
+                )
+                .map_err(|e| anyhow::anyhow!("likelihood bootstrap: {e}"))?,
+            )
+        } else {
+            None
+        };
+        tables::likelihood_branch_table(&data, &fit, boot.as_ref())
+            .write(dir.join("likelihood_branches.tsv"))?;
+        tables::likelihood_tip_table(&data, &err, &fit).write(dir.join("likelihood_tips.tsv"))?;
+        tables::likelihood_site_table(&data, &fit).write(dir.join("likelihood_sites.tsv"))?;
+        let root = data.tree.root();
+        let gains: f64 = (0..data.tree.len())
+            .filter(|&v| v != root)
+            .map(|v| fit.nodes[v].expected_gains)
+            .sum();
+        let losses: f64 = fit.nodes.iter().map(|n| n.expected_losses).sum();
+        summary.push(("ml_log_likelihood", format!("{:.6}", fit.log_lik)));
+        summary.push(("ml_iterations", fit.iterations.to_string()));
+        summary.push((
+            "ml_converged",
+            if fit.converged { "yes" } else { "no" }.to_string(),
+        ));
+        summary.push((
+            "ml_root_present",
+            format!("{:.2}", fit.nodes[root].expected_present),
+        ));
+        summary.push(("ml_expected_gains", format!("{gains:.2}")));
+        summary.push(("ml_expected_losses", format!("{losses:.2}")));
+        summary.push((
+            "ml_unobserved_positions",
+            format!("{:.2}", fit.unobserved_positions),
+        ));
+        summary.push((
+            "ml_error_rates",
+            o.ml.error_rates
+                .as_ref()
+                .map_or("none (no annotation error)".to_string(), |p| {
+                    p.display().to_string()
+                }),
+        ));
+        summary.push((
+            "ml_fixed_root_branch",
+            intronfate_core::likelihood::fixed_root_branch(&data.tree)
+                .map_or("-".to_string(), |v| data.tree.node_names()[v].clone()),
+        ));
+        if let Some(b) = &boot {
+            summary.push((
+                "ml_bootstrap",
+                format!("{} replicates, resampling by {}", b.replicates, b.unit),
+            ));
+        }
+        if verbose > 0 {
+            eprintln!(
+                "likelihood: lnL {:.3} after {} iterations; {gains:.0} gains, {losses:.0} losses expected",
+                fit.log_lik, fit.iterations
+            );
+        }
+        notes.push(format!("likelihood lnL {:.2}", fit.log_lik));
+    }
+
     if o.reconstructions && !recon_rows.is_empty() {
         let t = tables::reconstruction_table(&data, &recon_rows);
         summary.push(("reconstructed_nodes", t.len().to_string()));
@@ -1454,13 +1598,114 @@ fn resolve_methods(requested: &[String]) -> Result<Vec<Method>> {
     let mut out = Vec::new();
     for name in requested {
         let m = Method::parse(name).ok_or_else(|| {
-            anyhow::anyhow!("unknown method {name:?}: choose dollo, mp, counts or dollo_weighted")
+            anyhow::anyhow!(
+                "unknown method {name:?}: choose dollo, mp, counts, dollo_weighted or likelihood"
+            )
         })?;
         if !out.contains(&m) {
             out.push(m);
         }
     }
     Ok(out)
+}
+
+/// Per-tip error rates for `-m likelihood` from a TSV (`taxon`, `sensitivity`, `false_rate` or `precision`); unlisted taxa have none.
+fn read_error_rates(
+    path: Option<&Path>,
+    data: &ScoringData,
+) -> Result<intronfate_core::likelihood::ErrorRates> {
+    use intronfate_core::likelihood::{false_rate_from_precision, ErrorRates};
+    use intronfate_core::score::{MISSING, PRESENT};
+    let mut err = ErrorRates::none(data.tips.len());
+    let Some(path) = path else { return Ok(err) };
+    let text = std::fs::read_to_string(path)
+        .with_context(|| format!("could not read {}", path.display()))?;
+    let mut lines = text
+        .lines()
+        .filter(|l| !l.trim().is_empty() && !l.starts_with('#'));
+    let head: Vec<&str> = lines
+        .next()
+        .unwrap_or("")
+        .split('\t')
+        .map(str::trim)
+        .collect();
+    let col = |name: &str| head.iter().position(|h| *h == name);
+    let (Some(ti), Some(si)) = (col("taxon"), col("sensitivity")) else {
+        bail!(
+            "{}: the header needs `taxon` and `sensitivity` columns",
+            path.display()
+        );
+    };
+    let (fi, pi) = (col("false_rate"), col("precision"));
+    if fi.is_none() && pi.is_none() {
+        bail!(
+            "{}: give a `false_rate` or a `precision` column",
+            path.display()
+        );
+    }
+    let mut seen = std::collections::HashSet::new();
+    for (n, line) in lines.enumerate() {
+        let f: Vec<&str> = line.split('\t').map(str::trim).collect();
+        let get = |i: usize| f.get(i).copied().unwrap_or("");
+        let num = |i: usize, what: &str| -> Result<f64> {
+            get(i).parse::<f64>().with_context(|| {
+                format!(
+                    "{} line {}: {what} {:?} is not a number",
+                    path.display(),
+                    n + 2,
+                    get(i)
+                )
+            })
+        };
+        let taxon = get(ti);
+        let Some(i) = data.tip_names.iter().position(|t| t == taxon) else {
+            eprintln!(
+                "warn: {}: taxon {taxon:?} is not a scored tip; ignored",
+                path.display()
+            );
+            continue;
+        };
+        let s = num(si, "sensitivity")?;
+        let fr = match (fi, pi) {
+            (Some(fi), _) if !get(fi).is_empty() => num(fi, "false_rate")?,
+            (_, Some(pi)) => {
+                let carried = data
+                    .characters
+                    .iter()
+                    .filter(|c| c.states[i] == PRESENT)
+                    .count();
+                let observed = data
+                    .characters
+                    .iter()
+                    .filter(|c| c.states[i] != MISSING)
+                    .count();
+                false_rate_from_precision(carried as f64, observed as f64, s, num(pi, "precision")?)
+            }
+            _ => bail!(
+                "{} line {}: no false_rate or precision",
+                path.display(),
+                n + 2
+            ),
+        };
+        err.sensitivity[i] = s;
+        err.false_rate[i] = fr;
+        seen.insert(i);
+    }
+    let missing: Vec<&str> = (0..data.tips.len())
+        .filter(|i| !seen.contains(i))
+        .map(|i| data.tip_names[i].as_str())
+        .collect();
+    if !missing.is_empty() {
+        eprintln!(
+            "warn: {}: no error rates for {} taxon(s), taken as error-free: {}",
+            path.display(),
+            missing.len(),
+            intronfate_core::util::ellipsis(&missing.join(", "), 200)
+        );
+    }
+    err.validate(data.tips.len())
+        .map_err(|e| anyhow::anyhow!("{}: {e}", path.display()))?;
+    Ok(err)
 }
 
 fn resolve_weights(requested: &[String]) -> Result<Vec<(u32, u32)>> {
@@ -1850,6 +2095,9 @@ mod tests {
             tree: Some(dir.join("demo.nwk")),
             methods: vec!["dollo".into()],
             gain_loss_weights: vec!["1:1".into()],
+            error_rates: None,
+            ml_bootstrap: 0,
+            ml_max_iter: 10000,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,
@@ -1883,6 +2131,9 @@ mod tests {
             tree: None,
             methods: vec!["counts".into()],
             gain_loss_weights: vec!["1:1".into()],
+            error_rates: None,
+            ml_bootstrap: 0,
+            ml_max_iter: 10000,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -1914,6 +2165,9 @@ mod tests {
             tree: None,
             methods: vec!["dollo".into()],
             gain_loss_weights: vec!["1:1".into()],
+            error_rates: None,
+            ml_bootstrap: 0,
+            ml_max_iter: 10000,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -1975,6 +2229,9 @@ mod tests {
             tree: Some(nwk),
             methods: vec![],
             gain_loss_weights: vec!["1:1".into()],
+            error_rates: None,
+            ml_bootstrap: 0,
+            ml_max_iter: 10000,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,

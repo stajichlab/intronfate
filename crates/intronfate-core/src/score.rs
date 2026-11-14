@@ -42,6 +42,8 @@ pub enum Method {
     Counts,
     /// Weighted irreversible model ([`dollo_weighted`]) over a sweep of gain:loss weights; never a default.
     DolloWeighted,
+    /// Maximum likelihood with annotation error ([`crate::likelihood`]); never a default.
+    Likelihood,
 }
 
 impl std::fmt::Display for Method {
@@ -51,6 +53,7 @@ impl std::fmt::Display for Method {
             Method::MaxParsimony => "mp",
             Method::Counts => "counts",
             Method::DolloWeighted => "dollo_weighted",
+            Method::Likelihood => "likelihood",
         })
     }
 }
@@ -64,6 +67,7 @@ impl Method {
             "dollo_weighted" | "dollo-weighted" | "weighted_dollo" | "wdollo" => {
                 Some(Method::DolloWeighted)
             }
+            "likelihood" | "ml" => Some(Method::Likelihood),
             _ => None,
         }
     }
@@ -1390,6 +1394,8 @@ mod tests {
         assert_eq!(parse_gain_loss_weight("a:1"), None);
         assert_eq!(Method::parse("dollo_weighted"), Some(Method::DolloWeighted));
         assert_eq!(Method::DolloWeighted.to_string(), "dollo_weighted");
+        assert_eq!(Method::parse("ml"), Some(Method::Likelihood));
+        assert_eq!(Method::Likelihood.to_string(), "likelihood");
     }
 
     #[test]
