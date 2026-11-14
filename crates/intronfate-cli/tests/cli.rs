@@ -1247,3 +1247,85 @@ fn convert_exports_matrices_from_lists_and_folders_and_skips_combined() {
     ]);
     assert_eq!(o.status.code(), Some(2));
 }
+
+/// `-m dollo_weighted` on the quickstart, by hand. Each site is carried by three of ((A,B),(C,D)) and missing in the fourth, so it
+/// is either one gain with one loss (cost G+L) or two gains (cost 2G). At 3:1 one gain + one loss (4) beats two gains (6); at 1:2
+/// two gains (2) beat one gain + one loss (3). Not a default method, and a malformed weighting is an error.
+#[test]
+fn dollo_weighted_sweeps_gain_loss_weights() {
+    let w = scratch("dollo_weighted");
+    let q = example("01_quickstart");
+    let args = |m: &str, weights: Option<&str>, out: &Path| -> Vec<String> {
+        let mut v: Vec<String> = [
+            "analyze",
+            "--gff",
+            q.join("family.gff3").to_str().unwrap(),
+            "-p",
+            q.join("proteins.faa").to_str().unwrap(),
+            "--msa",
+            q.join("family.aln.fasta").to_str().unwrap(),
+            "-t",
+            q.join("family.nwk").to_str().unwrap(),
+            "-m",
+            m,
+            "-o",
+            out.to_str().unwrap(),
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        if let Some(x) = weights {
+            v.extend(["--gain-loss-weights".to_string(), x.to_string()]);
+        }
+        v
+    };
+    let out = w.join("o");
+    let a = args("dollo_weighted", Some("3:1,1:2"), &out);
+    ok(&a.iter().map(String::as_str).collect::<Vec<_>>());
+    let d = out.join("family.aln");
+    assert_eq!(
+        fs::read_to_string(d.join("dollo_weighted.tsv")).unwrap(),
+        "gain_weight\tloss_weight\tsites\tgains\tlosses\tsites_one_gain\tsites_several_gains\tsites_with_losses\n\
+         3\t1\t2\t2\t2\t2\t0\t2\n\
+         1\t2\t2\t4\t0\t0\t2\t0\n"
+    );
+    assert_eq!(
+        fs::read_to_string(d.join("dollo_weighted_sites.tsv")).unwrap(),
+        "site\tgain_weight\tloss_weight\tgains\tlosses\tcost\n\
+         4:0\t3\t1\t1\t1\t4\n7:0\t3\t1\t1\t1\t4\n\
+         4:0\t1\t2\t2\t0\t2\n7:0\t1\t2\t2\t0\t2\n"
+    );
+    let summary = fs::read_to_string(d.join("summary_score.tsv")).unwrap();
+    assert!(
+        summary.contains("dollo_weighted\t3:1=2g/2l,1:2=4g/0l"),
+        "{summary}"
+    );
+
+    // not run unless asked for
+    let out2 = w.join("default");
+    let a = args("dollo,mp,counts", None, &out2);
+    ok(&a.iter().map(String::as_str).collect::<Vec<_>>());
+    assert!(!out2.join("family.aln/dollo_weighted.tsv").exists());
+
+    // the default sweep has four weightings
+    let out3 = w.join("sweep");
+    let a = args("dollo_weighted", None, &out3);
+    ok(&a.iter().map(String::as_str).collect::<Vec<_>>());
+    assert_eq!(
+        fs::read_to_string(out3.join("family.aln/dollo_weighted.tsv"))
+            .unwrap()
+            .lines()
+            .count(),
+        5
+    );
+
+    for bad in ["0:1", "3", "x:1"] {
+        let a = args("dollo_weighted", Some(bad), &w.join("bad"));
+        let o = run(&a.iter().map(String::as_str).collect::<Vec<_>>());
+        assert!(!o.status.success(), "{bad} was accepted");
+        assert!(
+            String::from_utf8_lossy(&o.stderr).contains("--gain-loss-weights"),
+            "{bad}"
+        );
+    }
+}

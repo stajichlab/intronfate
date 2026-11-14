@@ -40,6 +40,8 @@ pub enum Method {
     Dollo,
     MaxParsimony,
     Counts,
+    /// Weighted irreversible model ([`dollo_weighted`]) over a sweep of gain:loss weights; never a default.
+    DolloWeighted,
 }
 
 impl std::fmt::Display for Method {
@@ -48,6 +50,7 @@ impl std::fmt::Display for Method {
             Method::Dollo => "dollo",
             Method::MaxParsimony => "mp",
             Method::Counts => "counts",
+            Method::DolloWeighted => "dollo_weighted",
         })
     }
 }
@@ -58,6 +61,9 @@ impl Method {
             "dollo" | "d" => Some(Method::Dollo),
             "mp" | "parsimony" | "maxparsimony" | "fitch" => Some(Method::MaxParsimony),
             "count" | "counts" | "frequency" => Some(Method::Counts),
+            "dollo_weighted" | "dollo-weighted" | "weighted_dollo" | "wdollo" => {
+                Some(Method::DolloWeighted)
+            }
             _ => None,
         }
     }
@@ -534,6 +540,13 @@ pub fn dollo_weighted(
             (ch.label.clone(), g, l)
         })
         .collect()
+}
+
+/// Parse a gain:loss weighting such as `3:1` (gain weight first). The gain weight must be at least 1.
+pub fn parse_gain_loss_weight(s: &str) -> Option<(u32, u32)> {
+    let (g, l) = s.trim().split_once(':')?;
+    let (g, l) = (g.trim().parse::<u32>().ok()?, l.trim().parse::<u32>().ok()?);
+    (g >= 1).then_some((g, l))
 }
 
 /// Three-state weighted DP: `U` not yet gained, `P` present, `L` lost (terminal).
@@ -1366,6 +1379,17 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn gain_loss_weights_parse() {
+        assert_eq!(parse_gain_loss_weight("3:1"), Some((3, 1)));
+        assert_eq!(parse_gain_loss_weight(" 10 : 0 "), Some((10, 0)));
+        assert_eq!(parse_gain_loss_weight("0:1"), None);
+        assert_eq!(parse_gain_loss_weight("3"), None);
+        assert_eq!(parse_gain_loss_weight("a:1"), None);
+        assert_eq!(Method::parse("dollo_weighted"), Some(Method::DolloWeighted));
+        assert_eq!(Method::DolloWeighted.to_string(), "dollo_weighted");
     }
 
     #[test]

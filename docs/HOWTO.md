@@ -244,10 +244,12 @@ gain. For how large that effect is in these species, see [V4](../bench/V4_annota
 ## 9. Next steps
 
 **Score again** without redoing the projection (this takes seconds). Change `-t`, `--outgroup` or `-m` to try another tree, rooting
-or method:
+or method. `dollo_weighted` asks how the counts change when a second origin of a position is allowed at a price (gain:loss costs
+1:1, 2:1, 5:1 and 10:1; set others with `--gain-loss-weights`):
 
 ```sh
-intronfate score --matrix results/A_strict/combined/matrix.tsv -t $EX/$SET.nwk --outgroup $OUTGROUP -m dollo,mp -o results/A_strict/rescored
+intronfate score --matrix results/A_strict/combined/matrix.tsv -t $EX/$SET.nwk --outgroup $OUTGROUP -m dollo,mp,dollo_weighted -o results/A_strict/rescored
+column -t results/A_strict/rescored/dollo_weighted.tsv
 ```
 
 **Use another tier.** Align and run it the same way, for example tier B:

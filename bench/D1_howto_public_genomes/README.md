@@ -55,7 +55,7 @@ Both examples ran from download to the tier B rescore without error.
 3. The page wrote OrthoFinder's output to a log in the working folder; when it failed, nothing was shown. It now `tee`s the output.
 4. `align_families.sh` passed its arguments to `xargs` in the wrong order, and left a temporary file behind when MAFFT failed. Both fixed,
    with a stub-`mafft` test.
-5. The rescore example used `-m dollo_weighted`, which the CLI does not offer (the README mentions weighted Dollo; it is in the library
-   only). The page now uses `-m dollo,mp`.
+5. The rescore example used `-m dollo_weighted`, which the CLI did not offer (it was in the library only). It is now a CLI method
+   (`-m dollo_weighted`, `--gain-loss-weights`), and the page's rescore step uses it.
 
 The Docker option on the page was not tested.

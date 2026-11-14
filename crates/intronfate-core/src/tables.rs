@@ -497,6 +497,69 @@ pub fn spectrum_table(m: &SiteMatrix) -> Table {
     t
 }
 
+/// One weighting of a weighted-Dollo sweep: `(gain_weight, loss_weight, [(site, gains, losses)])`.
+pub type WeightedDolloRun = (u32, u32, Vec<(String, u32, u32)>);
+
+/// Per-site weighted-Dollo results, long form: one row per site and weighting.
+pub fn dollo_weighted_table(runs: &[WeightedDolloRun]) -> Table {
+    let n = runs.iter().map(|r| r.2.len()).sum();
+    let mut t = Table::with_capacity(
+        &[
+            "site",
+            "gain_weight",
+            "loss_weight",
+            "gains",
+            "losses",
+            "cost",
+        ],
+        n,
+    );
+    for (gw, lw, sites) in runs {
+        for (label, g, l) in sites {
+            t.push_row(|c| {
+                c.push(label.clone());
+                c.push(cell(gw));
+                c.push(cell(lw));
+                c.push(cell(g));
+                c.push(cell(l));
+                c.push(cell(
+                    u64::from(*gw) * u64::from(*g) + u64::from(*lw) * u64::from(*l),
+                ));
+            });
+        }
+    }
+    t
+}
+
+/// Totals per weighting of a weighted-Dollo sweep.
+pub fn dollo_weighted_summary_table(runs: &[WeightedDolloRun]) -> Table {
+    let mut t = Table::new(&[
+        "gain_weight",
+        "loss_weight",
+        "sites",
+        "gains",
+        "losses",
+        "sites_one_gain",
+        "sites_several_gains",
+        "sites_with_losses",
+    ]);
+    for (gw, lw, sites) in runs {
+        let gains: u64 = sites.iter().map(|s| u64::from(s.1)).sum();
+        let losses: u64 = sites.iter().map(|s| u64::from(s.2)).sum();
+        t.push_row(|c| {
+            c.push(cell(gw));
+            c.push(cell(lw));
+            c.push(cell(sites.len()));
+            c.push(cell(gains));
+            c.push(cell(losses));
+            c.push(cell(sites.iter().filter(|s| s.1 == 1).count()));
+            c.push(cell(sites.iter().filter(|s| s.1 > 1).count()));
+            c.push(cell(sites.iter().filter(|s| s.2 > 0).count()));
+        });
+    }
+    t
+}
+
 pub fn dollo_table(r: &DolloResult) -> Table {
     let mut t = Table::new(&[
         "site",

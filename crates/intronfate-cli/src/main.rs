@@ -226,9 +226,18 @@ struct AnalyzeArgs {
     #[arg(long, short = 't', value_name = "FILE")]
     tree: Option<PathBuf>,
 
-    /// Scoring method(s): dollo, mp, counts. Defaults to all three.
+    /// Scoring method(s): dollo, mp, counts, dollo_weighted. Defaults to dollo, mp and counts.
     #[arg(long, short = 'm', value_delimiter = ',')]
     methods: Vec<String>,
+
+    /// Gain:loss weights swept by `-m dollo_weighted` (gain weight first; each gain costs the first number, each loss the second).
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_name = "G:L",
+        default_value = "1:1,2:1,5:1,10:1"
+    )]
+    gain_loss_weights: Vec<String>,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -280,9 +289,18 @@ struct ScoreArgs {
     #[arg(long, short = 't', value_name = "FILE")]
     tree: Option<PathBuf>,
 
-    /// Scoring method(s): dollo, mp, counts. Defaults to all three.
+    /// Scoring method(s): dollo, mp, counts, dollo_weighted. Defaults to dollo, mp and counts.
     #[arg(long, short = 'm', value_delimiter = ',')]
     methods: Vec<String>,
+
+    /// Gain:loss weights swept by `-m dollo_weighted` (gain weight first; each gain costs the first number, each loss the second).
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_name = "G:L",
+        default_value = "1:1,2:1,5:1,10:1"
+    )]
+    gain_loss_weights: Vec<String>,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -1056,6 +1074,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                 min_taxa: a.min_taxa,
                 min_observed: a.min_observed,
                 reconstructions: a.reconstructions,
+                weights: resolve_weights(&a.gain_loss_weights)?,
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
             verbose,
@@ -1079,6 +1098,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                 min_taxa: a.min_taxa,
                 min_observed: a.min_observed,
                 reconstructions: a.reconstructions,
+                weights: resolve_weights(&a.gain_loss_weights)?,
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
             verbose,
@@ -1122,6 +1142,7 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                 min_taxa: a.min_taxa,
                 min_observed: a.min_observed,
                 reconstructions: a.reconstructions,
+                weights: resolve_weights(&a.gain_loss_weights)?,
                 matrix_label: format!("{} matrices combined", parts.len()),
             },
             verbose,
@@ -1176,6 +1197,7 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
             min_taxa: a.min_taxa,
             min_observed: a.min_observed,
             reconstructions: a.reconstructions,
+            weights: resolve_weights(&a.gain_loss_weights)?,
             matrix_label: matrix.display().to_string(),
         },
         verbose,
@@ -1199,6 +1221,8 @@ struct ScoreOpts {
     min_taxa: usize,
     min_observed: usize,
     reconstructions: bool,
+    /// Gain:loss weightings for `dollo_weighted`.
+    weights: Vec<(u32, u32)>,
     matrix_label: String,
 }
 
@@ -1231,16 +1255,18 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         }
     }
 
-    let needs_tree = o
-        .methods
-        .iter()
-        .any(|x| matches!(x, Method::Dollo | Method::MaxParsimony));
+    let needs_tree = o.methods.iter().any(|x| {
+        matches!(
+            x,
+            Method::Dollo | Method::MaxParsimony | Method::DolloWeighted
+        )
+    });
     if !needs_tree {
         tables::summary_table(&summary).write(dir.join("summary_score.tsv"))?;
         return Ok(Some(format!("counts over {} sites", m.n_sites())));
     }
     let Some(tree_path) = &o.tree else {
-        bail!("--tree is required to score with dollo or mp (or select only --methods counts)");
+        bail!("--tree is required to score with dollo, mp or dollo_weighted (or select only --methods counts)");
     };
     let tree = Tree::read(tree_path)
         .with_context(|| format!("could not read tree {}", tree_path.display()))?;
@@ -1350,6 +1376,36 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         notes.push(format!("mp {} steps", mp.total_steps));
     }
 
+    if o.methods.contains(&Method::DolloWeighted) {
+        let runs: Vec<tables::WeightedDolloRun> = o
+            .weights
+            .iter()
+            .map(|&(gw, lw)| (gw, lw, score::dollo_weighted(&data, gw, lw)))
+            .collect();
+        tables::dollo_weighted_table(&runs).write(dir.join("dollo_weighted_sites.tsv"))?;
+        let t = tables::dollo_weighted_summary_table(&runs);
+        t.write(dir.join("dollo_weighted.tsv"))?;
+        summary.push((
+            "dollo_weighted",
+            runs.iter()
+                .map(|(gw, lw, sites)| {
+                    let g: u64 = sites.iter().map(|s| u64::from(s.1)).sum();
+                    let l: u64 = sites.iter().map(|s| u64::from(s.2)).sum();
+                    format!("{gw}:{lw}={g}g/{l}l")
+                })
+                .collect::<Vec<_>>()
+                .join(","),
+        ));
+        if verbose > 0 {
+            eprintln!(
+                "dollo_weighted: {} weighting(s) over {} sites",
+                runs.len(),
+                data.characters.len()
+            );
+        }
+        notes.push(format!("dollo_weighted {} weighting(s)", runs.len()));
+    }
+
     if o.reconstructions && !recon_rows.is_empty() {
         let t = tables::reconstruction_table(&data, &recon_rows);
         summary.push(("reconstructed_nodes", t.len().to_string()));
@@ -1398,11 +1454,29 @@ fn resolve_methods(requested: &[String]) -> Result<Vec<Method>> {
     let mut out = Vec::new();
     for name in requested {
         let m = Method::parse(name).ok_or_else(|| {
-            anyhow::anyhow!("unknown method {name:?}: choose dollo, mp or counts")
+            anyhow::anyhow!("unknown method {name:?}: choose dollo, mp, counts or dollo_weighted")
         })?;
         if !out.contains(&m) {
             out.push(m);
         }
+    }
+    Ok(out)
+}
+
+fn resolve_weights(requested: &[String]) -> Result<Vec<(u32, u32)>> {
+    let mut out = Vec::new();
+    for w in requested {
+        let p = score::parse_gain_loss_weight(w).ok_or_else(|| {
+            anyhow::anyhow!(
+                "--gain-loss-weights: {w:?} is not G:L with whole numbers and G >= 1 (e.g. 3:1)"
+            )
+        })?;
+        if !out.contains(&p) {
+            out.push(p);
+        }
+    }
+    if out.is_empty() {
+        bail!("--gain-loss-weights needs at least one G:L weighting");
     }
     Ok(out)
 }
@@ -1775,6 +1849,7 @@ mod tests {
             combine: false,
             tree: Some(dir.join("demo.nwk")),
             methods: vec!["dollo".into()],
+            gain_loss_weights: vec!["1:1".into()],
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,
@@ -1807,6 +1882,7 @@ mod tests {
             combine: false,
             tree: None,
             methods: vec!["counts".into()],
+            gain_loss_weights: vec!["1:1".into()],
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -1837,6 +1913,7 @@ mod tests {
             combine: false,
             tree: None,
             methods: vec!["dollo".into()],
+            gain_loss_weights: vec!["1:1".into()],
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -1897,6 +1974,7 @@ mod tests {
             },
             tree: Some(nwk),
             methods: vec![],
+            gain_loss_weights: vec!["1:1".into()],
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,

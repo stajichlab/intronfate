@@ -119,8 +119,8 @@ generates (`demo.gff3`, `demo.faa`, `demo.aln.fasta`, `demo.nwk`).
   `--flank` controls how much alignment around a site a taxon needs. See `docs/USAGE.md` §6.
 - **Classic Dollo minimises losses, not gains.** With gain cost 1 and loss cost 0 and free losses,
   one gain at the root explains any pattern — the min-gain score is degenerate at exactly 1 for every
-  site. The informative statistic is the loss count given one origin; `dollo_weighted` sweeps the
-  gain/loss ratio when you need a real trade-off.
+  site. The informative statistic is the loss count given one origin; `-m dollo_weighted` sweeps the
+  gain/loss ratio (`--gain-loss-weights`) when you need a real trade-off.
 - **Dollo gain placement depends on rooting.** Pass `--outgroup`; if the Newick looks unrooted the
   tool warns instead of guessing.
 - **`introns.tsv` numbers are per-protein.** Cross-species comparisons use `matrix.tsv` columns.
@@ -178,7 +178,7 @@ scripts/              helpers for docs/HOWTO.md (one_protein_per_gene.py, make_f
 
 Implemented: GFF3/GTF ingestion with frame/exon/length cross-checks, protein-space projection,
 FASTA/Stockholm alignments, site × taxon matrices, pairwise sharing, Dollo (classic + weighted),
-Fitch MP with ancestral reconstruction, counts, TSV/NEXUS output.
+Fitch MP with ancestral reconstruction, counts, TSV/NEXUS output, and a weighted Dollo sweep (`-m dollo_weighted`).
 
 Also: per-cell missing data (alignment gaps are `?`), MALIN import/export (`convert`), `--min-observed`.
 

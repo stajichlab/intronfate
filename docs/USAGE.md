@@ -114,7 +114,8 @@ makes them so). Likewise each `-p` file is read in parallel and merged in the or
 | `--taxon-map FILE` | – | Two-column `alignment_row_id → taxon`. **Needed for one-alignment-per-gene-family runs**, where each species' row carries its own protein id but the tree's tips are species. Rows not listed keep their id; two rows of one alignment may not map to one taxon. See §9. |
 | `--strict` | off | Abort on a malformed annotation line instead of counting it. |
 | `--outgroup NAME` | – | Root the tree on a tip (or a set that forms a split). **Dollo results depend on rooting**; a tree that looks unrooted triggers a warning. |
-| `-m dollo,mp,counts` | all | Which scoring methods to run. |
+| `-m dollo,mp,counts` | `dollo,mp,counts` | Which scoring methods to run. `dollo_weighted` is also available, never by default. |
+| `--gain-loss-weights G:L,...` | `1:1,2:1,5:1,10:1` | The gain:loss costs swept by `-m dollo_weighted` (a gain costs G, a loss L; G ≥ 1). Per site, the cheapest history in which a lost position never comes back. |
 | `--min-taxa N` | 1 | Skip sites carried by fewer than N scored taxa (`2` drops lineage-specific singletons). |
 | `--min-observed N` | 0 | Skip sites observed (`1` or `0`, not `?`) in fewer than N taxa. |
 | `--reconstructions` | off | Also write per-node ancestral states. |
