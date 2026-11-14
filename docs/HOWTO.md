@@ -196,10 +196,11 @@ gain. For how large that effect is in these species, see [V4](../bench/V4_annota
 
 ## 9. Next steps
 
-**Score again** with another tree, rooting or method, without redoing the projection (this takes seconds):
+**Score again** without redoing the projection (this takes seconds). Change `-t`, `--outgroup` or `-m` to try another tree, rooting
+or method:
 
 ```sh
-intronfate score --matrix results/A_strict/combined/matrix.tsv -t $EX/$SET.nwk --outgroup $OUTGROUP -m dollo_weighted -o results/A_strict/rescored
+intronfate score --matrix results/A_strict/combined/matrix.tsv -t $EX/$SET.nwk --outgroup $OUTGROUP -m dollo,mp -o results/A_strict/rescored
 ```
 
 **Use another tier.** Align and run it the same way, for example tier B:
