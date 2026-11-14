@@ -1,0 +1,13 @@
+kind	count
+no_cds	10132
+proteins_not_in_alignment	1817
+present_not_observable	624
+protein_not_in_fasta	101
+site_beyond_protein_end	48
+cds_gap_not_exon_gap	47
+overlapping_exons	21
+overlapping_cds	20
+tail_sites_dropped	7
+frame_mismatch	4
+protein_id_fallback_transcript	3
+source_summary	1

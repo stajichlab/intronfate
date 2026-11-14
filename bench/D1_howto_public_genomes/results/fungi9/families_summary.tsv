@@ -1,0 +1,5 @@
+tier	families	sequences	species_per_family
+A_strict	1103	9927	9:1103
+B_partial	720	5480	7:280;8:440
+C_hog	415	2965	7:355;8:60
+D_synteny	0	0	

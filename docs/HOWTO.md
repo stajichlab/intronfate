@@ -3,13 +3,13 @@
 Every command below can be copied and pasted in order. The data are complete public genomes (NCBI RefSeq annotation and proteins),
 downloaded in step 2. Two examples use the same steps:
 
-| Example | Genomes | Runtime, 8 cores | Disk |
+| Example | Genomes | Time, 8 cores | Disk |
 |---|---|---|---|
-| **1. five fungi** (`fungi5`) | *Cryptococcus neoformans* (outgroup), *S. pombe*, *S. cerevisiae*, *N. crassa*, *A. nidulans* | @T5@ | @D5@ |
-| **2. nine fungi** (`fungi9`) | the five above, plus *Spizellomyces punctatus* (outgroup), *Mucor mucedo*, *Mycosarcoma maydis*, *Coprinopsis cinerea* | @T9@ | @D9@ |
+| **1. five fungi** (`fungi5`) | *Cryptococcus neoformans* (outgroup), *S. pombe*, *S. cerevisiae*, *N. crassa*, *A. nidulans* | 14 min (OrthoFinder 10) | 0.4 GB |
+| **2. nine fungi** (`fungi9`) | the five above, plus *Spizellomyces punctatus* (outgroup), *Mucor mucedo*, *Mycosarcoma maydis*, *Coprinopsis cinerea* | 37 min (OrthoFinder 30) | 0.7 GB |
 
 Example 2 is the species set of the worked result in the [README](../README.md) (which used funannotate annotation; here RefSeq is used, so
-the numbers differ a little). The genome lists and trees are in [`examples/04_public_genomes/`](../examples/04_public_genomes/).
+the numbers differ a little, see step 8). Times and sizes are from the test run on a cluster node; the container adds 0.65 GB. The genome lists and trees are in [`examples/04_public_genomes/`](../examples/04_public_genomes/).
 
 What you get at the end: for every branch of the species tree, how many intron positions were gained and lost, with the table of positions
 behind it. For the reasoning behind each step, see [`TUTORIAL.md`](TUTORIAL.md). For every option, see [`USAGE.md`](USAGE.md).
@@ -107,8 +107,13 @@ for g in genomes/*.gff.gz; do
 done
 ```
 
-Each line of the output reports how many genes were kept, for example
-`@ONEPERGENE@`.
+Each line of the output reports how many genes were kept, for example:
+
+```text
+Ncrassa: 9757 genes kept from 10812 proteins (1055 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
+```
+
+The number of genes kept equals NCBI's count of protein-coding genes for every genome in both examples.
 
 ## 4. Find orthologs (OrthoFinder)
 
@@ -165,7 +170,7 @@ intronfate analyze \
   alignment picks out the one isoform per gene that was used.
 - `--taxon-map` makes the tree tips species rather than proteins.
 - `--combine --combined-only` stacks all families into one matrix and scores it once. Drop `--combined-only` to also get one folder per family.
-- This step takes @T7@.
+- This step takes 4 s (Example 1) or 7 s (Example 2).
 
 ## 8. Read the results
 
@@ -174,10 +179,41 @@ column -t results/A_strict/combined/dollo_branches.tsv | cut -c1-150
 cut -f1,2 results/A_strict/diagnostics.tsv
 ```
 
-@BRANCHES@
+Example 1 gives (columns `branch`, `gains`, `losses`; `node`, `n_tips` and `tips` left out):
+
+```text
+branch                                gains  losses
+root                                  1935   0
+Cneoformans                           8342   0
+Spombe,Scerevisiae,Ncrassa,Anidulans  344    0
+Spombe                                923    965
+Scerevisiae,Ncrassa,Anidulans         17     444
+Scerevisiae                           23     1747
+Ncrassa,Anidulans                     1105   21
+Ncrassa                               894    679
+Anidulans                             1557   164
+```
 
 How to read it: a **gain** is where an intron position first appears (Dollo parsimony allows one origin per position). A **loss** is a
-descendant that lacks it. The other tables:
+descendant that lacks it.
+
+The outgroup's own branch (here *C. neoformans*, 8,342 gains) holds every position found only in the outgroup. With a single outgroup these
+cannot be dated, so do not read them as lineage-specific gains. Add a second outgroup (Example 2) to see more of the deep history.
+
+In Example 2, the RefSeq annotation gives almost the same terminal losses as the funannotate run behind the README's worked result:
+
+| Branch | Losses, this how-to (RefSeq) | Losses, README (funannotate) |
+|---|---|---|
+| *M. maydis* | 3,864 | 4,055 |
+| *S. cerevisiae* | 1,452 | 1,447 |
+| *M. mucedo* | 1,479 | 1,516 |
+| *C. neoformans* | 1,010 | 1,091 |
+| Ascomycota (*S. pombe*, *S. cerevisiae*, *N. crassa*, *A. nidulans*) | 2,455 | 2,569 |
+
+with 1,103 strict single-copy families (README: 1,106). The full tables of both examples are in
+[`bench/D1_howto_public_genomes/results/`](../bench/D1_howto_public_genomes/results/).
+
+The other tables:
 
 | File | What it tells you |
 |---|---|
@@ -188,7 +224,18 @@ descendant that lacks it. The other tables:
 | `introns.tsv` | every annotated coding intron of every genome, with its position in the protein |
 | `unmatched.tsv`, `diagnostics.tsv` | what failed to join or was skipped, and why. **Read these first.** |
 
-All columns are explained in [`OUTPUTS.md`](OUTPUTS.md). @DIAG@
+All columns are explained in [`OUTPUTS.md`](OUTPUTS.md). With RefSeq, expect these diagnostics, which are harmless:
+
+| Diagnostic | Example 1 | Why |
+|---|---|---|
+| `no_cds` | 10,132 | tRNA, rRNA and ncRNA transcripts: they have no CDS |
+| `protein_not_in_fasta` (in `unmatched.tsv`) | 101 | pseudogenes (`pseudo=true`): RefSeq gives their CDS rows but no protein |
+| `proteins_not_in_alignment` | 1,817 | one record per alignment: the proteins (other genes, other isoforms) that are not in that family |
+| `present_not_observable` | 624 | introns in a stretch where that species is not aligned (gaps around the site): scored `?`, not counted |
+
+There are also a few dozen minor records (`site_beyond_protein_end`, `cds_gap_not_exon_gap`, `overlapping_exons`, `frame_mismatch`, ...; see
+[`USAGE.md`](USAGE.md) for each). Neither example had a `row_sequence_mismatch` or `length_mismatch`; many of those would mean that the
+annotation and the protein file do not match.
 
 **Before you interpret a number:** RefSeq annotation is not truth. A missed intron looks exactly like a loss, and a false intron looks like a
 gain. For how large that effect is in these species, see [V4](../bench/V4_annotation_accuracy/README.md) and
