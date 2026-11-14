@@ -123,6 +123,8 @@ makes them so). Likewise each `-p` file is read in parallel and merged in the or
 | `--ml-bootstrap N` | 0 | `-m likelihood`: bootstrap replicates for intervals on gains, losses and presence. |
 | `--ml-max-iter N` | 50000 | `-m likelihood`: limit on EM steps (E-steps). |
 | `--ml-seed N` | 1 | `-m likelihood`: random seed of `--ml-bootstrap`. |
+| `--ml-rate-categories K` | 1 | `-m likelihood`: rate classes across positions (discrete gamma; 4 is usual, 1 = none). |
+| `--ml-gamma-shape A` | estimated | `-m likelihood`: fix the gamma shape instead of estimating it. |
 
 ## 5. Reading the results
 
@@ -260,7 +262,7 @@ annotations you analyse alongside the results. A worked example, with measured n
 from the genome-wide rate), is in `bench/V4_annotation_accuracy/README.md`.
 
 CDS features define protein space; UTR introns are reported but never projected. One protein per id
-(isoforms are unioned and flagged). The likelihood model (`-m likelihood`, §11) has no rate variation across positions yet (SPEC §5.6).
+(isoforms are unioned and flagged). The likelihood model (`-m likelihood`, §11) allows rate variation across positions with `--ml-rate-categories`.
 Analyses on real genomes belong on a cluster: nothing here has been benchmarked at genome scale yet.
 
 ## 11. Likelihood with annotation error (`-m likelihood`)
@@ -303,7 +305,13 @@ Read with care:
   no change (`fixed` = `no_data`) and left out of the totals; a note says how many there are. Its parent may then have a single
   informative child; the parent's branch is fixed too (`unary`) and the change is put on the child's branch.
 - At least 4 genomes must have data: conditioning on positions being seen costs one degree of freedom.
-- No rate variation across positions yet; `--min-taxa` must be 1 (each position is conditioned on being seen at least once).
+- `--min-taxa` must be 1 (each position is conditioned on being seen at least once).
+- **Rate variation across positions** (`--ml-rate-categories 4`): positions get one of 4 rate classes from a gamma with shape `α`
+  (`ml_gamma_shape`; small means very heterogeneous). Without it, a few fast positions and many slow ones are averaged into one rate,
+  which can overstate how rich ancestors were and how many losses happened. Compare the two fits' `ml_log_likelihood`: the classes
+  add one parameter. Branch probabilities in `likelihood_branches.tsv` are then those at the mean rate, and
+  `likelihood_sites.tsv` gets each position's posterior rate (`rate`, above 1 = changes more readily). A fit with classes takes
+  several times longer; `-vv` prints one line per EM cycle.
 - `--ml-bootstrap` resamples whole families when the matrix is combined (`<family>:<column>:<phase>` labels), single positions
   otherwise. Each replicate is a full EM fit, so 100 replicates take about 100 times as long as one fit.
 

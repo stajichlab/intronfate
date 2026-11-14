@@ -351,11 +351,31 @@ loose stopping rule; all three are fixed and tested. A second review of the fixe
 no-data fix (the split between two branches moved with the starting values) and run-to-run differences from the parallel sum;
 both are fixed and tested.
 
+### 5.5b Rate variation across positions (implemented: `--ml-rate-categories K`, `--ml-gamma-shape`)
+
+Intron gain and loss rates vary strongly between positions [R5, R12]. With `K > 1`, each position belongs to one of `K` equally likely
+classes with rate multipliers `r_k`, the category means of a mean-1 gamma with shape `α` (Yang 1994; one factor on both rates, as in
+MALIN's rate variation [R1]). Each branch is read as a two-state continuous-time process: its rate-1 probabilities `(g, l)` give the
+equilibrium `π = g/(g+l)` and the decay `d = 1−g−l` (so `g + l < 1` is required), and class `k` has `g_k = π(1−d^{r_k})`,
+`l_k = (1−π)(1−d^{r_k})`. Root probability and tip errors are shared by the classes. A position's likelihood and its no-show
+probability `Z` are class means. EM: the E-step yields expected transition counts per class and branch (observed positions weighted
+by their class posterior, unseen ones by `Z_k/K/(1−Z̄)`); the M-step maximises the expected complete-data log-likelihood, first `α` by
+golden-section search on ln α ∈ [ln 0.05, ln 200], then each branch in `(logit π, logit(g+l))` by Newton steps with step halving
+(coordinate golden searches where the Hessian is not negative definite), keeping a move only if it raises the objective
+(generalised EM, so the log-likelihood never decreases). SQUAREM acceleration and the stopping rule are as in §5.5, with ln α in the
+parameter vector. `K = 1` is exactly the §5.5 model. Output: `ml_gamma_shape`, and per position the posterior mean rate multiplier
+(`likelihood_sites.tsv` `rate`).
+
+Validated by: the incomplete gamma function and quantiles against closed forms; the four-class rates against Yang (1994, Table 1)
+for α = 0.5 and 1; class transitions composing as a continuous-time process (`T(r1)T(r2) = T(r1+r2)`); the class mixture, `Z`,
+posterior presence and posterior rates against brute-force enumeration under each class; seen patterns summing to 1; on a simulated
+8-tip data set with α = 0.5 (40,000 positions), EM never decreasing, α recovered (0.3-0.8), rate-1 losses within 0.06, a gain of >50
+lnL units over the one-class model, a stationary point in α and every branch, and higher posterior rates for changing positions than
+for all-present ones; on homogeneous data, a large α (> 5) and a log-likelihood within 5 units of the one-class fit; fixed α kept.
+
 ### 5.6 Planned
 
-- **Rate heterogeneity across sites** (Γ over positions, MALIN's rate categories); intron gain and loss rates vary strongly
-  between positions and lineages [R5, R12], so a homogeneous model can misplace both. Needs a branch-length/rate
-  parameterisation instead of free per-branch probabilities, and a numerical M-step.
+- **Separate rate factors for gain and loss** (MALIN allows both); branch lengths shared between gain and loss.
 - **A likelihood-ratio test** of "ancient intron" vs "convergent insertion" per position.
 - **Bias correction**: positions in poorly aligned or gappy columns are under-called. Plan:
   per-column observability from the alignment and an explicit "scorable site" set.
@@ -665,7 +685,8 @@ comparison the tool exists to make mechanically repeatable.
    genome (§6).
 4. **`AnnotationSource` for SQL/Chado/Ensembl** — the seam exists; needs a schema decision.
 5. **Likelihood-based scoring**: v1 done (§5.5: branch-specific probabilities, annotation error, ascertainment, EM, bootstrap).
-   Remaining: rate heterogeneity and branch lengths (§5.6), validation against MALIN's `*.rates` output (§6b).
+   Rate variation across positions done (§5.5b). Remaining: separate gain/loss rate factors (§5.6), validation against MALIN's
+   `*.rates` output (§6b).
 6. ~~Column observability~~ — done (§2: per-cell observability with a flank rule), as are `--min-observed` and
    the `n_both_observable` column in `pairwise.tsv`. Remaining: tuning the `--flank` default.
 7. **Stdin/stdout support** (`--gff -`, `-o -`) for pipeline composition.
