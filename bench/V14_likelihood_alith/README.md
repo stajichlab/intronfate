@@ -103,9 +103,9 @@ in brackets where ≥ 0.01). One panel per error set.
 
 ## Limits
 
-- **No rate variation across positions.** Intron positions differ greatly in how readily they are lost and gained. A homogeneous model
-  can overstate how rich ancestors were and therefore how many losses occurred (MALIN's rate categories address this; SPEC §5.6). The
-  Dollo/likelihood contrast in section 1 is partly this.
+- **No rate variation across positions.** Intron positions differ greatly in how readily they are lost and gained. (This note first
+  said a homogeneous model overstates ancestral richness; that was the wrong way round. V15 added rate classes: ancestors became
+  richer and losses larger, as published comparisons also found. See `bench/V15_rate_variation`.)
 - Error rates are measured for only 6 of 42 genomes; the rest use the median. Alith's are unknown (hence the sweep).
 - The likelihood placement test is **not calibrated** the way V13 calibrated the Dollo tests (known lineages thinned to Alith's
   content). That would take a likelihood fit per thinned matrix and placement (about 20,000 fits).

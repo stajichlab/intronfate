@@ -42,7 +42,7 @@ rest, Alith swept from 1.0 to 0.7):
   Alith's annotation misses 30 % of introns moves its stem losses by less than 1 %: its intron poverty is not an annotation artefact.
 - **Strains:** with errors modelled, almost no change is placed between the six strains (0-19 per branch), consistent with the
   strain-level Dollo events being annotation noise.
-- No rate variation across positions yet, which can overstate ancestral richness and losses.
+- No rate variation across positions in V14; V15 adds it (deep ancestors then come out richer and losses larger; see §2d).
 
 ## 3. Protein-domain content (V10)
 Pfam counts for 472 genomes (the V9 genomes plus a BFD sample of up to 3 per order; 10,642 Pfams). *Antarctolithica* carries 89-98 % of the 2,500 core fungal Pfams (other genomes: median 99.4 %), so it looks like a normal fungus. In the PCoA it lies between the yeast cluster (Saccharomycotina, Taphrinomycotina) and the Pezizomycotina; its nearest genomes are early-diverging yeasts (Lipomycetes-type Saccharomycotina, *Taphrina*, *Saitoella*), *Novakomyces* and *Tortispora*. A random forest that classifies known genomes at 99-100 % (leave-one-order-out) does not assign it confidently (Taphrinomycotina 0.41, Saccharomycotina 0.22, Pezizomycotina 0.18, Basidiomycota 0.17). Pfam signatures: it carries 0.11 of the Pezizomycotina signature (members 0.65-1.00) and 0.14 of the Saccharomycotina signature (members 0.53-1.00). Best reading: a yeast-like, small-proteome ascomycete outside both groups; but Pfam content tracks lifestyle and proteome size, so this is not a calibrated placement method.
