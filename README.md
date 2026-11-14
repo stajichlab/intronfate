@@ -8,7 +8,8 @@ counts.
 
 Rust workspace, no runtime dependencies beyond the binary.
 
-**Documentation:** [`docs/TUTORIAL.md`](docs/TUTORIAL.md) start here: genomes to results ·
+**Documentation:** [`docs/HOWTO.md`](docs/HOWTO.md) start here: copy-paste steps on complete public genomes (five or nine fungi, downloaded from NCBI) ·
+[`docs/TUTORIAL.md`](docs/TUTORIAL.md) the same pipeline explained, for your own genomes ·
 [`docs/USAGE.md`](docs/USAGE.md) user guide ·
 [`docs/OUTPUTS.md`](docs/OUTPUTS.md) every output column · [`examples/`](examples/) runnable, hand-checked
 examples · [`docs/SPEC.md`](docs/SPEC.md) design, assumptions and references ·
@@ -66,6 +67,8 @@ species2/species3 stem. The annotated tree shows where the origins were placed:
 ```
 
 ## Real data
+
+For a complete run on public genomes, from download to results, follow [`docs/HOWTO.md`](docs/HOWTO.md). The commands in short:
 
 ```sh
 # 1. intron positions in protein space (no alignment needed yet)
@@ -165,9 +168,10 @@ The other counts need the limits below before they are interpreted.
 crates/intronfate-core/  library: gff, annotation, seqio, msa, project, matrix, tree, score, tables
 crates/intronfate-cli/   the `intronfate` binary
 docs/                 USAGE, OUTPUTS, TESTING, SPEC (design + references), HANDOFF (state)
-examples/             three runnable examples with committed expected output
+examples/             three runnable examples with committed expected output, plus 04_public_genomes (inputs for docs/HOWTO.md)
 tests/data/           tiny synthetic fixtures
-scripts/              malin_to_matrix.py — independent MALIN importer used as a cross-check
+scripts/              helpers for docs/HOWTO.md (one_protein_per_gene.py, make_families.py, align_families.sh, doc_blocks.py);
+                      malin_to_matrix.py — independent MALIN importer used as a cross-check
 ```
 
 ## Status

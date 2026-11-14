@@ -5,6 +5,9 @@ results. It follows exactly what was done for the nine-fungus set in [`bench/V6_
 (scripts there are the reference implementation), so every number quoted below is real. Run the heavy steps (OrthoFinder, MAFFT) on a cluster or
 a large machine; `intronfate` itself is light (the nine-genome, 1,106-family run takes seconds).
 
+To try the whole pipeline first on public genomes, with commands you can paste, see [`HOWTO.md`](HOWTO.md). It uses the same steps, with
+RefSeq downloads for five or nine fungi and the helper scripts in [`scripts/`](../scripts/).
+
 What you will have at the end: for every lineage of your species tree, how many intron positions were gained and lost, with the full table of
 positions behind it.
 

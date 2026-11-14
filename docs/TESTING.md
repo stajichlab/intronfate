@@ -5,6 +5,7 @@ cargo test --workspace                      # Rust: unit, integration, CLI end-t
 cargo clippy --workspace --all-targets      # must stay warning-free
 cargo fmt --check
 python3 -I scripts/test_malin_to_matrix.py  # the Python converter's fixture tests
+python3 -I scripts/test_howto_scripts.py    # the HOWTO helper scripts' fixture tests
 ```
 
 ## Layers
@@ -19,6 +20,8 @@ python3 -I scripts/test_malin_to_matrix.py  # the Python converter's fixture tes
 | Examples | `examples/*/` | Each has `run.sh` and a committed `expected/`; the CLI test re-runs them and requires byte-identical output. Their READMEs list the hand-checked numbers. |
 | Randomised vs reference | `matrix.rs`, `annotation.rs`, `tree.rs`, `score.rs` tests | Random CDS layouts on both strands (with 5'-partial skips and exon rows) against a naive per-base model; random matrices through `matrix.tsv` and MALIN; random trees for `mrca`, Dollo and Fitch against brute force; weighted Dollo against brute force with missing tips; the parallel pairwise code against the per-pair reference; the `ambiguous` flag against an exhaustive count of optimal labellings. |
 | Cross-implementation | `scripts/test_malin_to_matrix.py` vs `malin.rs` tests | Two independent MALIN importers agree on the same fixture (`tests/data/malin_tiny.table`). |
+| How-to helpers | `scripts/test_howto_scripts.py` | `one_protein_per_gene.py` keeps the longest isoform per gene for NCBI- and Ensembl-style GFF3 (ties, CDS under a gene, internal stops, missing proteins); `make_families.py` builds the tiers from a tiny OrthoFinder layout with plain and gzip proteomes; `doc_blocks.py` extracts only ```` ```sh ```` blocks and refuses a `--sub` line it cannot find. |
+| How-to, end to end | `bench/D1_howto_public_genomes/run_howto.sbatch` (HPCC) | `docs/HOWTO.md` run as written, on both examples, from download to `dollo_branches.tsv`. |
 
 Golden files only catch *changes*. The numbers that make the examples trustworthy are the
 hand-calculated ones (`quickstart_numbers_match_the_hand_calculation` and the example READMEs).
