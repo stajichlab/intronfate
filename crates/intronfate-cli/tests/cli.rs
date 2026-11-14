@@ -1470,6 +1470,8 @@ fn likelihood_writes_its_tables_and_reads_error_rates() {
         "4".into(),
         "--ml-gamma-shape".into(),
         "0.5".into(),
+        "--ml-param-tol".into(),
+        "1e-5".into(),
     ]);
     let o = run_s(&a);
     assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));

@@ -148,8 +148,10 @@ impl Params {
 pub struct FitOptions {
     /// Limit on E-steps. It is checked once per acceleration cycle, which can use up to 15 E-steps, so it may be exceeded by that.
     pub max_iter: usize,
-    /// Stop when an iteration improves the log-likelihood by less than this.
+    /// Stop when an acceleration cycle improves the log-likelihood by less than this ...
     pub tol: f64,
+    /// ... and moves no parameter by more than this.
+    pub param_tol: f64,
     /// Starting values (default: gain 0.05, loss 0.2, root 0.5 everywhere, shape 1). Their `rates.categories` is ignored: the fit
     /// uses [`FitOptions::categories`].
     pub init: Option<Params>,
@@ -166,6 +168,7 @@ impl Default for FitOptions {
         FitOptions {
             max_iter: 50_000,
             tol: 1e-6,
+            param_tol: 1e-7,
             init: None,
             categories: 1,
             shape: None,
@@ -1076,7 +1079,8 @@ fn keep_below_one(p: &mut Params, free: &[NodeId]) {
 /// Fit the model by EM (accelerated with SQUAREM, Varadhan & Roland 2008, and never accepting a step that lowers the
 /// log-likelihood) and return the parameters with the posterior expectations at the optimum.
 ///
-/// Stops when one acceleration cycle improves the log-likelihood by less than `tol` *and* moves no parameter by more than 1e-7;
+/// Stops when one acceleration cycle improves the log-likelihood by less than `tol` *and* moves no parameter by more than `param_tol`
+/// (default 1e-7);
 /// the gain/root direction is flat with annotation error, so a log-likelihood criterion alone stops too early. `iterations` counts
 /// E-steps.
 pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<FitResult, String> {
@@ -1239,7 +1243,7 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
                 t_m.get()
             );
         }
-        if dlnl < opt.tol && dx < 1e-7 {
+        if dlnl < opt.tol && dx < opt.param_tol {
             converged = true;
             break;
         }

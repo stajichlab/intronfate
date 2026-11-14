@@ -256,6 +256,15 @@ struct AnalyzeArgs {
     #[arg(long, default_value = "1")]
     ml_seed: u64,
 
+    /// `-m likelihood` stops when an EM cycle gains less than this in log-likelihood and moves no parameter by more than
+    /// `--ml-param-tol`.
+    #[arg(long, default_value = "1e-6")]
+    ml_tol: f64,
+
+    /// See `--ml-tol`. Looser values (e.g. 1e-5) shorten fits with rate classes at a small cost in log-likelihood.
+    #[arg(long, default_value = "1e-7")]
+    ml_param_tol: f64,
+
     /// Rate classes across positions for `-m likelihood` (discrete gamma, mean rate 1; 1 = no rate variation, 4 is usual).
     #[arg(long, default_value = "1")]
     ml_rate_categories: usize,
@@ -343,6 +352,15 @@ struct ScoreArgs {
     /// Random seed for `--ml-bootstrap`.
     #[arg(long, default_value = "1")]
     ml_seed: u64,
+
+    /// `-m likelihood` stops when an EM cycle gains less than this in log-likelihood and moves no parameter by more than
+    /// `--ml-param-tol`.
+    #[arg(long, default_value = "1e-6")]
+    ml_tol: f64,
+
+    /// See `--ml-tol`. Looser values (e.g. 1e-5) shorten fits with rate classes at a small cost in log-likelihood.
+    #[arg(long, default_value = "1e-7")]
+    ml_param_tol: f64,
 
     /// Rate classes across positions for `-m likelihood` (discrete gamma, mean rate 1; 1 = no rate variation, 4 is usual).
     #[arg(long, default_value = "1")]
@@ -1132,6 +1150,8 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     seed: a.ml_seed,
                     categories: a.ml_rate_categories,
                     shape: a.ml_gamma_shape,
+                    tol: a.ml_tol,
+                    param_tol: a.ml_param_tol,
                 },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
@@ -1164,6 +1184,8 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     seed: a.ml_seed,
                     categories: a.ml_rate_categories,
                     shape: a.ml_gamma_shape,
+                    tol: a.ml_tol,
+                    param_tol: a.ml_param_tol,
                 },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
@@ -1216,6 +1238,8 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     seed: a.ml_seed,
                     categories: a.ml_rate_categories,
                     shape: a.ml_gamma_shape,
+                    tol: a.ml_tol,
+                    param_tol: a.ml_param_tol,
                 },
                 matrix_label: format!("{} matrices combined", parts.len()),
             },
@@ -1279,6 +1303,8 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 seed: a.ml_seed,
                 categories: a.ml_rate_categories,
                 shape: a.ml_gamma_shape,
+                tol: a.ml_tol,
+                param_tol: a.ml_param_tol,
             },
             matrix_label: matrix.display().to_string(),
         },
@@ -1318,6 +1344,8 @@ struct MlOpts {
     seed: u64,
     categories: usize,
     shape: Option<f64>,
+    tol: f64,
+    param_tol: f64,
 }
 
 /// Score one matrix; returns a one-line summary of what was computed.
@@ -1512,6 +1540,8 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
             max_iter: o.ml.max_iter,
             categories: o.ml.categories.max(1),
             shape: o.ml.shape,
+            tol: o.ml.tol,
+            param_tol: o.ml.param_tol,
             trace: verbose > 1,
             ..Default::default()
         };
@@ -2189,6 +2219,8 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_tol: 1e-6,
+            ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,
@@ -2228,6 +2260,8 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_tol: 1e-6,
+            ml_param_tol: 1e-7,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -2265,6 +2299,8 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_tol: 1e-6,
+            ml_param_tol: 1e-7,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -2332,6 +2368,8 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_tol: 1e-6,
+            ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,

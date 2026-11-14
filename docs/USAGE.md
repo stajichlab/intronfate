@@ -125,6 +125,7 @@ makes them so). Likewise each `-p` file is read in parallel and merged in the or
 | `--ml-seed N` | 1 | `-m likelihood`: random seed of `--ml-bootstrap`. |
 | `--ml-rate-categories K` | 1 | `-m likelihood`: rate classes across positions (discrete gamma; 4 is usual, 1 = none). |
 | `--ml-gamma-shape A` | estimated | `-m likelihood`: fix the gamma shape instead of estimating it. |
+| `--ml-tol X`, `--ml-param-tol Y` | 1e-6, 1e-7 | `-m likelihood`: stop when an EM cycle gains less than X in log-likelihood and moves no parameter by more than Y. With rate classes EM creeps for a long time near the optimum; `--ml-param-tol 1e-5` ends fits several times sooner, about 0.01 short in log-likelihood. |
 
 ## 5. Reading the results
 
