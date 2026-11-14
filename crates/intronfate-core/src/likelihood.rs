@@ -876,6 +876,7 @@ pub fn fit_with_precision(
         return Ok((r, err, true));
     }
     let mut settled = false;
+    let mut steps = r.iterations;
     for _ in 0..20 {
         let next: Vec<f64> = (0..n)
             .map(|i| rate(i, r.tips[i].unseen_observable))
@@ -888,11 +889,13 @@ pub fn fit_with_precision(
         err.false_rate = next;
         o.init = Some(r.params.clone());
         r = fit(data, &err, &o)?;
+        steps += r.iterations;
         if change < 1e-3 {
             settled = true;
             break;
         }
     }
+    r.iterations = steps; // E-steps over all rounds, not only the last (warm-started) one
     Ok((r, err, settled))
 }
 
@@ -1649,6 +1652,8 @@ mod tests {
         let (r, used, settled) =
             fit_with_precision(&d, &err.sensitivity, &spec, &FitOptions::default()).unwrap();
         assert!(settled);
+        let single = fit(&d, &used, &FitOptions::default()).unwrap();
+        assert!(r.iterations > 0 && (r.log_lik - single.log_lik).abs() < 1e-3);
         let f = used.false_rate[0];
         assert!(
             (f - 0.01).abs() < 0.002,

@@ -1,0 +1,43 @@
+taxon	sensitivity	precision	source
+Mmucedo	0.9450	0.8762	V4 measured
+Smaydis	0.8966	0.8687	V4 measured
+Cneoformans	0.9890	0.9904	V4 measured
+Spombe	0.9717	0.9892	V4 measured
+Taphrina	0.9583	0.9292	default (median of measured)
+Protomyces	0.9583	0.9292	default (median of measured)
+Savitreella	0.9583	0.9292	default (median of measured)
+Saitoella	0.9583	0.9292	default (median of measured)
+Neolecta	0.9583	0.9292	default (median of measured)
+Yarrowia	0.9583	0.9292	default (median of measured)
+Lipomyces	0.9583	0.9292	default (median of measured)
+Pyronema	0.9583	0.9292	default (median of measured)
+Orbilia	0.9583	0.9292	default (median of measured)
+Cladonia	0.9583	0.9292	default (median of measured)
+Lichina	0.9583	0.9292	default (median of measured)
+Arthonia	0.9583	0.9292	default (median of measured)
+Geoglossum	0.9583	0.9292	default (median of measured)
+Botrytis	0.9583	0.9292	default (median of measured)
+Antarctomyces	0.9583	0.9292	default (median of measured)
+Ncrassa	0.9768	0.9821	V4 measured
+Anidulans	0.8737	0.8590	V4 measured
+Exophiala	0.9583	0.9292	default (median of measured)
+Cryomyces	0.9583	0.9292	default (median of measured)
+Zymoseptoria	0.9583	0.9292	default (median of measured)
+Hortaea	0.9583	0.9292	default (median of measured)
+Alith_14.71	0.9583	0.9292	sweep
+Alith_17.30	0.9583	0.9292	sweep
+Alith_52.25	0.9583	0.9292	sweep
+Alith_55.28	0.9583	0.9292	sweep
+Alith_62.17	0.9583	0.9292	sweep
+Alith_82.9	0.9583	0.9292	sweep
+Babjevia	0.9583	0.9292	default (median of measured)
+Kockiozyma	0.9583	0.9292	default (median of measured)
+Myxozyma	0.9583	0.9292	default (median of measured)
+Limtongia	0.9583	0.9292	default (median of measured)
+Dipodascopsis	0.9583	0.9292	default (median of measured)
+Neoaidaea	0.9583	0.9292	default (median of measured)
+Trigonopsis	0.9583	0.9292	default (median of measured)
+Geotrichum	0.9583	0.9292	default (median of measured)
+Alloascoidea	0.9583	0.9292	default (median of measured)
+Tdeformans	0.9583	0.9292	default (median of measured)
+Sjaponicus	0.9583	0.9292	default (median of measured)

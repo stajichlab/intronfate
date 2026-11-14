@@ -30,6 +30,20 @@ On the V9 tier-A matrix (42 genomes, 29,085 positions; Dollo and Fitch parsimony
   separate these two, and they do not support a position deeper than Saccharomycotina + Pezizomycotina; 22 positions pointing only to
   *Neolecta* are the one contrary signal.
 
+## 2c. The likelihood model with annotation error (V14)
+Same matrix, fitted with `-m likelihood` (per-genome sensitivity and false-intron rates: measured for 6 genomes, the median for the
+rest, Alith swept from 1.0 to 0.7):
+- **Placement:** sister to Saccharomycotina + Pezizomycotina is best under every error set (family-resampled RELL 0.86-0.91), sister
+  to Pezizomycotina second (Δ lnL 4.5-4.9, RELL 0.08-0.13), sister to Saccharomycotina third (Δ 5.1-5.2). Deeper positions are 36-47
+  worse; next to *M. maydis* 186-197. Unlike Dollo over all positions, the likelihood is not attracted to intron-poor genomes. Not
+  calibrated as V13's Dollo tests were.
+- **Gains and losses:** the stem has about 6,560 expected losses [6,105-7,024] against Dollo's 4,185, because the likelihood
+  reconstructs a richer parent (7,544 positions against 5,369). Alith's ancestor holds about 1,300 positions under both. Assuming
+  Alith's annotation misses 30 % of introns moves its stem losses by less than 1 %: its intron poverty is not an annotation artefact.
+- **Strains:** with errors modelled, almost no change is placed between the six strains (0-19 per branch), consistent with the
+  strain-level Dollo events being annotation noise.
+- No rate variation across positions yet, which can overstate ancestral richness and losses.
+
 ## 3. Protein-domain content (V10)
 Pfam counts for 472 genomes (the V9 genomes plus a BFD sample of up to 3 per order; 10,642 Pfams). *Antarctolithica* carries 89-98 % of the 2,500 core fungal Pfams (other genomes: median 99.4 %), so it looks like a normal fungus. In the PCoA it lies between the yeast cluster (Saccharomycotina, Taphrinomycotina) and the Pezizomycotina; its nearest genomes are early-diverging yeasts (Lipomycetes-type Saccharomycotina, *Taphrina*, *Saitoella*), *Novakomyces* and *Tortispora*. A random forest that classifies known genomes at 99-100 % (leave-one-order-out) does not assign it confidently (Taphrinomycotina 0.41, Saccharomycotina 0.22, Pezizomycotina 0.18, Basidiomycota 0.17). Pfam signatures: it carries 0.11 of the Pezizomycotina signature (members 0.65-1.00) and 0.14 of the Saccharomycotina signature (members 0.53-1.00). Best reading: a yeast-like, small-proteome ascomycete outside both groups; but Pfam content tracks lifestyle and proteome size, so this is not a calibrated placement method.
 
@@ -55,4 +69,4 @@ Supermatrix of 270 single-copy families (200,000 columns, 37 lineages, the six s
 - **Next steps that would discriminate:** the same hypothesis set under CAT-GTR on this supermatrix with posterior predictive tests on the long branch; a topology test restricted to genes with the fewest gaps; the strain-by-strain check; the V7-style error sensitivity for the V9 set.
 
 ## Where things are
-`bench/V4_annotation_accuracy`, `V6_orthology_nine_species`, `V7_annotation_error_sensitivity`, `V8_antarctolithica_placement` (31 genomes), `V9_antarctolithica_expanded` (42 genomes), `V10_antarctolithica_domains`, `V11_antarctolithica_topology_tests`, `V12_antarctolithica_composition`, `V13_antarctolithica_intron_map` (figures and the calibrated intron placement test). Large data stays on the HPCC (purgeable folders are listed in each README); the repository holds the scripts, fixture tests and small result tables.
+`bench/V4_annotation_accuracy`, `V6_orthology_nine_species`, `V7_annotation_error_sensitivity`, `V8_antarctolithica_placement` (31 genomes), `V9_antarctolithica_expanded` (42 genomes), `V10_antarctolithica_domains`, `V11_antarctolithica_topology_tests`, `V12_antarctolithica_composition`, `V13_antarctolithica_intron_map` (figures and the calibrated intron placement test), `V14_likelihood_alith` (the likelihood model with annotation error). Large data stays on the HPCC (purgeable folders are listed in each README); the repository holds the scripts, fixture tests and small result tables.
