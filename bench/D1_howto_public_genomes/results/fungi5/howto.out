@@ -1,39 +1,39 @@
-[doc block 1/11] 1794620307 17:38:27
-[doc block 2/11] 1794620307 17:38:27
+[doc block 1/11] 1794624635 18:50:35
+[doc block 2/11] 1794624635 18:50:35
 OrthoFinder runs
-[doc block 3/11] 1794620312 17:38:32
+[doc block 3/11] 1794624641 18:50:41
 Cneoformans  Cryptococcus neoformans var. grubii H99
 Spombe  Schizosaccharomyces pombe 972h-
 Scerevisiae  Saccharomyces cerevisiae S288C
 Ncrassa  Neurospora crassa OR74A
 Anidulans  Aspergillus nidulans FGSC A4
 total 21628
--rw-rw---- 1 jstajich stajichlab 2248573 Nov 13 17:38 Anidulans.gff.gz
--rw-rw---- 1 jstajich stajichlab 3274304 Nov 13 17:38 Anidulans.protein.faa.gz
--rw-rw---- 1 jstajich stajichlab 1996629 Nov 13 17:38 Cneoformans.gff.gz
--rw-rw---- 1 jstajich stajichlab 2504045 Nov 13 17:38 Cneoformans.protein.faa.gz
--rw-rw---- 1 jstajich stajichlab 1778135 Nov 13 17:38 Ncrassa.gff.gz
--rw-rw---- 1 jstajich stajichlab 3209613 Nov 13 17:38 Ncrassa.protein.faa.gz
--rw-rw---- 1 jstajich stajichlab 2203839 Nov 13 17:38 Scerevisiae.gff.gz
--rw-rw---- 1 jstajich stajichlab 1848181 Nov 13 17:38 Scerevisiae.protein.faa.gz
--rw-rw---- 1 jstajich stajichlab 1495495 Nov 13 17:38 Spombe.gff.gz
--rw-rw---- 1 jstajich stajichlab 1562816 Nov 13 17:38 Spombe.protein.faa.gz
-[doc block 4/11] 1794620319 17:38:39
+-rw-rw---- 1 jstajich stajichlab 2248573 Nov 13 18:50 Anidulans.gff.gz
+-rw-rw---- 1 jstajich stajichlab 3274304 Nov 13 18:50 Anidulans.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 1996629 Nov 13 18:50 Cneoformans.gff.gz
+-rw-rw---- 1 jstajich stajichlab 2504045 Nov 13 18:50 Cneoformans.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 1778135 Nov 13 18:50 Ncrassa.gff.gz
+-rw-rw---- 1 jstajich stajichlab 3209613 Nov 13 18:50 Ncrassa.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 2203839 Nov 13 18:50 Scerevisiae.gff.gz
+-rw-rw---- 1 jstajich stajichlab 1848181 Nov 13 18:50 Scerevisiae.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 1495495 Nov 13 18:50 Spombe.gff.gz
+-rw-rw---- 1 jstajich stajichlab 1562816 Nov 13 18:50 Spombe.protein.faa.gz
+[doc block 4/11] 1794624649 18:50:49
 Anidulans: 10453 genes kept from 10453 proteins (0 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
 Cneoformans: 6975 genes kept from 7826 proteins (851 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
 Ncrassa: 9757 genes kept from 10812 proteins (1055 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
 Scerevisiae: 6021 genes kept from 6021 proteins (0 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
 Spombe: 5124 genes kept from 5134 proteins (10 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
-[doc block 5/11] 1794620325 17:38:45
+[doc block 5/11] 1794624654 18:50:54
 
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:38:49[0m[39;49m : Starting [0m[33;49mOrthoFinder[0m[39;49m v[0m[36;49m3.[0m[1;36;49m2[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:50:59[0m[39;49m : Starting [0m[33;49mOrthoFinder[0m[39;49m v[0m[36;49m3.[0m[1;36;49m2[0m
 8 thread(s) for highly parallel tasks (BLAST searches etc.)
 4 thread(s) for OrthoFinder algorithm
 
 [1;33;49mOrthoFinder[0m[39;49m version [0m[1;36;49m3.2[0m[39;49m Copyright [0m[1;39;49m([0m[39;49mC[0m[1;39;49m)[0m[39;49m [0m[1;36;49m2014[0m[39;49m [0m[1;33;49mDavid Emms[0m
 
 [1;39;49mResults directory:[0m
-[39;49m    [0m[36;49m/scratch/jstajich/32075194/howto_fungi5/orthofinder/Results_fungi5/[0m
+[39;49m    [0m[36;49m/scratch/jstajich/32077206/howto_fungi5/orthofinder/Results_fungi5/[0m
 
 Checking required programs are installed
 ========================================
@@ -51,49 +51,49 @@ Creating diamond databases ━━━━━━━━━━━━━━━━━�
 Running diamond all-versus-all
 ==============================
 Using 8 thread(s)
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:38:52[0m[39;49m : This may take some time[0m[33;49m...[0m
-Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   25/25 0:03:29
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:42:21[0m[39;49m : Done all-versus-all sequence search[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:51:01[0m[39;49m : This may take some time[0m[33;49m...[0m
+Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   25/25 0:03:28
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:54:30[0m[39;49m : Done all-versus-all sequence search[0m
 
 Running OrthoFinder algorithm
 -----------------------------
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:42:21[0m[39;49m : Initial processing of each species[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:54:30[0m[39;49m : Initial processing of each species[0m
 Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   5/5 0:00:00
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:42:21[0m[39;49m : Connected putative homologues[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:54:30[0m[39;49m : Connected putative homologues[0m
 Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   5/5 0:00:00
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:42:26[0m[39;49m : Ran MCL[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:54:35[0m[39;49m : Ran MCL[0m
 
 Writing orthogroups to file
 ---------------------------
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:42:28[0m[39;49m : Done orthogroups[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:54:37[0m[39;49m : Done orthogroups[0m
 
 Analysing Orthogroups
 =====================
 
 Using user-supplied species tree
 --------------------------------
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:42:28[0m[39;49m : Starting MSA/Trees[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:54:37[0m[39;49m : Starting MSA/Trees[0m
 
 Inferring multiple sequence alignments and gene trees
 -----------------------------------------------------
 Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   5982/5982 0:05:57
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:48:25[0m[39;49m : Done MSA/Trees[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m19:00:35[0m[39;49m : Done MSA/Trees[0m
 
 Reconciling gene trees and species tree
 ---------------------------------------
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:48:25[0m[39;49m : Starting reconciliation and orthologs[0m
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:48:25[0m[39;49m : Inferring orthologs from gene trees[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m19:00:35[0m[39;49m : Starting reconciliation and orthologs[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m19:00:35[0m[39;49m : Inferring orthologs from gene trees[0m
 Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   3814/3814 0:00:02
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:48:27[0m[39;49m : Done of orthologs[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m19:00:37[0m[39;49m : Done of orthologs[0m
 
 Writing results files
 =====================
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:48:27[0m[39;49m : Start writing hierarchical orthogroups files[0m
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:48:27[0m[39;49m : Converting MSA/Trees[0m
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:48:30[0m[39;49m : Updating MSA/Trees[0m
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:48:33[0m[39;49m : Done updating MSA/Trees[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m19:00:37[0m[39;49m : Start writing hierarchical orthogroups files[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m19:00:37[0m[39;49m : Converting MSA/Trees[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m19:00:39[0m[39;49m : Updating MSA/Trees[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m19:00:42[0m[39;49m : Done updating MSA/Trees[0m
 Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   4201/4201 0:00:02
-[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:48:36[0m[39;49m : Done writing files[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m19:00:46[0m[39;49m : Done writing files[0m
 
 Summary: 
  OrthoFinder assigned 30221 genes (78.8% of total) to 6574 orthogroups.         
@@ -103,30 +103,30 @@ Summary:
  consisted entirely of single-copy genes.                                       
 
 [1;39;49mResults directory:[0m
-[39;49m    [0m[36;49m/scratch/jstajich/32075194/howto_fungi5/orthofinder/Results_fungi5/[0m
+[39;49m    [0m[36;49m/scratch/jstajich/32077206/howto_fungi5/orthofinder/Results_fungi5/[0m
 
 [1;39;49mCITATION:[0m
 [39;49m When publishing work that uses [0m[33;49mOrthoFinder[0m[39;49m please cite:[0m
 [39;49m Emms D.M., Liu Y., Belcher L., Holmes J. & Kelly S. [0m[1;39;49m([0m[1;36;49m2026[0m[1;39;49m)[0m[39;49m, Nature Methods [0m
-[1;92;49m23:1327[0m[39;49m–[0m[1;36;49m1333[0m[39;49m, [0m]8;id=1470387;https://doi.org/10.1038/s41592-026-03126-6\[4;36;49mhttps://doi.org/10.1038/s41592-026-03126-6[0m]8;;\
+[1;92;49m23:1327[0m[39;49m–[0m[1;36;49m1333[0m[39;49m, [0m]8;id=16497619;https://doi.org/10.1038/s41592-026-03126-6\[4;36;49mhttps://doi.org/10.1038/s41592-026-03126-6[0m]8;;\
 
 [39;49m If you use the species tree in your work then please also cite:[0m
 [39;49m Emms D.M. & Kelly S. [0m[1;39;49m([0m[1;36;49m2017[0m[1;39;49m)[0m[39;49m, MBE [0m[1;35;49m34[0m[1;39;49m([0m[1;36;49m12[0m[1;39;49m)[0m[39;49m: [0m[1;36;49m3267[0m[39;49m-[0m[1;36;49m3278[0m
-[39;49m Emms D.M. & Kelly S. [0m[1;39;49m([0m[1;36;49m2018[0m[1;39;49m)[0m[39;49m, bioRxiv [0m]8;id=1470391;https://doi.org/10.1101/267914\[4;36;49mhttps://doi.org/10.1101/267914[0m]8;;\
+[39;49m Emms D.M. & Kelly S. [0m[1;39;49m([0m[1;36;49m2018[0m[1;39;49m)[0m[39;49m, bioRxiv [0m]8;id=16497623;https://doi.org/10.1101/267914\[4;36;49mhttps://doi.org/10.1101/267914[0m]8;;\
 
-[33;49mOrthoFinder[0m[39;49m finished in [0m[1;32;49m587.[0m[32;49m821786[0m[39;49ms[0m
+[33;49mOrthoFinder[0m[39;49m finished in [0m[1;32;49m587.[0m[32;49m809618[0m[39;49ms[0m
 
 orthofinder/Results_fungi5/Orthogroups/Orthogroups.tsv
-[doc block 6/11] 1794620918 17:48:38
+[doc block 6/11] 1794625247 19:00:47
 tier	families	sequences	species_per_family
 A_strict	1817	9085	5:1817
 B_partial	635	2540	4:635
 C_hog	94	376	4:94
 D_synteny	0	0	
 S=5 MIN=4; proteins dropped for an internal stop: 0
-[doc block 7/11] 1794620918 17:48:38
+[doc block 7/11] 1794625248 19:00:48
 aligned 1817 of 1817 families into alignments/A_strict
-[doc block 8/11] 1794621084 17:51:24
+[doc block 8/11] 1794625416 19:03:36
 annotation quality: 12 kinds flagged (0 errors, 11004 warnings) — details in diagnostics.tsv
   no_cds x10132
   proteins_not_in_alignment x1817
@@ -137,7 +137,7 @@ annotation quality: 12 kinds flagged (0 errors, 11004 warnings) — details in d
 note: 2247 position(s) cannot be explained by a single origin without 4020 independent loss event(s) — candidates for convergent insertion, or for the topology
 combined: dollo 15140g/4020l, mp 15983 steps
 combined: 15140 sites from 1817 alignments x 5 taxa -> results/A_strict/combined
-[doc block 9/11] 1794621088 17:51:28
+[doc block 9/11] 1794625422 19:03:42
 branch                                node  n_tips  gains  losses  tips
 root                                  0     5       1935   0       Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidulans
 Cneoformans                           1     1       8342   0       Cneoformans
@@ -161,11 +161,16 @@ tail_sites_dropped	7
 frame_mismatch	4
 protein_id_fallback_transcript	3
 source_summary	1
-[doc block 10/11] 1794621088 17:51:28
+[doc block 10/11] 1794625422 19:03:42
 note: 2247 position(s) cannot be explained by a single origin without 4020 independent loss event(s) — candidates for convergent insertion, or for the topology
-dollo 15140g/4020l, mp 15983 steps
+dollo 15140g/4020l, mp 15983 steps, dollo_weighted 4 weighting(s)
 scored 15140 sites x 5 taxa from results/A_strict/combined/matrix.tsv
-[doc block 11/11] 1794621088 17:51:28
+gain_weight  loss_weight  sites  gains  losses  sites_one_gain  sites_several_gains  sites_with_losses
+1            1            15140  17278  278     13171           1969                 278
+2            1            15140  16247  1309    14033           1107                 1140
+5            1            15140  15140  4020    15140           0                    2247
+10           1            15140  15140  4020    15140           0                    2247
+[doc block 11/11] 1794625422 19:03:42
 aligned 635 of 635 families into alignments/B_partial
 annotation quality: 12 kinds flagged (0 errors, 10559 warnings) — details in diagnostics.tsv
   no_cds x10132
