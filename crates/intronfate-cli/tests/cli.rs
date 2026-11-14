@@ -1330,6 +1330,12 @@ fn dollo_weighted_sweeps_gain_loss_weights() {
     }
 }
 
+fn summary_has(dir: &Path, k: &str) -> bool {
+    fs::read_to_string(dir.join("summary_score.tsv"))
+        .unwrap()
+        .contains(k)
+}
+
 /// `-m likelihood` end to end: output tables, the error-rates file (false_rate or precision form), the refusals.
 #[test]
 fn likelihood_writes_its_tables_and_reads_error_rates() {
@@ -1367,6 +1373,7 @@ fn likelihood_writes_its_tables_and_reads_error_rates() {
     assert_eq!(br.lines().count(), 1 + 7); // 7 nodes in ((A,B),(C,D))
     let sites = fs::read_to_string(d.join("likelihood_sites.tsv")).unwrap();
     assert_eq!(sites.lines().count(), 3); // two positions
+    assert!(summary_has(&d, "ml_rate_categories\t1\n") && !summary_has(&d, "ml_gamma_shape"));
     let summary = fs::read_to_string(d.join("summary_score.tsv")).unwrap();
     for k in [
         "ml_log_likelihood\t",
@@ -1442,6 +1449,42 @@ fn likelihood_writes_its_tables_and_reads_error_rates() {
     assert!(fs::read_to_string(out.join("family.aln/summary_score.tsv"))
         .unwrap()
         .contains("ml_bootstrap\t3 replicates, resampling by position"));
+
+    // rate classes: estimated and fixed shape, and the site rates
+    let out = w.join("gamma");
+    let mut a = base(&out);
+    a.extend(["--ml-rate-categories".into(), "4".into()]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let summary = fs::read_to_string(out.join("family.aln/summary_score.tsv")).unwrap();
+    assert!(
+        summary.contains("ml_rate_categories\t4\n") && summary.contains("ml_gamma_shape\t"),
+        "{summary}"
+    );
+    let sites = fs::read_to_string(out.join("family.aln/likelihood_sites.tsv")).unwrap();
+    assert!(sites.starts_with("site\tlog_lik\trate\n"), "{sites}");
+    let out = w.join("gamma_fixed");
+    let mut a = base(&out);
+    a.extend([
+        "--ml-rate-categories".into(),
+        "4".into(),
+        "--ml-gamma-shape".into(),
+        "0.5".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert!(fs::read_to_string(out.join("family.aln/summary_score.tsv"))
+        .unwrap()
+        .contains("ml_gamma_shape\t0.5000 (fixed)"));
+    let mut a = base(&w.join("gamma_bad"));
+    a.extend([
+        "--ml-rate-categories".into(),
+        "4".into(),
+        "--ml-gamma-shape".into(),
+        "0.001".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(!o.status.success() && String::from_utf8_lossy(&o.stderr).contains("gamma shape"));
 
     // refusals: --min-taxa > 1, a bad file
     let mut a = base(&w.join("mt"));

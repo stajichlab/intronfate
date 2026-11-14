@@ -256,6 +256,14 @@ struct AnalyzeArgs {
     #[arg(long, default_value = "1")]
     ml_seed: u64,
 
+    /// Rate classes across positions for `-m likelihood` (discrete gamma, mean rate 1; 1 = no rate variation, 4 is usual).
+    #[arg(long, default_value = "1")]
+    ml_rate_categories: usize,
+
+    /// Fix the gamma shape of `--ml-rate-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_gamma_shape: Option<f64>,
+
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
     outgroups: Vec<String>,
@@ -335,6 +343,14 @@ struct ScoreArgs {
     /// Random seed for `--ml-bootstrap`.
     #[arg(long, default_value = "1")]
     ml_seed: u64,
+
+    /// Rate classes across positions for `-m likelihood` (discrete gamma, mean rate 1; 1 = no rate variation, 4 is usual).
+    #[arg(long, default_value = "1")]
+    ml_rate_categories: usize,
+
+    /// Fix the gamma shape of `--ml-rate-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_gamma_shape: Option<f64>,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -1114,6 +1130,8 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     bootstrap: a.ml_bootstrap,
                     max_iter: a.ml_max_iter,
                     seed: a.ml_seed,
+                    categories: a.ml_rate_categories,
+                    shape: a.ml_gamma_shape,
                 },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
@@ -1144,6 +1162,8 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     bootstrap: a.ml_bootstrap,
                     max_iter: a.ml_max_iter,
                     seed: a.ml_seed,
+                    categories: a.ml_rate_categories,
+                    shape: a.ml_gamma_shape,
                 },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
@@ -1194,6 +1214,8 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     bootstrap: a.ml_bootstrap,
                     max_iter: a.ml_max_iter,
                     seed: a.ml_seed,
+                    categories: a.ml_rate_categories,
+                    shape: a.ml_gamma_shape,
                 },
                 matrix_label: format!("{} matrices combined", parts.len()),
             },
@@ -1255,6 +1277,8 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 bootstrap: a.ml_bootstrap,
                 max_iter: a.ml_max_iter,
                 seed: a.ml_seed,
+                categories: a.ml_rate_categories,
+                shape: a.ml_gamma_shape,
             },
             matrix_label: matrix.display().to_string(),
         },
@@ -1292,6 +1316,8 @@ struct MlOpts {
     bootstrap: usize,
     max_iter: usize,
     seed: u64,
+    categories: usize,
+    shape: Option<f64>,
 }
 
 /// Score one matrix; returns a one-line summary of what was computed.
@@ -1484,6 +1510,9 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         let (sens, spec) = read_error_rates(o.ml.error_rates.as_deref(), &data)?;
         let opt = intronfate_core::likelihood::FitOptions {
             max_iter: o.ml.max_iter,
+            categories: o.ml.categories.max(1),
+            shape: o.ml.shape,
+            trace: verbose > 1,
             ..Default::default()
         };
         let (fit, err, settled) =
@@ -1544,6 +1573,20 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
             "ml_root_expected_present",
             format!("{:.2}", fit.nodes[root].expected_present),
         ));
+        summary.push((
+            "ml_rate_categories",
+            fit.params.rates.categories.to_string(),
+        ));
+        if fit.params.rates.categories > 1 {
+            summary.push((
+                "ml_gamma_shape",
+                format!(
+                    "{:.4}{}",
+                    fit.params.rates.shape,
+                    if o.ml.shape.is_some() { " (fixed)" } else { "" }
+                ),
+            ));
+        }
         summary.push(("ml_expected_gains", format!("{gains:.2}")));
         summary.push(("ml_expected_losses", format!("{losses:.2}")));
         summary.push((
@@ -2144,6 +2187,8 @@ mod tests {
             ml_bootstrap: 0,
             ml_max_iter: 50000,
             ml_seed: 1,
+            ml_rate_categories: 1,
+            ml_gamma_shape: None,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,
@@ -2181,6 +2226,8 @@ mod tests {
             ml_bootstrap: 0,
             ml_max_iter: 50000,
             ml_seed: 1,
+            ml_rate_categories: 1,
+            ml_gamma_shape: None,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -2216,6 +2263,8 @@ mod tests {
             ml_bootstrap: 0,
             ml_max_iter: 50000,
             ml_seed: 1,
+            ml_rate_categories: 1,
+            ml_gamma_shape: None,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -2281,6 +2330,8 @@ mod tests {
             ml_bootstrap: 0,
             ml_max_iter: 50000,
             ml_seed: 1,
+            ml_rate_categories: 1,
+            ml_gamma_shape: None,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,

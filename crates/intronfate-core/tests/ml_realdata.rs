@@ -65,6 +65,7 @@ fn likelihood_converges_to_the_same_optimum_on_real_data() {
                     max_iter: max,
                     tol,
                     init,
+                    ..Default::default()
                 },
             )
             .unwrap();

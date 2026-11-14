@@ -593,11 +593,17 @@ pub fn likelihood_tip_table(
     t
 }
 
-/// Conditional log-likelihood per position (for site-wise tree comparisons, e.g. CONSEL/AU).
+/// Conditional log-likelihood per position (for site-wise tree comparisons, e.g. CONSEL/AU) and its posterior mean rate multiplier
+/// (1 without rate classes).
 pub fn likelihood_site_table(data: &ScoringData, r: &crate::likelihood::FitResult) -> Table {
-    let mut t = Table::with_capacity(&["site", "log_lik"], data.characters.len());
-    for (ch, l) in data.characters.iter().zip(&r.site_log_lik) {
-        t.push(vec![ch.label.clone(), format!("{l:.6}")]);
+    let mut t = Table::with_capacity(&["site", "log_lik", "rate"], data.characters.len());
+    for ((ch, l), x) in data
+        .characters
+        .iter()
+        .zip(&r.site_log_lik)
+        .zip(&r.site_rate)
+    {
+        t.push(vec![ch.label.clone(), format!("{l:.6}"), format!("{x:.4}")]);
     }
     t
 }
