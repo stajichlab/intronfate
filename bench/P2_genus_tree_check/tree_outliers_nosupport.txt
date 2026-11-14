@@ -1,0 +1,57 @@
+
+Agaricomycetes (n=319, best F1=0.995): 3 stray(s) outside the main clade, 0 intruder(s) inside it
+   stray    F64028C5 Meruliopsis            Meruliopsis variegata              ORDER=Polyporales
+   stray    FC11E42B Garcileccinum          Garcileccinum viscosum             ORDER=Boletales
+   stray    FE27BEF0 Binderoboletus         Binderoboletus segoi               ORDER=Boletales
+
+Sordariomycetes (n=279, best F1=0.989): 3 stray(s) outside the main clade, 3 intruder(s) inside it
+   stray    F694138C Bertia                 Bertia moriformis                  ORDER=Coronophorales
+   stray    FD8592A2 Scortechinia           Scortechinia acanthostroma         ORDER=Coronophorales
+   stray    FC1F22EB Tympanopsis            Tympanopsis confertula             ORDER=Coronophorales
+   intruder F7442460 Coleodictyospora       Coleodictyospora muriformis        CLASS= ORDER=
+   intruder F3459717 Ramularia              Ramularia coccinea                 CLASS=Dothideomycetes ORDER=Mycosphaerellales
+   intruder F0635A13 Ascodesmis             Ascodesmis sphaerospora            CLASS=Pezizomycetes ORDER=Pezizales
+
+Dothideomycetes (n=203, best F1=0.975): 6 stray(s) outside the main clade, 4 intruder(s) inside it
+   stray    F382DE4E Emarellia              Emarellia grisea                   ORDER=Pleosporales
+   stray    F650A957 Pasadenomyces          Pasadenomyces melaninifex          ORDER=
+   stray    FD8FAC39 Lichenothelia          Lichenothelia convexa              ORDER=Lichenotheliales
+   stray    F5F45F9B Cryomyces              Cryomyces antarcticus              ORDER=
+   stray    F2E51F58 Ramulariopsis          Ramulariopsis pseudoglycines       ORDER=Mycosphaerellales
+   stray    F3459717 Ramularia              Ramularia coccinea                 ORDER=Mycosphaerellales
+   intruder F87402E5 Herpomyces             Herpomyces periplanetae            CLASS=Laboulbeniomycetes ORDER=Herpomycetales
+   intruder F68B3D04 Asteromyces            Asteromyces cruciatus              CLASS= ORDER=
+   intruder F4C2B5A4 Aristastoma            Aristastoma oeconomicum            CLASS= ORDER=
+   intruder F417D980 Helicoceras            Helicoceras oryzae                 CLASS= ORDER=
+
+Lecanoromycetes (n=164, best F1=0.997): 1 stray(s) outside the main clade, 0 intruder(s) inside it
+   stray    FFE09323 Botryolepraria         Botryolepraria lesdainii           ORDER=Lecanorales
+
+Leotiomycetes (n=89, best F1=0.989): 0 stray(s) outside the main clade, 2 intruder(s) inside it
+   intruder F964385A Kendrickiella          Kendrickiella phycomyces           CLASS= ORDER=
+   intruder FDE3DBED Anguillospora          Anguillospora crassa               CLASS= ORDER=
+
+Eurotiomycetes (n=71, best F1=0.959): 1 stray(s) outside the main clade, 5 intruder(s) inside it
+   stray    FC36CB78 Penicillium            Penicillium cf. chrysogenum        ORDER=Eurotiales
+   intruder F694138C Bertia                 Bertia moriformis                  CLASS=Sordariomycetes ORDER=Coronophorales
+   intruder F382DE4E Emarellia              Emarellia grisea                   CLASS=Dothideomycetes ORDER=Pleosporales
+   intruder FD8592A2 Scortechinia           Scortechinia acanthostroma         CLASS=Sordariomycetes ORDER=Coronophorales
+   intruder FFE09323 Botryolepraria         Botryolepraria lesdainii           CLASS=Lecanoromycetes ORDER=Lecanorales
+   intruder F650A957 Pasadenomyces          Pasadenomyces melaninifex          CLASS=Dothideomycetes ORDER=
+
+Saccharomycetes (n=42, best F1=0.988): 1 stray(s) outside the main clade, 0 intruder(s) inside it
+   stray    FB66D786 Ascoidea               Ascoidea rubescens                 ORDER=Ascoideales
+
+Chytridiomycetes (n=35, best F1=0.986): 0 stray(s) outside the main clade, 1 intruder(s) inside it
+   intruder F3F252DC Caulochytrium          Caulochytrium protostelioides      CLASS=Caulochytriomycetes ORDER=Caulochytriales
+
+Pezizomycetes (n=31, best F1=0.984): 1 stray(s) outside the main clade, 0 intruder(s) inside it
+   stray    F0635A13 Ascodesmis             Ascodesmis sphaerospora            ORDER=Pezizales
+
+Exobasidiomycetes (n=16, best F1=0.941): 0 stray(s) outside the main clade, 2 intruder(s) inside it
+   intruder F64028C5 Meruliopsis            Meruliopsis variegata              CLASS=Agaricomycetes ORDER=Polyporales
+   intruder F5DAAAF3 Moniliella             Moniliella sp. wahieum             CLASS=Moniliellomycetes ORDER=Moniliellales
+
+Ustilaginomycetes (n=15, best F1=0.938): 0 stray(s) outside the main clade, 2 intruder(s) inside it
+   intruder FC11E42B Garcileccinum          Garcileccinum viscosum             CLASS=Agaricomycetes ORDER=Boletales
+   intruder FF2B341B Malassezia             Malassezia globosa                 CLASS=Malasseziomycetes ORDER=Malasseziales

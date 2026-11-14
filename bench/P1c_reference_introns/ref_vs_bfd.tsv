@@ -1,0 +1,7 @@
+genome	ref_introns	bfd_introns	exact	precision	recall	shift_le3bp	bfd_only_noncanon_pct	matched_noncanon_pct	chrom_overlap
+A.nidulans FGSC A4	24441	22079	17159	0.7772	0.7021	54	2.7	0.3	8/8
+C.neoformans H99	36863	35967	34874	0.9696	0.9460	16	1.6	2.0	15/15
+N.crassa OR74A	15928	14078	12916	0.9175	0.8109	15	3.3	1.0	7/8
+S.cerevisiae S288C	343	329	217	0.6596	0.6327	1	0.0	0.0	17/17
+S.pombe 972h-	5093	4992	4816	0.9647	0.9456	4	2.3	0.1	4/4
+Z.tritici IPO323	17372	16385	11249	0.6865	0.6475	49	3.9	0.3	21/21

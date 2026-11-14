@@ -1,0 +1,44 @@
+genomes 660
+
+by Augustus training source
+  busco                                        n= 357 rec=0.82 prec=0.84 rec200=0.35 none=0.13
+  pasa                                         n= 165 rec=0.83 prec=0.85 rec200=0.40 none=0.12
+  pretrained                                   n= 138 rec=0.82 prec=0.83 rec200=0.34 none=0.13
+
+by (augustus, snap, glimmerhmm) training source
+  ('busco', 'busco', 'busco')                  n= 357 rec=0.82 prec=0.84 rec200=0.35 none=0.13
+  ('pasa', 'pasa', 'pasa')                     n= 165 rec=0.83 prec=0.85 rec200=0.40 none=0.12
+  ('pretrained', 'pretrained', 'pretrained')   n= 138 rec=0.82 prec=0.83 rec200=0.34 none=0.13
+
+by Augustus species used (n>=5)
+  anidulans                                    n= 660 rec=0.83 prec=0.84 rec200=0.35 none=0.13
+
+by (augustus source, version)
+  ('busco', 'v1.9.0-rc.6')                     n= 323 rec=0.82 prec=0.84 rec200=0.35 none=0.13
+  ('pasa', 'v1.9.0-rc.6')                      n= 118 rec=0.83 prec=0.84 rec200=0.40 none=0.12
+  ('pretrained', 'v1.9.0-rc.6')                n=  76 rec=0.82 prec=0.82 rec200=0.37 none=0.12
+  ('pretrained', 'v1.9.1-beta.2')              n=  61 rec=0.80 prec=0.83 rec200=0.33 none=0.14
+  ('pasa', 'v1.9.0-rc.5')                      n=  34 rec=0.84 prec=0.88 rec200=0.45 none=0.12
+  ('busco', 'v1.9.0-rc.5')                     n=  25 rec=0.84 prec=0.86 rec200=0.30 none=0.11
+  ('pasa', 'v1.9.0-rc.4')                      n=  13 rec=0.80 prec=0.85 rec200=0.32 none=0.13
+  ('busco', 'v1.9.0-rc.4')                     n=   9 rec=0.82 prec=0.85 rec200=0.41 none=0.14
+
+by (augustus source, RNA-seq training files found)
+  ('busco', 0)                                 n= 357 rec=0.82 prec=0.84 rec200=0.35 none=0.13
+  ('pasa', 1)                                  n= 165 rec=0.83 prec=0.85 rec200=0.40 none=0.12
+  ('pretrained', 1)                            n=  98 rec=0.81 prec=0.81 rec200=0.35 none=0.14
+  ('pretrained', 0)                            n=  40 rec=0.82 prec=0.85 rec200=0.31 none=0.12
+
+GlimmerHMM training failed flag
+  0                                            n= 629 rec=0.82 prec=0.84 rec200=0.35 none=0.13
+  1                                            n=  31 rec=0.84 prec=0.85 rec200=0.36 none=0.10
+
+yeast-like classes vs others, by augustus source
+  ('busco', 'other')                           n= 328 rec=0.83 prec=0.85 rec200=0.35 none=0.12
+  ('pasa', 'other')                            n= 144 rec=0.85 prec=0.86 rec200=0.39 none=0.11
+  ('pretrained', 'other')                      n= 118 rec=0.83 prec=0.85 rec200=0.33 none=0.12
+  ('busco', 'Pichiomycetes')                   n=  19 rec=0.29 prec=0.29 rec200=0.29 none=0.67
+  ('pretrained', 'Pichiomycetes')              n=  16 rec=0.59 prec=0.35 rec200=0.43 none=0.37
+  ('pasa', 'Pichiomycetes')                    n=  11 rec=0.32 prec=0.49 rec200=0.33 none=0.64
+  ('pasa', 'Saccharomycetes')                  n=   9 rec=0.71 prec=0.54 rec200=0.74 none=0.30
+  ('busco', 'Saccharomycetes')                 n=   8 rec=0.28 prec=0.18 rec200=0.44 none=0.71

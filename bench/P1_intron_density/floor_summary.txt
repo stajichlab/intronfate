@@ -1,0 +1,50 @@
+genomes 23448
+
+floor 25% of class median CDS bp: removes 139 (0.6%)
+   Agaricomycetes                78 of  1849 (4.2%)
+   Sordariomycetes               17 of  5995 (0.3%)
+   Saccharomycetes               16 of  2576 (0.6%)
+   Pucciniomycetes                6 of   117 (5.1%)
+   Eurotiomycetes                 4 of  3206 (0.1%)
+   Pezizomycetes                  4 of   172 (2.3%)
+   (none)                         3 of   184 (1.6%)
+   Entomophthoromycetes           2 of    11 (18.2%)
+   Pichiomycetes                  2 of  2932 (0.1%)
+   Pneumocystomycetes             2 of    11 (18.2%)
+   kept density p1/p50/p99/max: [0.04, 1.21, 3.97] 11.48
+   kept with density>=8: 2  >=6: 6
+
+floor 50% of class median CDS bp: removes 304 (1.3%)
+   Agaricomycetes               118 of  1849 (6.4%)
+   Sordariomycetes               42 of  5995 (0.7%)
+   Saccharomycetes               28 of  2576 (1.1%)
+   Pucciniomycetes               26 of   117 (22.2%)
+   Pneumocystomycetes            11 of    11 (100.0%)
+   Dothideomycetes                9 of  2723 (0.3%)
+   (none)                         9 of   184 (4.9%)
+   Eurotiomycetes                 9 of  3206 (0.3%)
+   Pezizomycetes                  8 of   172 (4.7%)
+   Trigonopsidomycetes            6 of    16 (37.5%)
+   kept density p1/p50/p99/max: [0.04, 1.21, 3.95] 11.48
+   kept with density>=8: 2  >=6: 6
+
+floor 75% of class median CDS bp: removes 1790 (7.6%)
+   Sordariomycetes              559 of  5995 (9.3%)
+   Eurotiomycetes               373 of  3206 (11.6%)
+   Agaricomycetes               292 of  1849 (15.8%)
+   Dothideomycetes               99 of  2723 (3.6%)
+   Dipodascomycetes              85 of   393 (21.6%)
+   Pucciniomycetes               47 of   117 (40.2%)
+   Saccharomycetes               47 of  2576 (1.8%)
+   (none)                        45 of   184 (24.5%)
+   Leotiomycetes                 45 of   429 (10.5%)
+   Kickxellomycetes              29 of   171 (17.0%)
+   kept density p1/p50/p99/max: [0.04, 1.21, 3.93] 8.46
+   kept with density>=8: 1  >=6: 4
+SUBPHYLUM values: [('', 23448)]
+
+Saccharomycotina-like classes n= 5976 [('', 5976)]
+  floor 25%: removes 18
+  floor 50%: removes 39
+  floor 75%: removes 177
+  CDS bp p1/p5/p50: [5460984, 6877149, 8065128]

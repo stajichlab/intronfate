@@ -1,0 +1,9 @@
+tips 1643; internal nodes with support 1640
+  support >= 0.5: 1589 (96.9%)
+  support >= 0.7: 1560 (95.1%)
+  support >= 0.9: 1512 (92.2%)
+  support >= 0.95: 1468 (89.5%)
+  support >= 0.99: 1393 (84.9%)
+  support >= 1.0: 1307 (79.7%)
+  support < 0.7: 80
+RF distance to the other tree: 0 of 3280 splits differ (0.0%)

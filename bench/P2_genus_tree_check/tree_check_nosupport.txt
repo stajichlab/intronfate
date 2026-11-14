@@ -1,0 +1,67 @@
+tips: 1643  internal branches: 1641
+tips without taxonomy: 0 []
+
+PHYLUM: 14 groups with >=3 tips (>=2 for phylum); monophyletic 12; tips in monophyletic groups 1183 of 1639
+   Ascomycota                   n=1035 MONOPHYLETIC
+   Basidiomycota                n= 426 not mono, best F1=1.00
+   Mucoromycota                 n=  40 MONOPHYLETIC
+   Chytridiomycota              n=  36 MONOPHYLETIC
+   Microsporidia                n=  30 not mono, best F1=0.98
+   Glomeromycota                n=  15 MONOPHYLETIC
+   Kickxellomycota              n=  15 MONOPHYLETIC
+   Mortierellomycota            n=  14 MONOPHYLETIC
+   Zoopagomycota                n=   8 MONOPHYLETIC
+   Blastocladiomycota           n=   6 MONOPHYLETIC
+   Neocallimastigomycota        n=   5 MONOPHYLETIC
+   Entomophthoromycota          n=   5 MONOPHYLETIC
+   Aphelidiomycota              n=   2 MONOPHYLETIC
+   Monoblepharomycota           n=   2 MONOPHYLETIC
+
+CLASS: 37 groups with >=3 tips (>=2 for phylum); monophyletic 26; tips in monophyletic groups 299 of 1563
+   Agaricomycetes               n= 319 not mono, best F1=1.00
+   Sordariomycetes              n= 279 not mono, best F1=0.99
+   Dothideomycetes              n= 203 not mono, best F1=0.98
+   Lecanoromycetes              n= 164 not mono, best F1=1.00
+   Leotiomycetes                n=  89 not mono, best F1=0.99
+   Eurotiomycetes               n=  71 not mono, best F1=0.96
+   Pichiomycetes                n=  66 MONOPHYLETIC
+   Saccharomycetes              n=  42 not mono, best F1=0.99
+   Tremellomycetes              n=  36 MONOPHYLETIC
+   Mucoromycetes                n=  36 MONOPHYLETIC
+   Chytridiomycetes             n=  35 not mono, best F1=0.99
+   Pezizomycetes                n=  31 not mono, best F1=0.98
+   Dipodascomycetes             n=  22 MONOPHYLETIC
+   Exobasidiomycetes            n=  16 not mono, best F1=0.94
+   Ustilaginomycetes            n=  15 not mono, best F1=0.94
+   Glomeromycetes               n=  15 MONOPHYLETIC
+   Mortierellomycetes           n=  14 MONOPHYLETIC
+   Microbotryomycetes           n=  12 MONOPHYLETIC
+   Arthoniomycetes              n=   8 MONOPHYLETIC
+   Zoopagomycetes               n=   8 MONOPHYLETIC
+
+ORDER: 88 groups with >=3 tips (>=2 for phylum); monophyletic 50; tips in monophyletic groups 496 of 1445
+   Agaricales                   n= 121 not mono, best F1=0.97
+   Hypocreales                  n=  96 not mono, best F1=0.98
+   Pleosporales                 n=  94 not mono, best F1=0.94
+   Helotiales                   n=  77 not mono, best F1=0.98
+   Boletales                    n=  72 not mono, best F1=0.95
+   Lecanorales                  n=  64 not mono, best F1=0.99
+   Polyporales                  n=  56 not mono, best F1=0.96
+   Serinales                    n=  51 MONOPHYLETIC
+   Sordariales                  n=  44 not mono, best F1=0.99
+   Mycosphaerellales            n=  43 not mono, best F1=0.94
+   Mucorales                    n=  36 MONOPHYLETIC
+   Pezizales                    n=  31 not mono, best F1=0.98
+   Xylariales                   n=  30 not mono, best F1=0.98
+   Onygenales                   n=  29 MONOPHYLETIC
+   Teloschistales               n=  28 MONOPHYLETIC
+   Microascales                 n=  24 MONOPHYLETIC
+   Saccharomycetales            n=  24 MONOPHYLETIC
+   Dipodascales                 n=  22 MONOPHYLETIC
+   Diaporthales                 n=  18 MONOPHYLETIC
+   Chaetothyriales              n=  17 not mono, best F1=0.92
+   Hymenochaetales              n=  17 not mono, best F1=0.97
+   Russulales                   n=  16 MONOPHYLETIC
+   Peltigerales                 n=  15 MONOPHYLETIC
+   Eurotiales                   n=  15 not mono, best F1=0.90
+   Ophiostomatales              n=  15 not mono, best F1=0.97

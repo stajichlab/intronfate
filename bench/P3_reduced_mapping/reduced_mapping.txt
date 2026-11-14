@@ -1,0 +1,31 @@
+tips 1643; with density 1643; pass floors (CDS>=50% class median, >=100 markers) 1588
+  outgroup candidate 'flagellated+Microsporidia': 82 tips; is a branch: False
+  outgroup candidate 'Chytridiomycota+Neocallimastigomycota+Monoblepharomycota+Blastocladiomycota': 49 tips; is a branch: False
+
+threshold < 0.3/kb, all tips: tips with state 1643, reduced 149; minimum number of state changes (Fitch) = 27
+
+threshold < 0.3/kb, core tips only: tips with state 1588, reduced 138; minimum number of state changes (Fitch) = 22
+
+threshold < 0.5/kb, all tips: tips with state 1643, reduced 172; minimum number of state changes (Fitch) = 27
+
+threshold < 0.5/kb, core tips only: tips with state 1588, reduced 160; minimum number of state changes (Fitch) = 23
+   maximal reduced-only branches (either side of a split, no non-reduced known tip): 15
+     n=  51 reduced tips; classes: {'Pichiomycetes': 51}
+     n=  26 reduced tips; classes: {'Saccharomycetes': 26}
+     n=  18 reduced tips; classes: {'(none)': 18}
+     n=  13 reduced tips; classes: {'Ustilaginomycetes': 12, 'Malasseziomycetes': 1}
+     n=  12 reduced tips; classes: {'Pichiomycetes': 12}
+     n=  10 reduced tips; classes: {'Saccharomycetes': 10}
+     n=   4 reduced tips; classes: {'Dipodascomycetes': 4}
+     n=   4 reduced tips; classes: {'(none)': 4}
+     n=   4 reduced tips; classes: {'Dipodascomycetes': 4}
+     n=   3 reduced tips; classes: {'Dipodascomycetes': 3}
+     n=   3 reduced tips; classes: {'Dipodascomycetes': 3}
+     n=   3 reduced tips; classes: {'Dipodascomycetes': 3}
+     n=   2 reduced tips; classes: {'Pichiomycetes': 2}
+     n=   2 reduced tips; classes: {'Kickxellomycetes': 2}
+     n=   2 reduced tips; classes: {'Saccharomycetes': 2}
+
+threshold < 1.0/kb, all tips: tips with state 1643, reduced 308; minimum number of state changes (Fitch) = 44
+
+threshold < 1.0/kb, core tips only: tips with state 1588, reduced 287; minimum number of state changes (Fitch) = 40

@@ -1,0 +1,47 @@
+genomes 23402  markers available (Pfams): 453
+markers found per genome p1/p5/p50/p95: [22, 268, 443, 451]
+Spearman marker vs genome-wide density: 0.981
+marker density quantiles 1/5/50/95/99: [0.01, 0.02, 0.97, 3.73, 4.05]
+genome-wide  quantiles 1/5/50/95/99:    [0.04, 0.05, 1.22, 3.55, 4.05]
+ratio marker/genome-wide median: 0.79
+genomes with >=50 marker proteins: 23012  <50: 390  <100: 550
+
+genomes at genome-wide >=6/kb: 21 ; of these marker density p50: [6.49]
+genomes at marker >=6/kb (n>=50): 1 ; >=8: 1
+
+per class (n>=40): median genome-wide vs marker density, median #markers
+                           n=  179 genome-wide= 0.14 marker= 0.01 markers/genome=  138 rho=+0.85
+  Saccharomycetes          n= 2567 genome-wide= 0.05 marker= 0.03 markers/genome=  436 rho=+0.77
+  Pichiomycetes            n= 2928 genome-wide= 0.09 marker= 0.06 markers/genome=  440 rho=+0.85
+  Ustilaginomycetes        n=  133 genome-wide= 0.27 marker= 0.18 markers/genome=  448 rho=+0.94
+  Dipodascomycetes         n=  393 genome-wide= 0.24 marker= 0.19 markers/genome=  429 rho=+0.96
+  Kickxellomycetes         n=  158 genome-wide= 0.37 marker= 0.25 markers/genome=  360 rho=+0.90
+  Malasseziomycetes        n=   82 genome-wide= 0.65 marker= 0.60 markers/genome=  436 rho=+0.94
+  Schizosaccharomycetes    n=   67 genome-wide= 0.72 marker= 0.73 markers/genome=  445 rho=+0.42
+  Dothideomycetes          n= 2723 genome-wide= 1.14 marker= 0.92 markers/genome=  449 rho=+0.95
+  Sordariomycetes          n= 5995 genome-wide= 1.20 marker= 0.96 markers/genome=  446 rho=+0.70
+  Leotiomycetes            n=  429 genome-wide= 1.34 marker= 1.01 markers/genome=  448 rho=+0.80
+  Eurotiomycetes           n= 3203 genome-wide= 1.44 marker= 1.20 markers/genome=  448 rho=+0.58
+  Tremellomycetes          n=  558 genome-wide= 3.33 marker= 3.14 markers/genome=  445 rho=+0.93
+  Chytridiomycetes         n=   82 genome-wide= 2.41 marker= 3.21 markers/genome=  400 rho=+0.86
+  Agaricomycetes           n= 1847 genome-wide= 3.56 marker= 3.74 markers/genome=  415 rho=+0.54
+  Glomeromycetes           n=   59 genome-wide= 3.00 marker= 4.49 markers/genome=  413 rho=+0.29
+
+class-level Spearman of medians (n>=40 classes): 0.979
+
+suspicious genomes (genome-wide >= 8 per kb or marker >= 8 with n>=50):
+  F36C489C Agaricomycetes   genome-wide=13.23 marker=17.74 nmark=  12 Tylopilus aff. balloui
+  F113D02F Endogonomycetes  genome-wide=11.48 marker=10.04 nmark=   9 Jimgerdemannia lactiflua
+  F6238FAD Agaricomycetes   genome-wide= 9.22 marker=13.04 nmark=   7 Rubroboletus sp. TRTC157201
+  FBFB4B38                  genome-wide= 8.85 marker= 3.41 nmark=   5 Hamiltosporidium tvaerminnen
+  FE1ED680 Agaricomycetes   genome-wide= 5.44 marker= 8.48 nmark=  57 Lactarius vividus
+  F2CAA5A4 Pucciniomycetes  genome-wide= 8.46 marker= 3.24 nmark= 171 Phakopsora pachyrhizi
+  F6AC4372 Sordariomycetes  genome-wide= 8.41 marker= 6.49 nmark=  11 Fusarium oxysporum
+  F13E60AB Agaricomycetes   genome-wide= 8.02 marker=15.64 nmark=   8 Boletus putidus
+  F58AA80D Agaricomycetes   genome-wide= 7.73 marker=12.67 nmark=   9 Boletaceae sp. TRTC168574
+  F4A2A445 Agaricomycetes   genome-wide= 7.23 marker= 9.87 nmark=  25 Phylloporus sp. TRTC163509
+  FF1E50A8 Sordariomycetes  genome-wide= 7.00 marker= 4.20 nmark=  31 Fusarium oxysporum
+  FCF75579 Entomophthoromyc genome-wide= 6.94 marker=27.40 nmark=   1 Massospora cicadina
+  F2C21852 Pezizomycetes    genome-wide= 6.75 marker= 8.53 nmark=  25 Tuber magnatum
+  F1766F9D Agaricomycetes   genome-wide= 6.74 marker= 2.96 nmark=   3 Boletaceae sp. TRTC157249
+  F560E16E Tremellomycetes  genome-wide= 6.48 marker= 5.42 nmark= 413 Tausonia pamirica

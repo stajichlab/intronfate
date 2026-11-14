@@ -1,0 +1,14 @@
+== GCF_000011425.1_ASM1142v1 Aspergillus_nidulans_FGSC_A4
+   stats keys: ['format', 'command', 'organism', 'software', 'assembly', 'annotation']
+== GCF_000219625.1_MYCGR_v2.0 Zymoseptoria_tritici_IPO323
+   stats keys: ['format', 'command', 'organism', 'software', 'assembly', 'annotation']
+== GCF_001661235.1_Picme2 Pichia_membranifaciens_NRRL_Y-2026
+   stats keys: ['format', 'command', 'organism', 'software', 'assembly', 'annotation']
+== GCF_000151645.1_ASM15164v1 Tuber_melanosporum_Mel28
+   stats keys: ['format', 'command', 'organism', 'software', 'assembly', 'annotation']
+== GCF_000143535.2_ASM14353v4 Botrytis_cinerea_B05.10
+   stats keys: ['format', 'command', 'organism', 'software', 'assembly', 'annotation']
+== GCF_000182925.2_NC12 Neurospora_crassa_OR74A
+   stats keys: ['format', 'command', 'organism', 'software', 'assembly', 'annotation']
+== GCF_000002945.2_ASM294v3 Schizosaccharomyces_pombe_972h
+   stats keys: ['format', 'command', 'organism', 'software', 'assembly', 'annotation']

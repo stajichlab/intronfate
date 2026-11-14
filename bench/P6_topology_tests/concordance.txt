@@ -1,0 +1,5 @@
+gene trees 80
+Kickxellomycota: monophyletic in 18 of 79 gene trees with >=3 members present (0.23)
+Mortierellomycota: monophyletic in 63 of 73 gene trees with >=3 members present (0.86)
+Glomeromycota: monophyletic in 55 of 80 gene trees with >=3 members present (0.69)
+Microsporidia: monophyletic in 20 of 33 gene trees with >=3 members present (0.61)

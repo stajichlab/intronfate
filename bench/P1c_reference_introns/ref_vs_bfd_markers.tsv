@@ -1,0 +1,7 @@
+genome	marker_genes	ref_introns_in_spans	bfd_marker_introns	exact	precision	recall	genes_identical_pct	genes_ref_has_introns_bfd_none	genes_bfd_has_introns_ref_none
+A.nidulans FGSC A4	354	827	853	746	0.8746	0.9021	73.4	3	9
+C.neoformans H99	352	2282	2284	2267	0.9926	0.9934	93.2	0	1
+N.crassa OR74A	357	604	601	588	0.9784	0.9735	95.2	1	0
+S.cerevisiae S288C	345	5	8	4	0.5000	0.8000	98.8	0	3
+S.pombe 972h-	353	466	470	457	0.9723	0.9807	96.3	1	1
+Z.tritici IPO323	353	351	331	264	0.7976	0.7521	70.3	34	18

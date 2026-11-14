@@ -1,0 +1,69 @@
+tips 1643; internal splits FastTree 1640, ASTRAL 1640; shared 1136; RF 1008; normalised 0.307
+
+FastTree splits by support, fraction also in ASTRAL:
+  support [0,0.5): n=  51 shared 0.31
+  support [0.5,0.9): n=  77 shared 0.27
+  support [0.9,0.99): n= 119 shared 0.36
+  support [0.99,1.001): n=1393 shared 0.76
+  no support label: n=0
+
+ASTRAL splits by support, fraction also in FastTree:
+  support [0,0.5): n= 115 shared 0.20
+  support [0.5,0.9): n= 478 shared 0.43
+  support [0.9,0.99): n= 201 shared 0.65
+  support [0.99,1.001): n= 846 shared 0.92
+  no support label: n=0
+
+FastTree splits with support >= 0.95 absent from ASTRAL: 384; 25 largest-side examples (smaller side size, top classes):
+   n= 425 support 1.000 [('Agaricomycetes', 318), ('Tremellomycetes', 36), ('Exobasidiomycetes', 16)]
+   n= 392 support 1.000 [('Agaricomycetes', 318), ('Tremellomycetes', 36), ('Exobasidiomycetes', 16)]
+   n= 371 support 0.991 [('Sordariomycetes', 276), ('Leotiomycetes', 89), ('Ascomycota', 3)]
+   n= 356 support 1.000 [('Agaricomycetes', 316), ('Tremellomycetes', 36), ('Dacrymycetes', 2)]
+   n= 354 support 1.000 [('Agaricomycetes', 316), ('Tremellomycetes', 36), ('Dacrymycetes', 2)]
+   n= 318 support 1.000 [('Agaricomycetes', 316), ('Dacrymycetes', 2)]
+   n= 316 support 1.000 [('Agaricomycetes', 316)]
+   n= 307 support 1.000 [('Agaricomycetes', 307)]
+   n= 306 support 1.000 [('Agaricomycetes', 306)]
+   n= 302 support 0.995 [('Agaricomycetes', 302)]
+   n= 290 support 1.000 [('Agaricomycetes', 290)]
+   n= 272 support 1.000 [('Agaricomycetes', 272)]
+   n= 263 support 1.000 [('Lecanoromycetes', 164), ('Eurotiomycetes', 70), ('Ascomycota', 6)]
+   n= 234 support 0.991 [('Sordariomycetes', 231), ('Pezizomycetes', 1), ('Dothideomycetes', 1)]
+   n= 210 support 1.000 [('Dothideomycetes', 198), ('Arthoniomycetes', 8), ('Ascomycota', 3)]
+   n= 201 support 1.000 [('Dothideomycetes', 197), ('Ascomycota', 3), ('Laboulbeniomycetes', 1)]
+   n= 190 support 1.000 [('Agaricomycetes', 190)]
+   n= 187 support 1.000 [('Lecanoromycetes', 163), ('Ascomycota', 6), ('Geoglossomycetes', 6)]
+   n= 186 support 1.000 [('Lecanoromycetes', 163), ('Geoglossomycetes', 6), ('Lichinomycetes', 5)]
+   n= 183 support 1.000 [('Mucoromycetes', 36), ('Chytridiomycetes', 35), ('Microsporidia', 30)]
+   n= 168 support 0.957 [('Lecanoromycetes', 163), ('Candelariomycetes', 3), ('Xylonomycetes', 1)]
+   n= 166 support 1.000 [('Lecanoromycetes', 163), ('Candelariomycetes', 3)]
+   n= 163 support 1.000 [('Lecanoromycetes', 163)]
+   n= 161 support 1.000 [('Lecanoromycetes', 161)]
+   n= 158 support 1.000 [('Lecanoromycetes', 158)]
+
+ASTRAL splits with support >= 0.95 absent from FastTree: 106; 25 largest-side examples (smaller side size, top classes):
+   n= 478 support 0.991 [('Dothideomycetes', 202), ('Lecanoromycetes', 164), ('Eurotiomycetes', 71)]
+   n= 426 support 1.000 [('Agaricomycetes', 319), ('Tremellomycetes', 36), ('Exobasidiomycetes', 16)]
+   n= 394 support 1.000 [('Agaricomycetes', 319), ('Tremellomycetes', 36), ('Exobasidiomycetes', 16)]
+   n= 358 support 1.000 [('Agaricomycetes', 318), ('Tremellomycetes', 36), ('Dacrymycetes', 2)]
+   n= 356 support 0.990 [('Agaricomycetes', 318), ('Tremellomycetes', 36), ('Dacrymycetes', 2)]
+   n= 320 support 1.000 [('Agaricomycetes', 318), ('Dacrymycetes', 2)]
+   n= 318 support 1.000 [('Agaricomycetes', 318)]
+   n= 305 support 0.959 [('Agaricomycetes', 305)]
+   n= 291 support 1.000 [('Agaricomycetes', 291)]
+   n= 212 support 0.979 [('Dothideomycetes', 200), ('Arthoniomycetes', 8), ('Ascomycota', 3)]
+   n= 190 support 0.987 [('Agaricomycetes', 190)]
+   n= 181 support 1.000 [('Mucoromycetes', 36), ('Chytridiomycetes', 35), ('Microsporidia', 29)]
+   n= 168 support 0.970 [('Lecanoromycetes', 163), ('Candelariomycetes', 3), ('Eurotiomycetes', 1)]
+   n= 164 support 1.000 [('Lecanoromycetes', 163), ('Eurotiomycetes', 1)]
+   n= 149 support 0.964 [('Lecanoromycetes', 149)]
+   n= 147 support 0.996 [('Lecanoromycetes', 147)]
+   n= 120 support 0.969 [('Agaricomycetes', 120)]
+   n=  76 support 1.000 [('Eurotiomycetes', 70), ('Sordariomycetes', 3), ('Dothideomycetes', 2)]
+   n=  73 support 0.960 [('Dothideomycetes', 70), ('Ascomycota', 3)]
+   n=  71 support 0.966 [('Leotiomycetes', 70), ('Ascomycota', 1)]
+   n=  71 support 0.976 [('Mucoromycetes', 36), ('Glomeromycetes', 15), ('Mortierellomycetes', 14)]
+   n=  70 support 1.000 [('Agaricomycetes', 70)]
+   n=  68 support 0.973 [('Agaricomycetes', 68)]
+   n=  55 support 1.000 [('Dothideomycetes', 55)]
+   n=  51 support 0.968 [('Agaricomycetes', 51)]

@@ -1,0 +1,7 @@
+genome	ref_rnas_with_introns	all_matched	partial	none_matched	missed_introns_in_none_matched_pct	bfd_only_introns	bfd_only_in_ref_intronless_region_pct
+A.nidulans FGSC A4	9066	5090	2214	1762	46.8	4920	11.1
+C.neoformans H99	7567	6328	849	390	39.2	1093	9.3
+N.crassa OR74A	8500	6506	769	1225	65.6	1162	16.0
+S.cerevisiae S288C	329	209	1	119	99.3	112	73.2
+S.pombe 972h-	2402	2195	81	126	60.4	176	34.7
+Z.tritici IPO323	7656	4226	1506	1924	56.7	5136	34.4
