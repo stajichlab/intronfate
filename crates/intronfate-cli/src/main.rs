@@ -1486,8 +1486,12 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
             max_iter: o.ml.max_iter,
             ..Default::default()
         };
-        let (fit, err) = intronfate_core::likelihood::fit_with_precision(&data, &sens, &spec, &opt)
-            .map_err(|e| anyhow::anyhow!("likelihood: {e}"))?;
+        let (fit, err, settled) =
+            intronfate_core::likelihood::fit_with_precision(&data, &sens, &spec, &opt)
+                .map_err(|e| anyhow::anyhow!("likelihood: {e}"))?;
+        if !settled {
+            eprintln!("warn: likelihood: the false-intron rates converted from precision did not settle in 20 rounds");
+        }
         if !fit.converged {
             eprintln!(
                 "warn: likelihood: EM stopped after {} iterations without converging (raise --ml-max-iter)",
@@ -1527,7 +1531,7 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         let no_data = fit.nodes.iter().filter(|n| !n.has_data).count();
         if no_data > 0 {
             eprintln!(
-                "note: likelihood: {no_data} branch(es) have no observed tip below them; fixed at no change and marked has_data=no"
+                "note: likelihood: {no_data} branch(es) have no observed tip below them; fixed at no change (fixed = no_data) and left out of the totals"
             );
         }
         summary.push(("ml_log_likelihood", format!("{:.6}", fit.log_lik)));
@@ -1554,11 +1558,31 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
                     p.display().to_string()
                 }),
         ));
-        summary.push((
-            "ml_fixed_root_branch",
-            intronfate_core::likelihood::fixed_root_branch(&data.tree)
-                .map_or("-".to_string(), |v| data.tree.node_names()[v].clone()),
-        ));
+        let names = data.tree.node_names();
+        for kind in [
+            intronfate_core::likelihood::Fixed::Root,
+            intronfate_core::likelihood::Fixed::Unary,
+            intronfate_core::likelihood::Fixed::NoData,
+        ] {
+            let list: Vec<&str> = (0..data.tree.len())
+                .filter(|&v| fit.nodes[v].fixed == kind)
+                .map(|v| names[v].as_str())
+                .collect();
+            if kind == intronfate_core::likelihood::Fixed::Root || !list.is_empty() {
+                summary.push((
+                    match kind {
+                        intronfate_core::likelihood::Fixed::Root => "ml_fixed_root_branch",
+                        intronfate_core::likelihood::Fixed::Unary => "ml_fixed_unary_branches",
+                        _ => "ml_fixed_no_data_branches",
+                    },
+                    if list.is_empty() {
+                        "-".to_string()
+                    } else {
+                        list.join(";")
+                    },
+                ));
+            }
+        }
         if let Some(b) = &boot {
             summary.push((
                 "ml_bootstrap",

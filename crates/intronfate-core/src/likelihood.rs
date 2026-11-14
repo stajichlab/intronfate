@@ -89,22 +89,6 @@ impl ErrorRates {
     }
 }
 
-/// Per-position false-intron rate from annotation precision.
-///
-/// With `carried` positions annotated in a genome, of which a fraction `precision` are real, `carried·(1 − precision)` are false; the
-/// genome truly lacks an intron at about `observed − carried·precision/sensitivity` of its `observed` (non-`?`) positions. The rate is
-/// the first over the second.
-pub fn false_rate_from_precision(
-    carried: f64,
-    observed: f64,
-    sensitivity: f64,
-    precision: f64,
-) -> f64 {
-    let false_ones = carried * (1.0 - precision);
-    let truly_absent = (observed - carried * precision / sensitivity).max(false_ones.max(1.0));
-    (false_ones / truly_absent).clamp(0.0, 0.5)
-}
-
 /// Model parameters. `gain` and `loss` are indexed by node id; the root's entries are unused.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Params {
@@ -125,6 +109,7 @@ impl Params {
 
 #[derive(Clone, Debug)]
 pub struct FitOptions {
+    /// Limit on E-steps. It is checked once per acceleration cycle, which can use up to 15 E-steps, so it may be exceeded by that.
     pub max_iter: usize,
     /// Stop when an iteration improves the log-likelihood by less than this.
     pub tol: f64,
@@ -138,6 +123,32 @@ impl Default for FitOptions {
             max_iter: 50_000,
             tol: 1e-6,
             init: None,
+        }
+    }
+}
+
+/// Why a branch's probabilities are not estimated (fixed at "no change").
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum Fixed {
+    /// Estimated.
+    #[default]
+    No,
+    /// One branch at the root is fixed so that the root probability is identifiable (see the module documentation).
+    Root,
+    /// No observed tip below: the data say nothing about this branch.
+    NoData,
+    /// The node below has a single child with data, so only the product of this branch and that child's branch is identified;
+    /// all change is put on the child's branch.
+    Unary,
+}
+
+impl Fixed {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Fixed::No => "no",
+            Fixed::Root => "root",
+            Fixed::NoData => "no_data",
+            Fixed::Unary => "unary",
         }
     }
 }
@@ -156,6 +167,8 @@ pub struct NodeStats {
     /// `false` when no tip below the node has any observed cell: the branch is fixed at "no change" and its numbers are not
     /// estimates.
     pub has_data: bool,
+    /// Whether, and why, the branch above the node is fixed at "no change".
+    pub fixed: Fixed,
 }
 
 /// Posterior expectations for one tip.
@@ -165,7 +178,8 @@ pub struct TipStats {
     pub expected_missed: f64,
     /// Positions observed present (1) that are expected to be false introns.
     pub expected_false: f64,
-    /// Expected never-seen positions at which this genome is observable (not `?`): where a false intron could have appeared.
+    /// Expected never-seen positions at which this genome is observable (not `?`) and truly lacks the intron: where a false intron
+    /// could have appeared.
     pub unseen_observable: f64,
 }
 
@@ -326,6 +340,14 @@ impl<'a> Ctx<'a> {
                     }
                 }
             }
+            if !real {
+                // a never-seen position where this genome is observable and truly lacks the intron: where a false one could appear
+                if let Some(i) = self.tip_of[v] {
+                    if col[i] != MISSING {
+                        acc.unseen_obs[i] += weight * post[0];
+                    }
+                }
+            }
             if v == r {
                 acc.root[0] += weight * post[0];
                 acc.root[1] += weight * post[1];
@@ -460,15 +482,17 @@ fn column_terms(ctx: &Ctx, p: &Params, col: &[u8], w: &mut Work) -> (f64, f64) {
     (ln_l - (1.0 - z).ln(), z)
 }
 
-/// One E-step over all distinct columns.
+/// One E-step over all distinct columns. Columns are processed in fixed chunks whose partial sums are added in order, so the
+/// result does not depend on how the work was split between threads (runs are reproducible bit for bit).
 fn e_step(ctx: &Ctx, pats: &Patterns, p: &Params) -> Acc {
     let n = ctx.tree.len();
     let tips = ctx.err.sensitivity.len();
-    (0..pats.columns.len())
-        .into_par_iter()
-        .fold(
-            || (Acc::new(n, tips), Work::new(n), Work::new(n)),
-            |(mut acc, mut w, mut wp), k| {
+    let idx: Vec<usize> = (0..pats.columns.len()).collect();
+    let parts: Vec<Acc> = idx
+        .par_chunks(64)
+        .map(|chunk| {
+            let (mut acc, mut w, mut wp) = (Acc::new(n, tips), Work::new(n), Work::new(n));
+            for &k in chunk {
                 let col = &pats.columns[k];
                 let cnt = pats.counts[k];
                 let ln_l = ctx.upward(p, col, &mut w);
@@ -480,16 +504,11 @@ fn e_step(ctx: &Ctx, pats: &Patterns, p: &Params) -> Acc {
                 ctx.accumulate(p, &ph, &mut wp, wt, false, &mut acc);
                 acc.log_lik += cnt * (ln_l - (1.0 - z).ln());
                 acc.unobserved += wt;
-                for (i, &c) in col.iter().enumerate() {
-                    if c != MISSING {
-                        acc.unseen_obs[i] += wt;
-                    }
-                }
-                (acc, w, wp)
-            },
-        )
-        .map(|(acc, _, _)| acc)
-        .reduce(|| Acc::new(n, tips), Acc::add)
+            }
+            acc
+        })
+        .collect();
+    parts.into_iter().fold(Acc::new(n, tips), Acc::add)
 }
 
 fn m_step(acc: &Acc, p: &mut Params, free: &[NodeId]) {
@@ -552,6 +571,68 @@ fn nodes_with_data(data: &ScoringData) -> Vec<bool> {
     has
 }
 
+/// Which branches are fixed at "no change", and why.
+///
+/// - no observed tip below the node: [`Fixed::NoData`];
+/// - a non-root node with exactly one child that has data: its own branch, [`Fixed::Unary`] (only the product of the two branches is
+///   identified; the change is put on the child's branch);
+/// - at the root, after looking through such unary nodes: with two informative children, the larger one's branch (by tips),
+///   [`Fixed::Root`]; with one, that one's branch, and the same rule again one level down (that child is then the effective root).
+///   With three or more the parameters are identifiable as they are.
+pub fn fixed_branches(data: &ScoringData) -> Vec<Fixed> {
+    let tree = &data.tree;
+    let has = nodes_with_data(data);
+    let mut fixed = vec![Fixed::No; tree.len()];
+    let data_kids = |v: NodeId| -> Vec<NodeId> {
+        tree.children(v)
+            .iter()
+            .copied()
+            .filter(|&c| has[c])
+            .collect()
+    };
+    for v in 0..tree.len() {
+        if tree.parent(v).is_none() {
+            continue;
+        }
+        if !has[v] {
+            fixed[v] = Fixed::NoData;
+        } else if !tree.children(v).is_empty() && data_kids(v).len() == 1 {
+            fixed[v] = Fixed::Unary;
+        }
+    }
+    // the root's effective children: follow each informative child down through unary nodes
+    let unary: Vec<bool> = fixed.iter().map(|&f| f == Fixed::Unary).collect();
+    let effective = |mut v: NodeId| {
+        while unary[v] {
+            v = data_kids(v)[0];
+        }
+        v
+    };
+    // walk down from the root while it has a single informative child: that child's state is then the root state, so its branch is
+    // fixed and it becomes the effective root; with two informative children, fix the larger one's branch
+    let mut r = tree.root();
+    loop {
+        let eff: Vec<NodeId> = data_kids(r).into_iter().map(effective).collect();
+        match eff.len() {
+            1 => {
+                fixed[eff[0]] = Fixed::Root;
+                r = eff[0];
+            }
+            2 => {
+                let n = |v: NodeId| tree.leaves_under(v).len();
+                fixed[if n(eff[1]) > n(eff[0]) {
+                    eff[1]
+                } else {
+                    eff[0]
+                }] = Fixed::Root;
+                break;
+            }
+            _ => break,
+        }
+    }
+    fixed
+}
+
 /// The parameters EM may change, as one vector: free gains, free losses, then the root probability.
 fn pack(p: &Params, free: &[NodeId]) -> Vec<f64> {
     let mut x: Vec<f64> = free.iter().map(|&v| p.gain[v]).collect();
@@ -589,6 +670,13 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
     let ctx = Ctx::new(data, err);
     let pats = compress(data);
     let has_data = nodes_with_data(data);
+    let informative = data.tips.iter().filter(|&&t| has_data[t]).count();
+    if informative < 4 {
+        return Err(format!(
+            "{informative} tip(s) have data; the model needs at least 4 (conditioning on positions being seen costs one degree of \
+             freedom, and with 3 tips the number of never-seen positions cannot be told from the root probability)"
+        ));
+    }
     let mut p = match &opt.init {
         Some(init) => {
             let ok = |x: f64| x > 0.0 && x < 1.0;
@@ -604,9 +692,9 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
         }
         None => Params::uniform(tree, 0.05, 0.2, 0.5),
     };
-    let fixed = fixed_root_branch(tree);
+    let fixed = fixed_branches(data);
     let free: Vec<NodeId> = (0..tree.len())
-        .filter(|&v| tree.parent(v).is_some() && Some(v) != fixed && has_data[v])
+        .filter(|&v| tree.parent(v).is_some() && fixed[v] == Fixed::No)
         .collect();
     for v in 0..tree.len() {
         if tree.parent(v).is_some() && !free.contains(&v) {
@@ -699,6 +787,7 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
                 expected_losses: if root { 0.0 } else { acc.losses[v] },
                 expected_present: acc.present[v],
                 has_data: has_data[v],
+                fixed: fixed[v],
             }
         })
         .collect();
@@ -743,13 +832,14 @@ pub enum FalseSpec {
 /// every position the genome truly lacks, including positions nobody shows (they exist but are not in the matrix), so the rate is
 /// `carried·(1 − precision) / (truly absent positions in the matrix + never-seen positions where the genome is observable)`. The
 /// never-seen count comes from the fit itself, so the rate and the fit are iterated to a fixed point (at most 20 rounds, until no
-/// rate changes by more than 0.1 %), each fit starting from the last. Returns the fit and the rates used.
+/// rate changes by more than 0.1 %), each fit starting from the last. Returns the fit, the rates used, and whether the rates
+/// settled within the 20 rounds.
 pub fn fit_with_precision(
     data: &ScoringData,
     sensitivity: &[f64],
     spec: &[FalseSpec],
     opt: &FitOptions,
-) -> Result<(FitResult, ErrorRates), String> {
+) -> Result<(FitResult, ErrorRates, bool), String> {
     let n = data.tips.len();
     if sensitivity.len() != n || spec.len() != n {
         return Err(format!(
@@ -770,7 +860,9 @@ pub fn fit_with_precision(
                 let false_ones = carried[i] * (1.0 - pr);
                 let truly_absent =
                     (observed[i] - carried[i] * pr / sensitivity[i]).max(0.0) + unseen;
-                (false_ones / truly_absent.max(false_ones.max(1.0))).clamp(0.0, 0.5)
+                // below the sensitivity, as `ErrorRates::validate` requires
+                (false_ones / truly_absent.max(false_ones.max(1.0)))
+                    .clamp(0.0, (0.5f64).min(0.95 * sensitivity[i]))
             }
         }
     };
@@ -781,8 +873,9 @@ pub fn fit_with_precision(
     let mut o = opt.clone();
     let mut r = fit(data, &err, &o)?;
     if spec.iter().all(|s| matches!(s, FalseSpec::Rate(_))) {
-        return Ok((r, err));
+        return Ok((r, err, true));
     }
+    let mut settled = false;
     for _ in 0..20 {
         let next: Vec<f64> = (0..n)
             .map(|i| rate(i, r.tips[i].unseen_observable))
@@ -796,10 +889,11 @@ pub fn fit_with_precision(
         o.init = Some(r.params.clone());
         r = fit(data, &err, &o)?;
         if change < 1e-3 {
+            settled = true;
             break;
         }
     }
-    Ok((r, err))
+    Ok((r, err, settled))
 }
 
 /// Percentile intervals over bootstrap replicates, per node.
@@ -1373,10 +1467,6 @@ mod tests {
         .validate(1)
         .is_err());
         assert!(ErrorRates::none(2).validate(3).is_err());
-        // 1,000 annotated, 90 % real, sensitivity 0.9 -> 100 false among ~ 10,000 - 1,000 truly absent positions
-        let f = false_rate_from_precision(1000.0, 10_000.0, 0.9, 0.9);
-        assert!((f - 100.0 / 9000.0).abs() < 1e-12, "{f}");
-        assert_eq!(false_rate_from_precision(1000.0, 10_000.0, 0.9, 1.0), 0.0);
     }
 
     #[test]
@@ -1556,8 +1646,9 @@ mod tests {
         let d = sim_data(NWK, cols);
         let mut spec = vec![FalseSpec::Rate(0.0); 5];
         spec[0] = FalseSpec::Precision(real / carried);
-        let (r, used) =
+        let (r, used, settled) =
             fit_with_precision(&d, &err.sensitivity, &spec, &FitOptions::default()).unwrap();
+        assert!(settled);
         let f = used.false_rate[0];
         assert!(
             (f - 0.01).abs() < 0.002,
@@ -1570,7 +1661,7 @@ mod tests {
             r.tips[0].expected_false
         );
         // rates given directly are passed through unchanged
-        let (_, used) = fit_with_precision(
+        let (_, used, _) = fit_with_precision(
             &d,
             &err.sensitivity,
             &[FalseSpec::Rate(0.01); 5],
@@ -1616,14 +1707,21 @@ mod tests {
                 );
             }
         }
+        for h in [1e-4, -1e-4] {
+            let mut q = r.params.clone();
+            q.root_present += h;
+            assert!(
+                log_likelihood(&d, &err, &q) <= base + 1e-6,
+                "moving the root probability by {h} improves the fit"
+            );
+        }
         // a far stricter run (tolerance 1e-12) ends at the same log-likelihood
         let slow = {
-            let mut o = FitOptions {
+            let o = FitOptions {
                 max_iter: 400_000,
                 tol: 1e-12,
                 init: None,
             };
-            o.max_iter = 400_000;
             fit(&d, &err, &o).unwrap()
         };
         assert!(
@@ -1650,5 +1748,129 @@ mod tests {
         assert!(fit(&d, &ErrorRates::none(5), &o)
             .unwrap_err()
             .contains("strictly between"));
+    }
+
+    #[test]
+    fn effectively_unary_nodes_are_fixed_and_the_split_does_not_depend_on_the_start() {
+        // E never observed: (D,E) is left with one informative child, D. Found by the second review: without fixing one of the
+        // two branches, their split moved with the starting values at the same log-likelihood.
+        let t = tree(NWK);
+        let err = some_errors();
+        let mut cols = simulate(
+            &t,
+            &truth_with_fixed_root(&t, 0.05, 0.15, 0.7),
+            &err,
+            8000,
+            13,
+        );
+        for c in cols.iter_mut() {
+            c[4] = MISSING;
+        }
+        cols.retain(|c| c.contains(&PRESENT));
+        let d = sim_data(NWK, cols);
+        let fx = fixed_branches(&d);
+        let (e, dn) = (t.tip_index("E").unwrap(), t.tip_index("D").unwrap());
+        let de = t.parent(e).unwrap();
+        assert_eq!(
+            (fx[e], fx[de], fx[dn]),
+            (Fixed::NoData, Fixed::Unary, Fixed::No)
+        );
+        assert_eq!(fx.iter().filter(|&&f| f == Fixed::Root).count(), 1);
+        let fits: Vec<FitResult> = [(0.05, 0.2, 0.5), (0.2, 0.05, 0.8), (0.01, 0.4, 0.3)]
+            .iter()
+            .map(|&(g, l, r0)| {
+                fit(
+                    &d,
+                    &err,
+                    &FitOptions {
+                        init: Some(Params::uniform(&t, g, l, r0)),
+                        ..Default::default()
+                    },
+                )
+                .unwrap()
+            })
+            .collect();
+        for f in &fits[1..] {
+            assert!((f.log_lik - fits[0].log_lik).abs() < 1e-4);
+            for v in [dn, de] {
+                let (a, b) = (f.nodes[v].expected_losses, fits[0].nodes[v].expected_losses);
+                assert!(
+                    (a - b).abs() < 1e-3 * b.max(1.0) + 0.5,
+                    "node {v}: {a} vs {b}"
+                );
+            }
+        }
+        assert!(
+            fits[0].nodes[de].expected_losses < 1e-2 && fits[0].nodes[de].fixed == Fixed::Unary
+        );
+    }
+
+    #[test]
+    fn a_root_with_one_informative_child_fixes_that_branch() {
+        // C, D and E never observed: the root's only informative child is ((A,B),(F,G)), which then acts as the root
+        let nwk = "(((A,B),(F,G)),(C,(D,E)));";
+        let t = tree(nwk);
+        let truth = truth_with_fixed_root(&t, 0.05, 0.15, 0.7);
+        let mut cols = simulate(&t, &truth, &ErrorRates::none(7), 30_000, 17);
+        let names: Vec<&str> = t.tips().iter().map(|&v| t.label(v).unwrap()).collect();
+        for c in cols.iter_mut() {
+            for (i, n) in names.iter().enumerate() {
+                if ["C", "D", "E"].contains(n) {
+                    c[i] = MISSING;
+                }
+            }
+        }
+        cols.retain(|c| c.contains(&PRESENT));
+        let d = sim_data(nwk, cols);
+        let fx = fixed_branches(&d);
+        let top = t
+            .parent(t.parent(t.tip_index("A").unwrap()).unwrap())
+            .unwrap();
+        assert_eq!(fx[top], Fixed::Root);
+        assert_eq!(fx.iter().filter(|&&f| f == Fixed::Root).count(), 2); // and one of (A,B), (F,G)
+        assert_eq!(fx.iter().filter(|&&f| f == Fixed::NoData).count(), 5); // C, D, E, (D,E), (C,(D,E))
+        let a = fit(&d, &ErrorRates::none(7), &FitOptions::default()).unwrap();
+        let b = fit(
+            &d,
+            &ErrorRates::none(7),
+            &FitOptions {
+                init: Some(Params::uniform(&t, 0.3, 0.02, 0.2)),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!((a.log_lik - b.log_lik).abs() < 1e-4);
+        assert!(
+            (a.params.root_present - b.params.root_present).abs() < 1e-3,
+            "{} vs {}",
+            a.params.root_present,
+            b.params.root_present
+        );
+        // too few informative tips is refused
+        let d3 = data("((A,B),(C,D));", &[&[1, 0, 1, MISSING]]);
+        assert!(fit(&d3, &ErrorRates::none(4), &FitOptions::default())
+            .unwrap_err()
+            .contains("at least 4"));
+    }
+
+    #[test]
+    fn e_steps_are_reproducible() {
+        let t = tree(NWK);
+        let d = sim_data(
+            NWK,
+            simulate(
+                &t,
+                &truth_with_fixed_root(&t, 0.05, 0.15, 0.7),
+                &some_errors(),
+                20_000,
+                23,
+            ),
+        );
+        let a = fit(&d, &some_errors(), &FitOptions::default()).unwrap();
+        let b = fit(&d, &some_errors(), &FitOptions::default()).unwrap();
+        assert_eq!(
+            (a.iterations, a.log_lik.to_bits()),
+            (b.iterations, b.log_lik.to_bits())
+        );
     }
 }

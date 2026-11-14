@@ -1363,7 +1363,7 @@ fn likelihood_writes_its_tables_and_reads_error_rates() {
     assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
     let d = out.join("family.aln");
     let br = fs::read_to_string(d.join("likelihood_branches.tsv")).unwrap();
-    assert!(br.starts_with("branch\tnode\tn_tips\tgain_prob\tloss_prob\texpected_gains\texpected_losses\texpected_present\thas_data\ttips\n"), "{br}");
+    assert!(br.starts_with("branch\tnode\tn_tips\tgain_prob\tloss_prob\texpected_gains\texpected_losses\texpected_present\thas_data\tfixed\ttips\n"), "{br}");
     assert_eq!(br.lines().count(), 1 + 7); // 7 nodes in ((A,B),(C,D))
     let sites = fs::read_to_string(d.join("likelihood_sites.tsv")).unwrap();
     assert_eq!(sites.lines().count(), 3); // two positions
