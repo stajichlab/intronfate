@@ -76,6 +76,7 @@ def read_groups(genomes):
 def fig1(a, sc):
     root = L.parse_newick(open(os.path.join(a.trees, "gene_tree.nwk")).read())
     anc = {frozenset(r["tips"].split(",")): r for r in L.read_tsv(os.path.join(a.results, "ancestral_states.tsv"))}
+    obs = {r["tip"]: r for r in L.read_tsv(os.path.join(a.results, "tip_counts.tsv"))}
     xs, ys, tips, H = layout(root)
     fig, ax = plt.subplots(figsize=(15, 13))
     red = lambda x: SC_COLOR["Antarctolithica"] if all(t.startswith("Alith") for t in L.leaves(x)) else "black"
@@ -91,11 +92,12 @@ def fig1(a, sc):
             ax.text(xs[id(x)] - 0.15, ys[id(x)], f"root: +{r['branch_gains']}", ha="right", va="center", fontsize=7)
         if x["kids"]:
             ax.scatter([xs[id(x)]], [ys[id(x)]], s=22, color="white", edgecolor="black", zorder=3)
-            ax.text(xs[id(x)] + 0.06, ys[id(x)] + 0.22, f"{r['dollo_present']} ({r['mp_present']})", fontsize=6.3, color="#1a5276",
-                    va="top", zorder=4)
+            ax.text(xs[id(x)] - 0.05, ys[id(x)] + 0.12, f"{r['dollo_present']} ({r['mp_present']})", fontsize=6.3, color="#1a5276",
+                    va="top", ha="right", zorder=4)
     for t in tips:
-        r = anc[frozenset([t["name"]])]
-        ax.text(H + 0.15, ys[id(t)], f"{t['name']}  {r['dollo_present']}", va="center", fontsize=8,
+        o = obs[t["name"]]
+        ax.text(H + 0.15, ys[id(t)], f"{t['name']}  {o['carried']}" + (f"  ({o['missing']} ?)" if int(o["missing"]) > 5000 else ""),
+                va="center", fontsize=8,
                 color=SC_COLOR.get(sc.get(t["name"], ""), "black"))
     ax.set_xlim(-1.2, H + 3.2)
     ax.set_ylim(-1, len(tips))
@@ -103,8 +105,9 @@ def fig1(a, sc):
     ax.axis("off")
     handles = [plt.Line2D([], [], color=c, lw=6, label=g) for g, c in SC_COLOR.items()]
     ax.legend(handles=handles, loc="lower left", fontsize=8, frameon=False)
-    ax.set_title("Dollo gains (+) and losses (−) of intron positions per branch; at each node the positions estimated present, "
-                 "Dollo (Fitch MP);\nat each tip the positions carried. V9 tier A: 1,704 families, 29,085 positions, gene tree rooted on Mucor",
+    ax.set_title("Dollo gains (+) and losses (−) of intron positions per branch; left of each node the positions estimated present, "
+                 "Dollo (Fitch MP);\nat each tip the positions the genome is observed to carry ('?' = positions not observable, shown when many). "
+                 "V9 tier A: 1,704 families, 29,085 positions, gene tree rooted on Mucor",
                  fontsize=10, loc="left")
     fig.tight_layout()
     fig.savefig(os.path.join(a.out, "fig1_tree_gains_losses.png"), dpi=170)

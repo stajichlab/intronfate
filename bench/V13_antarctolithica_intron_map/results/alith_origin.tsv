@@ -1,0 +1,8 @@
+origin_node	n_tips	present	absent	missing	retention	by_construction
+root (all)	42	226	2758	155	0.076	no
+Dikarya	41	184	1777	83	0.094	no
+Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	39	55	519	40	0.096	no
+Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	33	116	935	68	0.110	no
+Saccharomycotina + Pezizomycotina + Antarctolithica	31	78	0	0	1.000	yes
+Antarctolithica	6	183	0	0	1.000	yes
+inside Antarctolithica	-	366	0	0	1.000	yes

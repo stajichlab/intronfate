@@ -92,8 +92,11 @@ def summarize(a):
         hit = "n/a" if not true_ids else ("yes" if true_ids[0] in best else "no")
         dist = min(L.edge_distance(backbone, frozenset(idx[b]["tips_below"].split(",")), frozenset(true.split(","))) for b in best) if true_ids else ""
         gap = (v[true_ids[0]] - lo) if true_ids else ""
+        # negative: the cheapest attachment point is closer to the root than the true one (the lineage is placed too deep)
+        ddepth = (min(L.depth_of(backbone, frozenset(idx[b]["tips_below"].split(","))) for b in best)
+                  - L.depth_of(backbone, frozenset(true.split(",")))) if true_ids else ""
         rows.append(dict(control=x, variant=var, rep=rep, mode=mode, true_sibling=true, best=",".join(best), n_tied=len(best), true_is_best=hit,
-                         edges_from_true=dist, losses_true_minus_best=gap, best_sister_tips=idx[best[0]]["tips_below"]))
+                         edges_from_true=dist, depth_best_minus_true=ddepth, losses_true_minus_best=gap, best_sister_tips=idx[best[0]]["tips_below"]))
     os.makedirs(a.out, exist_ok=True)
     keys = list(rows[0])
     with open(os.path.join(a.out, "calibration_runs.tsv"), "w") as f:
@@ -104,13 +107,14 @@ def summarize(a):
     for r in rows:
         agg[(r["control"], r["variant"], r["mode"])].append(r)
     with open(os.path.join(a.out, "calibration_summary.tsv"), "w") as f:
-        f.write("control\tvariant\tmode\treplicates\ttrue_is_best\tmedian_edges_from_true\tmost_common_best_sister\n")
+        f.write("control\tvariant\tmode\treplicates\ttrue_is_best\tmedian_edges_from_true\tmedian_depth_best_minus_true\tmost_common_best_sister\n")
         for (x, var, mode), rs in sorted(agg.items()):
             hits = sum(r["true_is_best"] == "yes" for r in rs)
             ds = [r["edges_from_true"] for r in rs if r["edges_from_true"] != ""]
+            dd = [r["depth_best_minus_true"] for r in rs if r["depth_best_minus_true"] != ""]
             common = collections.Counter(r["best_sister_tips"] for r in rs).most_common(1)[0][0]
             common = common if len(common) < 60 else common[:57] + "..."
-            f.write(f"{x}\t{var}\t{mode}\t{len(rs)}\t{hits}\t{statistics.median(ds) if ds else ''}\t{common}\n")
+            f.write(f"{x}\t{var}\t{mode}\t{len(rs)}\t{hits}\t{statistics.median(ds) if ds else ''}\t{statistics.median(dd) if dd else ''}\t{common}\n")
     print(open(os.path.join(a.out, "calibration_summary.tsv")).read(), end="")
 
 

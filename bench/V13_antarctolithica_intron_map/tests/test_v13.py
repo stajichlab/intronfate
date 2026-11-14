@@ -12,6 +12,7 @@ def test_tree_helpers():
     r = L.parse_newick("(M:0.1,((A,B)90:0.2,(X1,X2)):0.3);")
     assert L.leaves(r) == ["M", "A", "B", "X1", "X2"]
     assert L.edge_distance(r, frozenset({"A"}), frozenset({"B"})) == 2
+    assert L.depth_of(r, frozenset({"A"})) == 3 and L.depth_of(r, frozenset({"X1", "X2"})) == 2
     assert L.edge_distance(r, frozenset({"A"}), frozenset({"X1", "X2"})) == 3
     assert [len(L.tipset(x)) for x in L.path_to(r, frozenset({"X1"}))] == [5, 4, 2, 1]
     assert L.recon_name(["A", "B", "C", "D", "E"]) == "nodeA-B-C-D…(5 tips)"

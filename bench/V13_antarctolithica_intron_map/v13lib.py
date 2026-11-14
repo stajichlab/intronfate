@@ -75,6 +75,14 @@ def path_to(root, target_tips):
     return None
 
 
+def depth_of(root, tips):
+    """Number of edges from the root to the node with this tip set."""
+    p = path_to(root, tips)
+    if p is None:
+        raise ValueError("node not in tree")
+    return len(p) - 1
+
+
 def edge_distance(root, a, b):
     """Number of edges on the path between the nodes with tip sets a and b."""
     pa, pb = path_to(root, a), path_to(root, b)

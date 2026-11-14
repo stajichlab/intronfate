@@ -1,0 +1,84 @@
+branch	node	n_tips	gains	losses	tips
+root	0	42	3139	0	Mmucedo,Sjaponicus,Spombe,Tdeformans,Taphrina,Protomyces,Savitreella,Saitoella,Neolecta,Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum,Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9,Cneoformans,Smaydis
+Mmucedo	1	1	1982	0	Mmucedo
+Sjaponicus,Spombe,Tdeformans,Taphrina…(41 tips)	2	41	2044	0	Sjaponicus,Spombe,Tdeformans,Taphrina,Protomyces,Savitreella,Saitoella,Neolecta,Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum,Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9,Cneoformans,Smaydis
+Sjaponicus,Spombe,Tdeformans,Taphrina…(39 tips)	3	39	614	550	Sjaponicus,Spombe,Tdeformans,Taphrina,Protomyces,Savitreella,Saitoella,Neolecta,Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum,Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9
+Sjaponicus,Spombe,Tdeformans,Taphrina…(6 tips)	4	6	10	3019	Sjaponicus,Spombe,Tdeformans,Taphrina,Protomyces,Savitreella
+Sjaponicus,Spombe	5	2	190	342	Sjaponicus,Spombe
+Sjaponicus	6	1	234	219	Sjaponicus
+Spombe	7	1	161	255	Spombe
+Tdeformans,Taphrina,Protomyces,Savitreella	8	4	49	1416	Tdeformans,Taphrina,Protomyces,Savitreella
+Tdeformans,Taphrina,Protomyces	9	3	121	70	Tdeformans,Taphrina,Protomyces
+Tdeformans,Taphrina	10	2	353	137	Tdeformans,Taphrina
+Tdeformans	11	1	75	13	Tdeformans
+Taphrina	12	1	74	16	Taphrina
+Protomyces	13	1	305	209	Protomyces
+Savitreella	14	1	149	515	Savitreella
+Saitoella,Neolecta,Pyronema,Orbilia…(33 tips)	15	33	1119	101	Saitoella,Neolecta,Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum,Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9
+Saitoella,Neolecta	16	2	38	705	Saitoella,Neolecta
+Saitoella	17	1	462	4044	Saitoella
+Neolecta	18	1	2245	285	Neolecta
+Pyronema,Orbilia,Ncrassa,Botrytis…(31 tips)	19	31	78	974	Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum,Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9
+Pyronema,Orbilia,Ncrassa,Botrytis…(25 tips)	20	25	577	113	Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum
+Pyronema,Orbilia,Ncrassa,Botrytis…(14 tips)	21	14	763	1494	Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea
+Pyronema,Orbilia	22	2	91	657	Pyronema,Orbilia
+Pyronema	23	1	657	1505	Pyronema
+Orbilia	24	1	716	769	Orbilia
+Ncrassa,Botrytis,Antarctomyces,Geoglossum…(12 tips)	25	12	340	974	Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea
+Ncrassa,Botrytis,Antarctomyces	26	3	77	1629	Ncrassa,Botrytis,Antarctomyces
+Ncrassa	27	1	379	724	Ncrassa
+Botrytis,Antarctomyces	28	2	30	94	Botrytis,Antarctomyces
+Botrytis	29	1	245	139	Botrytis
+Antarctomyces	30	1	192	902	Antarctomyces
+Geoglossum,Lichina,Exophiala,Anidulans…(9 tips)	31	9	174	55	Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea
+Geoglossum,Lichina	32	2	59	118	Geoglossum,Lichina
+Geoglossum	33	1	423	290	Geoglossum
+Lichina	34	1	609	380	Lichina
+Exophiala,Anidulans,Cladonia,Arthonia…(7 tips)	35	7	29	784	Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea
+Exophiala,Anidulans,Cladonia	36	3	10	157	Exophiala,Anidulans,Cladonia
+Exophiala,Anidulans	37	2	10	314	Exophiala,Anidulans
+Exophiala	38	1	239	1722	Exophiala
+Anidulans	39	1	225	116	Anidulans
+Cladonia	40	1	368	527	Cladonia
+Arthonia,Cryomyces,Zymoseptoria,Hortaea	41	4	6	1595	Arthonia,Cryomyces,Zymoseptoria,Hortaea
+Arthonia	42	1	469	530	Arthonia
+Cryomyces,Zymoseptoria,Hortaea	43	3	1	5	Cryomyces,Zymoseptoria,Hortaea
+Cryomyces	44	1	19	1	Cryomyces
+Zymoseptoria,Hortaea	45	2	60	830	Zymoseptoria,Hortaea
+Zymoseptoria	46	1	262	133	Zymoseptoria
+Hortaea	47	1	165	242	Hortaea
+Neoaidaea,Babjevia,Dipodascopsis,Lipomyces…(11 tips)	48	11	292	1159	Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum
+Neoaidaea,Babjevia,Dipodascopsis,Lipomyces…(7 tips)	49	7	265	351	Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma
+Neoaidaea,Babjevia	50	2	47	859	Neoaidaea,Babjevia
+Neoaidaea	51	1	312	1692	Neoaidaea
+Babjevia	52	1	354	193	Babjevia
+Dipodascopsis,Lipomyces,Limtongia,Kockiozyma…(5 tips)	53	5	94	708	Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma
+Dipodascopsis	54	1	166	1412	Dipodascopsis
+Lipomyces,Limtongia,Kockiozyma,Myxozyma	55	4	101	191	Lipomyces,Limtongia,Kockiozyma,Myxozyma
+Lipomyces	56	1	232	271	Lipomyces
+Limtongia,Kockiozyma,Myxozyma	57	3	10	512	Limtongia,Kockiozyma,Myxozyma
+Limtongia	58	1	168	816	Limtongia
+Kockiozyma,Myxozyma	59	2	84	364	Kockiozyma,Myxozyma
+Kockiozyma	60	1	84	30	Kockiozyma
+Myxozyma	61	1	57	33	Myxozyma
+Trigonopsis,Alloascoidea,Yarrowia,Geotrichum	62	4	9	2324	Trigonopsis,Alloascoidea,Yarrowia,Geotrichum
+Trigonopsis	63	1	250	939	Trigonopsis
+Alloascoidea,Yarrowia,Geotrichum	64	3	16	575	Alloascoidea,Yarrowia,Geotrichum
+Alloascoidea	65	1	177	426	Alloascoidea
+Yarrowia,Geotrichum	66	2	0	497	Yarrowia,Geotrichum
+Yarrowia	67	1	82	1144	Yarrowia
+Geotrichum	68	1	175	59	Geotrichum
+Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25…(6 tips)	69	6	183	4185	Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9
+Alith_62.17	70	1	47	39	Alith_62.17
+Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28…(5 tips)	71	5	83	152	Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9
+Alith_14.71,Alith_17.30,Alith_52.25	72	3	9	12	Alith_14.71,Alith_17.30,Alith_52.25
+Alith_14.71,Alith_17.30	73	2	5	21	Alith_14.71,Alith_17.30
+Alith_14.71	74	1	60	52	Alith_14.71
+Alith_17.30	75	1	24	39	Alith_17.30
+Alith_52.25	76	1	36	34	Alith_52.25
+Alith_55.28,Alith_82.9	77	2	2	16	Alith_55.28,Alith_82.9
+Alith_55.28	78	1	64	36	Alith_55.28
+Alith_82.9	79	1	36	31	Alith_82.9
+Cneoformans,Smaydis	80	2	43	885	Cneoformans,Smaydis
+Cneoformans	81	1	4653	100	Cneoformans
+Smaydis	82	1	228	3798	Smaydis

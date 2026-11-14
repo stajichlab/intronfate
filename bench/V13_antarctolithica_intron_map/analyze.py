@@ -9,7 +9,7 @@ Writes into OUT/:
   alith_origin.tsv         Alith-carried / lacked / unseen positions by the node where Dollo places their origin
   retention_by_origin.tsv  the same as a retention fraction for every lineage (single genomes and the Alith unit)
   placement_support.tsv    per candidate placement: Dollo losses (all sites, Alith-carrier sites), MP steps, sites that prefer it
-  site_preference.tsv      informative sites grouped by the set of placements that are cheapest for them
+  site_preference.tsv.gz   informative sites grouped by the set of placements that are cheapest for them
   summary.txt              the headline numbers quoted in README.md
 Usage: analyze.py --matrix M --trees V9/trees --genomes V9/genomes.tsv --score score --out results
 """
@@ -93,6 +93,11 @@ def main():
         for b in branches:
             f.write(f"{b['node']}\t{label(b['tips'])}\t{len(b['tips'])}\t{anc.get('dollo', {}).get(b['tips'], 0)}\t"
                     f"{anc.get('mp', {}).get(b['tips'], 0)}\t{b['gains']}\t{b['losses']}\t{','.join(b['tip_list'])}\n")
+    with W("tip_counts.tsv") as f:                      # observed cells, not the reconstruction (which fills in '?')
+        f.write("tip\tcarried\tabsent\tmissing\n")
+        for t in tips:
+            c = collections.Counter(r[t] for r in rows.values())
+            f.write(f"{t}\t{c['1']}\t{c['0']}\t{c['?']}\n")
     astem = frozenset(alith)
     stem = next(b for b in branches if b["tips"] == astem)
     parent = L.path_to(root, astem)[-2]
@@ -164,7 +169,7 @@ def main():
             continue
         kind = "carrier" if s["carrier"] else ("absent" if s["site"] in absent else "missing")
         pat[(kind, s["best"])] += 1
-    with W("site_preference.tsv") as f:
+    with gzip.open(os.path.join(a.out, "site_preference.tsv.gz"), "wt") as f:
         f.write("alith_state\tn_sites\tn_best_placements\tbest_placements\tsister_of_best\n")
         for (kind, best), n in pat.most_common():
             b = best.split(",")

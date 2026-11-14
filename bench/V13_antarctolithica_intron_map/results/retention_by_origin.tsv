@@ -1,0 +1,390 @@
+lineage	superclade	carried	depth	origin_node	present	absent	retention	by_construction
+Mmucedo	Mucoromycota	5121	0	root (all)	3139	0	1.0000	yes
+Mmucedo	Mucoromycota	5121	1	Mmucedo	1982	0	1.0000	yes
+Mmucedo	Mucoromycota	5121	inside	inside	0	0	nan	yes
+Sjaponicus	Taphrinomycotina	1725	0	root (all)	577	2226	0.2059	no
+Sjaponicus	Taphrinomycotina	1725	1	Dikarya	314	1567	0.1669	no
+Sjaponicus	Taphrinomycotina	1725	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	401	165	0.7085	no
+Sjaponicus	Taphrinomycotina	1725	3	Taphrinomycotina (6 of 8)	9	0	1.0000	no
+Sjaponicus	Taphrinomycotina	1725	4	Taphrinomycotina (Sjaponicus,Spombe)	190	0	1.0000	yes
+Sjaponicus	Taphrinomycotina	1725	5	Sjaponicus	234	0	1.0000	yes
+Sjaponicus	Taphrinomycotina	1725	inside	inside	0	0	nan	yes
+Spombe	Taphrinomycotina	1658	0	root (all)	581	2280	0.2031	no
+Spombe	Taphrinomycotina	1658	1	Dikarya	325	1594	0.1694	no
+Spombe	Taphrinomycotina	1658	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	392	190	0.6735	no
+Spombe	Taphrinomycotina	1658	3	Taphrinomycotina (6 of 8)	9	1	0.9000	no
+Spombe	Taphrinomycotina	1658	4	Taphrinomycotina (Sjaponicus,Spombe)	190	0	1.0000	yes
+Spombe	Taphrinomycotina	1658	5	Spombe	161	0	1.0000	yes
+Spombe	Taphrinomycotina	1658	inside	inside	0	0	nan	yes
+Tdeformans	Taphrinomycotina	1048	0	root (all)	200	2811	0.0664	no
+Tdeformans	Taphrinomycotina	1048	1	Dikarya	128	1835	0.0652	no
+Tdeformans	Taphrinomycotina	1048	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	140	436	0.2431	no
+Tdeformans	Taphrinomycotina	1048	3	Taphrinomycotina (6 of 8)	6	4	0.6000	no
+Tdeformans	Taphrinomycotina	1048	4	Taphrinomycotina (4 of 8)	35	11	0.7609	no
+Tdeformans	Taphrinomycotina	1048	5	Taphrinomycotina (Protomyces,Taphrina,Tdeformans)	111	1	0.9911	no
+Tdeformans	Taphrinomycotina	1048	6	Taphrinomycotina (Taphrina,Tdeformans)	353	0	1.0000	yes
+Tdeformans	Taphrinomycotina	1048	7	Tdeformans	75	0	1.0000	yes
+Tdeformans	Taphrinomycotina	1048	inside	inside	0	0	nan	yes
+Taphrina	Taphrinomycotina	1058	0	root (all)	199	2819	0.0659	no
+Taphrina	Taphrinomycotina	1058	1	Dikarya	129	1845	0.0653	no
+Taphrina	Taphrinomycotina	1058	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	142	442	0.2432	no
+Taphrina	Taphrinomycotina	1058	3	Taphrinomycotina (6 of 8)	6	4	0.6000	no
+Taphrina	Taphrinomycotina	1058	4	Taphrinomycotina (4 of 8)	37	9	0.8043	no
+Taphrina	Taphrinomycotina	1058	5	Taphrinomycotina (Protomyces,Taphrina,Tdeformans)	118	1	0.9916	no
+Taphrina	Taphrinomycotina	1058	6	Taphrinomycotina (Taphrina,Tdeformans)	353	0	1.0000	yes
+Taphrina	Taphrinomycotina	1058	7	Taphrina	74	0	1.0000	yes
+Taphrina	Taphrinomycotina	1058	inside	inside	0	0	nan	yes
+Protomyces	Taphrinomycotina	871	0	root (all)	189	2764	0.0640	no
+Protomyces	Taphrinomycotina	871	1	Dikarya	92	1849	0.0474	no
+Protomyces	Taphrinomycotina	871	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	116	451	0.2046	no
+Protomyces	Taphrinomycotina	871	3	Taphrinomycotina (6 of 8)	6	3	0.6667	no
+Protomyces	Taphrinomycotina	871	4	Taphrinomycotina (4 of 8)	42	5	0.8936	no
+Protomyces	Taphrinomycotina	871	5	Taphrinomycotina (Protomyces,Taphrina,Tdeformans)	121	0	1.0000	yes
+Protomyces	Taphrinomycotina	871	6	Protomyces	305	0	1.0000	yes
+Protomyces	Taphrinomycotina	871	inside	inside	0	0	nan	yes
+Savitreella	Taphrinomycotina	297	0	root (all)	47	2890	0.0160	no
+Savitreella	Taphrinomycotina	297	1	Dikarya	20	1919	0.0103	no
+Savitreella	Taphrinomycotina	297	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	28	544	0.0490	no
+Savitreella	Taphrinomycotina	297	3	Taphrinomycotina (6 of 8)	4	6	0.4000	no
+Savitreella	Taphrinomycotina	297	4	Taphrinomycotina (4 of 8)	49	0	1.0000	yes
+Savitreella	Taphrinomycotina	297	5	Savitreella	149	0	1.0000	yes
+Savitreella	Taphrinomycotina	297	inside	inside	0	0	nan	yes
+Saitoella	Taphrinomycotina	1680	0	root (all)	547	2406	0.1852	no
+Saitoella	Taphrinomycotina	1680	1	Dikarya	280	1663	0.1441	no
+Saitoella	Taphrinomycotina	1680	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	150	421	0.2627	no
+Saitoella	Taphrinomycotina	1680	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	203	867	0.1897	no
+Saitoella	Taphrinomycotina	1680	4	Taphrinomycotina (Neolecta,Saitoella)	38	0	1.0000	yes
+Saitoella	Taphrinomycotina	1680	5	Saitoella	462	0	1.0000	yes
+Saitoella	Taphrinomycotina	1680	inside	inside	0	0	nan	yes
+Neolecta	Taphrinomycotina	6804	0	root (all)	1733	920	0.6532	no
+Neolecta	Taphrinomycotina	6804	1	Dikarya	1386	395	0.7782	no
+Neolecta	Taphrinomycotina	6804	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	385	139	0.7347	no
+Neolecta	Taphrinomycotina	6804	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	1017	55	0.9487	no
+Neolecta	Taphrinomycotina	6804	4	Taphrinomycotina (Neolecta,Saitoella)	38	0	1.0000	yes
+Neolecta	Taphrinomycotina	6804	5	Neolecta	2245	0	1.0000	yes
+Neolecta	Taphrinomycotina	6804	inside	inside	0	0	nan	yes
+Pyronema	Pezizomycotina	3199	0	root (all)	724	2115	0.2550	no
+Pyronema	Pezizomycotina	3199	1	Dikarya	487	1365	0.2630	no
+Pyronema	Pezizomycotina	3199	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	189	358	0.3455	no
+Pyronema	Pezizomycotina	3199	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	329	713	0.3157	no
+Pyronema	Pezizomycotina	3199	4	Saccharomycotina + Pezizomycotina + Antarctolithica	31	43	0.4189	no
+Pyronema	Pezizomycotina	3199	5	Saccharomycotina + Pezizomycotina	258	257	0.5010	no
+Pyronema	Pezizomycotina	3199	6	Pezizomycotina	433	271	0.6151	no
+Pyronema	Pezizomycotina	3199	7	Pezizomycotina (Orbilia,Pyronema)	91	0	1.0000	yes
+Pyronema	Pezizomycotina	3199	8	Pyronema	657	0	1.0000	yes
+Pyronema	Pezizomycotina	3199	inside	inside	0	0	nan	yes
+Orbilia	Pezizomycotina	4288	0	root (all)	1049	2007	0.3433	no
+Orbilia	Pezizomycotina	4288	1	Dikarya	719	1276	0.3604	no
+Orbilia	Pezizomycotina	4288	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	233	353	0.3976	no
+Orbilia	Pezizomycotina	4288	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	497	591	0.4568	no
+Orbilia	Pezizomycotina	4288	4	Saccharomycotina + Pezizomycotina + Antarctolithica	35	42	0.4545	no
+Orbilia	Pezizomycotina	4288	5	Saccharomycotina + Pezizomycotina	337	194	0.6347	no
+Orbilia	Pezizomycotina	4288	6	Pezizomycotina	611	128	0.8268	no
+Orbilia	Pezizomycotina	4288	7	Pezizomycotina (Orbilia,Pyronema)	91	0	1.0000	yes
+Orbilia	Pezizomycotina	4288	8	Orbilia	716	0	1.0000	yes
+Orbilia	Pezizomycotina	4288	inside	inside	0	0	nan	yes
+Ncrassa	Pezizomycotina	2383	0	root (all)	529	2526	0.1732	no
+Ncrassa	Pezizomycotina	2383	1	Dikarya	308	1686	0.1545	no
+Ncrassa	Pezizomycotina	2383	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	145	441	0.2474	no
+Ncrassa	Pezizomycotina	2383	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	189	899	0.1737	no
+Ncrassa	Pezizomycotina	2383	4	Saccharomycotina + Pezizomycotina + Antarctolithica	23	55	0.2949	no
+Ncrassa	Pezizomycotina	2383	5	Saccharomycotina + Pezizomycotina	188	356	0.3456	no
+Ncrassa	Pezizomycotina	2383	6	Pezizomycotina	339	396	0.4612	no
+Ncrassa	Pezizomycotina	2383	7	Pezizomycotina (12 of 14)	206	118	0.6358	no
+Ncrassa	Pezizomycotina	2383	8	Pezizomycotina (Antarctomyces,Botrytis,Ncrassa)	77	0	1.0000	yes
+Ncrassa	Pezizomycotina	2383	9	Ncrassa	379	0	1.0000	yes
+Ncrassa	Pezizomycotina	2383	inside	inside	0	0	nan	yes
+Botrytis	Pezizomycotina	2812	0	root (all)	676	2383	0.2210	no
+Botrytis	Pezizomycotina	2812	1	Dikarya	409	1592	0.2044	no
+Botrytis	Pezizomycotina	2812	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	179	411	0.3034	no
+Botrytis	Pezizomycotina	2812	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	246	850	0.2245	no
+Botrytis	Pezizomycotina	2812	4	Saccharomycotina + Pezizomycotina + Antarctolithica	26	52	0.3333	no
+Botrytis	Pezizomycotina	2812	5	Saccharomycotina + Pezizomycotina	231	311	0.4262	no
+Botrytis	Pezizomycotina	2812	6	Pezizomycotina	422	319	0.5695	no
+Botrytis	Pezizomycotina	2812	7	Pezizomycotina (12 of 14)	278	49	0.8502	no
+Botrytis	Pezizomycotina	2812	8	Pezizomycotina (Antarctomyces,Botrytis,Ncrassa)	70	1	0.9859	no
+Botrytis	Pezizomycotina	2812	9	Pezizomycotina (Antarctomyces,Botrytis)	30	0	1.0000	yes
+Botrytis	Pezizomycotina	2812	10	Botrytis	245	0	1.0000	yes
+Botrytis	Pezizomycotina	2812	inside	inside	0	0	nan	yes
+Antarctomyces	Pezizomycotina	1921	0	root (all)	454	2552	0.1510	no
+Antarctomyces	Pezizomycotina	1921	1	Dikarya	237	1738	0.1200	no
+Antarctomyces	Pezizomycotina	1921	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	124	459	0.2127	no
+Antarctomyces	Pezizomycotina	1921	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	156	907	0.1468	no
+Antarctomyces	Pezizomycotina	1921	4	Saccharomycotina + Pezizomycotina + Antarctolithica	21	54	0.2800	no
+Antarctomyces	Pezizomycotina	1921	5	Saccharomycotina + Pezizomycotina	161	367	0.3049	no
+Antarctomyces	Pezizomycotina	1921	6	Pezizomycotina	325	391	0.4539	no
+Antarctomyces	Pezizomycotina	1921	7	Pezizomycotina (12 of 14)	183	126	0.5922	no
+Antarctomyces	Pezizomycotina	1921	8	Pezizomycotina (Antarctomyces,Botrytis,Ncrassa)	38	34	0.5278	no
+Antarctomyces	Pezizomycotina	1921	9	Pezizomycotina (Antarctomyces,Botrytis)	30	0	1.0000	yes
+Antarctomyces	Pezizomycotina	1921	10	Antarctomyces	192	0	1.0000	yes
+Antarctomyces	Pezizomycotina	1921	inside	inside	0	0	nan	yes
+Geoglossum	Pezizomycotina	4283	0	root (all)	1027	1934	0.3468	no
+Geoglossum	Pezizomycotina	4283	1	Dikarya	733	1218	0.3757	no
+Geoglossum	Pezizomycotina	4283	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	236	329	0.4177	no
+Geoglossum	Pezizomycotina	4283	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	459	590	0.4376	no
+Geoglossum	Pezizomycotina	4283	4	Saccharomycotina + Pezizomycotina + Antarctolithica	38	37	0.5067	no
+Geoglossum	Pezizomycotina	4283	5	Saccharomycotina + Pezizomycotina	307	205	0.5996	no
+Geoglossum	Pezizomycotina	4283	6	Pezizomycotina	620	78	0.8883	no
+Geoglossum	Pezizomycotina	4283	7	Pezizomycotina (12 of 14)	239	64	0.7888	no
+Geoglossum	Pezizomycotina	4283	8	Pezizomycotina (9 of 14)	142	19	0.8820	no
+Geoglossum	Pezizomycotina	4283	9	Pezizomycotina (Geoglossum,Lichina)	59	0	1.0000	yes
+Geoglossum	Pezizomycotina	4283	10	Geoglossum	423	0	1.0000	yes
+Geoglossum	Pezizomycotina	4283	inside	inside	0	0	nan	yes
+Lichina	Pezizomycotina	3946	0	root (all)	890	1849	0.3249	no
+Lichina	Pezizomycotina	3946	1	Dikarya	638	1182	0.3505	no
+Lichina	Pezizomycotina	3946	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	199	318	0.3849	no
+Lichina	Pezizomycotina	3946	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	383	603	0.3884	no
+Lichina	Pezizomycotina	3946	4	Saccharomycotina + Pezizomycotina + Antarctolithica	28	37	0.4308	no
+Lichina	Pezizomycotina	3946	5	Saccharomycotina + Pezizomycotina	274	188	0.5931	no
+Lichina	Pezizomycotina	3946	6	Pezizomycotina	535	103	0.8386	no
+Lichina	Pezizomycotina	3946	7	Pezizomycotina (12 of 14)	207	63	0.7667	no
+Lichina	Pezizomycotina	3946	8	Pezizomycotina (9 of 14)	124	19	0.8671	no
+Lichina	Pezizomycotina	3946	9	Pezizomycotina (Geoglossum,Lichina)	59	0	1.0000	yes
+Lichina	Pezizomycotina	3946	10	Lichina	609	0	1.0000	yes
+Lichina	Pezizomycotina	3946	inside	inside	0	0	nan	yes
+Exophiala	Pezizomycotina	1671	0	root (all)	366	2656	0.1211	no
+Exophiala	Pezizomycotina	1671	1	Dikarya	226	1757	0.1140	no
+Exophiala	Pezizomycotina	1671	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	111	475	0.1894	no
+Exophiala	Pezizomycotina	1671	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	139	943	0.1285	no
+Exophiala	Pezizomycotina	1671	4	Saccharomycotina + Pezizomycotina + Antarctolithica	14	63	0.1818	no
+Exophiala	Pezizomycotina	1671	5	Saccharomycotina + Pezizomycotina	142	384	0.2700	no
+Exophiala	Pezizomycotina	1671	6	Pezizomycotina	248	485	0.3383	no
+Exophiala	Pezizomycotina	1671	7	Pezizomycotina (12 of 14)	127	188	0.4032	no
+Exophiala	Pezizomycotina	1671	8	Pezizomycotina (9 of 14)	37	120	0.2357	no
+Exophiala	Pezizomycotina	1671	9	Pezizomycotina (7 of 14)	6	18	0.2500	no
+Exophiala	Pezizomycotina	1671	10	Pezizomycotina (Anidulans,Cladonia,Exophiala)	6	3	0.6667	no
+Exophiala	Pezizomycotina	1671	11	Pezizomycotina (Anidulans,Exophiala)	10	0	1.0000	yes
+Exophiala	Pezizomycotina	1671	12	Exophiala	239	0	1.0000	yes
+Exophiala	Pezizomycotina	1671	inside	inside	0	0	nan	yes
+Anidulans	Pezizomycotina	3267	0	root (all)	801	2227	0.2645	no
+Anidulans	Pezizomycotina	3267	1	Dikarya	533	1435	0.2708	no
+Anidulans	Pezizomycotina	3267	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	196	391	0.3339	no
+Anidulans	Pezizomycotina	3267	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	324	748	0.3022	no
+Anidulans	Pezizomycotina	3267	4	Saccharomycotina + Pezizomycotina + Antarctolithica	28	46	0.3784	no
+Anidulans	Pezizomycotina	3267	5	Saccharomycotina + Pezizomycotina	275	259	0.5150	no
+Anidulans	Pezizomycotina	3267	6	Pezizomycotina	498	219	0.6946	no
+Anidulans	Pezizomycotina	3267	7	Pezizomycotina (12 of 14)	233	88	0.7259	no
+Anidulans	Pezizomycotina	3267	8	Pezizomycotina (9 of 14)	123	33	0.7885	no
+Anidulans	Pezizomycotina	3267	9	Pezizomycotina (7 of 14)	14	8	0.6364	no
+Anidulans	Pezizomycotina	3267	10	Pezizomycotina (Anidulans,Cladonia,Exophiala)	7	0	1.0000	no
+Anidulans	Pezizomycotina	3267	11	Pezizomycotina (Anidulans,Exophiala)	10	0	1.0000	yes
+Anidulans	Pezizomycotina	3267	12	Anidulans	225	0	1.0000	yes
+Anidulans	Pezizomycotina	3267	inside	inside	0	0	nan	yes
+Cladonia	Pezizomycotina	2757	0	root (all)	654	1872	0.2589	no
+Cladonia	Pezizomycotina	2757	1	Dikarya	436	1284	0.2535	no
+Cladonia	Pezizomycotina	2757	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	158	326	0.3264	no
+Cladonia	Pezizomycotina	2757	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	259	671	0.2785	no
+Cladonia	Pezizomycotina	2757	4	Saccharomycotina + Pezizomycotina + Antarctolithica	21	37	0.3621	no
+Cladonia	Pezizomycotina	2757	5	Saccharomycotina + Pezizomycotina	199	240	0.4533	no
+Cladonia	Pezizomycotina	2757	6	Pezizomycotina	366	238	0.6060	no
+Cladonia	Pezizomycotina	2757	7	Pezizomycotina (12 of 14)	181	80	0.6935	no
+Cladonia	Pezizomycotina	2757	8	Pezizomycotina (9 of 14)	89	47	0.6544	no
+Cladonia	Pezizomycotina	2757	9	Pezizomycotina (7 of 14)	16	6	0.7273	no
+Cladonia	Pezizomycotina	2757	10	Pezizomycotina (Anidulans,Cladonia,Exophiala)	10	0	1.0000	yes
+Cladonia	Pezizomycotina	2757	11	Cladonia	368	0	1.0000	yes
+Cladonia	Pezizomycotina	2757	inside	inside	0	0	nan	yes
+Arthonia	Pezizomycotina	1925	0	root (all)	395	2624	0.1308	no
+Arthonia	Pezizomycotina	1925	1	Dikarya	253	1723	0.1280	no
+Arthonia	Pezizomycotina	1925	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	115	468	0.1973	no
+Arthonia	Pezizomycotina	1925	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	134	926	0.1264	no
+Arthonia	Pezizomycotina	1925	4	Saccharomycotina + Pezizomycotina + Antarctolithica	16	62	0.2051	no
+Arthonia	Pezizomycotina	1925	5	Saccharomycotina + Pezizomycotina	151	375	0.2871	no
+Arthonia	Pezizomycotina	1925	6	Pezizomycotina	229	491	0.3181	no
+Arthonia	Pezizomycotina	1925	7	Pezizomycotina (12 of 14)	106	204	0.3419	no
+Arthonia	Pezizomycotina	1925	8	Pezizomycotina (9 of 14)	35	119	0.2273	no
+Arthonia	Pezizomycotina	1925	9	Pezizomycotina (7 of 14)	16	9	0.6400	no
+Arthonia	Pezizomycotina	1925	10	Pezizomycotina (4 of 14)	6	0	1.0000	yes
+Arthonia	Pezizomycotina	1925	11	Arthonia	469	0	1.0000	yes
+Arthonia	Pezizomycotina	1925	inside	inside	0	0	nan	yes
+Cryomyces	Pezizomycotina	102	0	root (all)	18	75	0.1935	no
+Cryomyces	Pezizomycotina	102	1	Dikarya	15	41	0.2679	no
+Cryomyces	Pezizomycotina	102	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	4	11	0.2667	no
+Cryomyces	Pezizomycotina	102	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	6	17	0.2609	no
+Cryomyces	Pezizomycotina	102	4	Saccharomycotina + Pezizomycotina + Antarctolithica	0	0	nan	no
+Cryomyces	Pezizomycotina	102	5	Saccharomycotina + Pezizomycotina	9	7	0.5625	no
+Cryomyces	Pezizomycotina	102	6	Pezizomycotina	13	6	0.6842	no
+Cryomyces	Pezizomycotina	102	7	Pezizomycotina (12 of 14)	11	4	0.7333	no
+Cryomyces	Pezizomycotina	102	8	Pezizomycotina (9 of 14)	5	1	0.8333	no
+Cryomyces	Pezizomycotina	102	9	Pezizomycotina (7 of 14)	1	1	0.5000	no
+Cryomyces	Pezizomycotina	102	10	Pezizomycotina (4 of 14)	0	0	nan	no
+Cryomyces	Pezizomycotina	102	11	Pezizomycotina (Cryomyces,Hortaea,Zymoseptoria)	1	0	1.0000	yes
+Cryomyces	Pezizomycotina	102	12	Cryomyces	19	0	1.0000	yes
+Cryomyces	Pezizomycotina	102	inside	inside	0	0	nan	yes
+Zymoseptoria	Pezizomycotina	1426	0	root (all)	291	2756	0.0955	no
+Zymoseptoria	Pezizomycotina	1426	1	Dikarya	195	1796	0.0979	no
+Zymoseptoria	Pezizomycotina	1426	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	81	505	0.1382	no
+Zymoseptoria	Pezizomycotina	1426	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	102	984	0.0939	no
+Zymoseptoria	Pezizomycotina	1426	4	Saccharomycotina + Pezizomycotina + Antarctolithica	8	70	0.1026	no
+Zymoseptoria	Pezizomycotina	1426	5	Saccharomycotina + Pezizomycotina	102	432	0.1910	no
+Zymoseptoria	Pezizomycotina	1426	6	Pezizomycotina	199	534	0.2715	no
+Zymoseptoria	Pezizomycotina	1426	7	Pezizomycotina (12 of 14)	89	226	0.2825	no
+Zymoseptoria	Pezizomycotina	1426	8	Pezizomycotina (9 of 14)	21	136	0.1338	no
+Zymoseptoria	Pezizomycotina	1426	9	Pezizomycotina (7 of 14)	10	13	0.4348	no
+Zymoseptoria	Pezizomycotina	1426	10	Pezizomycotina (4 of 14)	5	1	0.8333	no
+Zymoseptoria	Pezizomycotina	1426	11	Pezizomycotina (Cryomyces,Hortaea,Zymoseptoria)	1	0	1.0000	no
+Zymoseptoria	Pezizomycotina	1426	12	Pezizomycotina (Hortaea,Zymoseptoria)	60	0	1.0000	yes
+Zymoseptoria	Pezizomycotina	1426	13	Zymoseptoria	262	0	1.0000	yes
+Zymoseptoria	Pezizomycotina	1426	inside	inside	0	0	nan	yes
+Hortaea	Pezizomycotina	1209	0	root (all)	252	2804	0.0825	no
+Hortaea	Pezizomycotina	1209	1	Dikarya	182	1812	0.0913	no
+Hortaea	Pezizomycotina	1209	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	78	509	0.1329	no
+Hortaea	Pezizomycotina	1209	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	89	999	0.0818	no
+Hortaea	Pezizomycotina	1209	4	Saccharomycotina + Pezizomycotina + Antarctolithica	9	67	0.1184	no
+Hortaea	Pezizomycotina	1209	5	Saccharomycotina + Pezizomycotina	90	446	0.1679	no
+Hortaea	Pezizomycotina	1209	6	Pezizomycotina	177	551	0.2431	no
+Hortaea	Pezizomycotina	1209	7	Pezizomycotina (12 of 14)	71	239	0.2290	no
+Hortaea	Pezizomycotina	1209	8	Pezizomycotina (9 of 14)	19	136	0.1226	no
+Hortaea	Pezizomycotina	1209	9	Pezizomycotina (7 of 14)	13	11	0.5417	no
+Hortaea	Pezizomycotina	1209	10	Pezizomycotina (4 of 14)	3	3	0.5000	no
+Hortaea	Pezizomycotina	1209	11	Pezizomycotina (Cryomyces,Hortaea,Zymoseptoria)	1	0	1.0000	no
+Hortaea	Pezizomycotina	1209	12	Pezizomycotina (Hortaea,Zymoseptoria)	60	0	1.0000	yes
+Hortaea	Pezizomycotina	1209	13	Hortaea	165	0	1.0000	yes
+Hortaea	Pezizomycotina	1209	inside	inside	0	0	nan	yes
+Neoaidaea	Saccharomycotina	1938	0	root (all)	560	2092	0.2112	no
+Neoaidaea	Saccharomycotina	1938	1	Dikarya	265	1512	0.1491	no
+Neoaidaea	Saccharomycotina	1938	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	150	374	0.2863	no
+Neoaidaea	Saccharomycotina	1938	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	170	794	0.1763	no
+Neoaidaea	Saccharomycotina	1938	4	Saccharomycotina + Pezizomycotina + Antarctolithica	21	49	0.3000	no
+Neoaidaea	Saccharomycotina	1938	5	Saccharomycotina + Pezizomycotina	177	304	0.3680	no
+Neoaidaea	Saccharomycotina	1938	6	Saccharomycotina	146	102	0.5887	no
+Neoaidaea	Saccharomycotina	1938	7	Saccharomycotina (7 of 11)	90	143	0.3863	no
+Neoaidaea	Saccharomycotina	1938	8	Saccharomycotina (Babjevia,Neoaidaea)	47	0	1.0000	yes
+Neoaidaea	Saccharomycotina	1938	9	Neoaidaea	312	0	1.0000	yes
+Neoaidaea	Saccharomycotina	1938	inside	inside	0	0	nan	yes
+Babjevia	Saccharomycotina	3848	0	root (all)	1138	1786	0.3892	no
+Babjevia	Saccharomycotina	3848	1	Dikarya	745	1173	0.3884	no
+Babjevia	Saccharomycotina	3848	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	255	309	0.4521	no
+Babjevia	Saccharomycotina	3848	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	482	566	0.4599	no
+Babjevia	Saccharomycotina	3848	4	Saccharomycotina + Pezizomycotina + Antarctolithica	34	40	0.4595	no
+Babjevia	Saccharomycotina	3848	5	Saccharomycotina + Pezizomycotina	330	191	0.6334	no
+Babjevia	Saccharomycotina	3848	6	Saccharomycotina	216	56	0.7941	no
+Babjevia	Saccharomycotina	3848	7	Saccharomycotina (7 of 11)	247	10	0.9611	no
+Babjevia	Saccharomycotina	3848	8	Saccharomycotina (Babjevia,Neoaidaea)	47	0	1.0000	yes
+Babjevia	Saccharomycotina	3848	9	Babjevia	354	0	1.0000	yes
+Babjevia	Saccharomycotina	3848	inside	inside	0	0	nan	yes
+Dipodascopsis	Saccharomycotina	2700	0	root (all)	876	2086	0.2957	no
+Dipodascopsis	Saccharomycotina	2700	1	Dikarya	461	1481	0.2374	no
+Dipodascopsis	Saccharomycotina	2700	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	217	361	0.3754	no
+Dipodascopsis	Saccharomycotina	2700	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	274	777	0.2607	no
+Dipodascopsis	Saccharomycotina	2700	4	Saccharomycotina + Pezizomycotina + Antarctolithica	27	48	0.3600	no
+Dipodascopsis	Saccharomycotina	2700	5	Saccharomycotina + Pezizomycotina	248	283	0.4670	no
+Dipodascopsis	Saccharomycotina	2700	6	Saccharomycotina	190	78	0.7090	no
+Dipodascopsis	Saccharomycotina	2700	7	Saccharomycotina (7 of 11)	147	112	0.5676	no
+Dipodascopsis	Saccharomycotina	2700	8	Saccharomycotina (5 of 11)	94	0	1.0000	yes
+Dipodascopsis	Saccharomycotina	2700	9	Dipodascopsis	166	0	1.0000	yes
+Dipodascopsis	Saccharomycotina	2700	inside	inside	0	0	nan	yes
+Lipomyces	Saccharomycotina	3791	0	root (all)	1114	1817	0.3801	no
+Lipomyces	Saccharomycotina	3791	1	Dikarya	748	1190	0.3860	no
+Lipomyces	Saccharomycotina	3791	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	257	308	0.4549	no
+Lipomyces	Saccharomycotina	3791	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	469	588	0.4437	no
+Lipomyces	Saccharomycotina	3791	4	Saccharomycotina + Pezizomycotina + Antarctolithica	40	36	0.5263	no
+Lipomyces	Saccharomycotina	3791	5	Saccharomycotina + Pezizomycotina	317	199	0.6143	no
+Lipomyces	Saccharomycotina	3791	6	Saccharomycotina	222	57	0.7957	no
+Lipomyces	Saccharomycotina	3791	7	Saccharomycotina (7 of 11)	213	44	0.8288	no
+Lipomyces	Saccharomycotina	3791	8	Saccharomycotina (5 of 11)	78	11	0.8764	no
+Lipomyces	Saccharomycotina	3791	9	Saccharomycotina (4 of 11)	101	0	1.0000	yes
+Lipomyces	Saccharomycotina	3791	10	Lipomyces	232	0	1.0000	yes
+Lipomyces	Saccharomycotina	3791	inside	inside	0	0	nan	yes
+Limtongia	Saccharomycotina	2679	0	root (all)	870	2078	0.2951	no
+Limtongia	Saccharomycotina	2679	1	Dikarya	482	1463	0.2478	no
+Limtongia	Saccharomycotina	2679	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	196	375	0.3433	no
+Limtongia	Saccharomycotina	2679	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	272	769	0.2613	no
+Limtongia	Saccharomycotina	2679	4	Saccharomycotina + Pezizomycotina + Antarctolithica	29	46	0.3867	no
+Limtongia	Saccharomycotina	2679	5	Saccharomycotina + Pezizomycotina	253	263	0.4903	no
+Limtongia	Saccharomycotina	2679	6	Saccharomycotina	168	111	0.6022	no
+Limtongia	Saccharomycotina	2679	7	Saccharomycotina (7 of 11)	135	113	0.5444	no
+Limtongia	Saccharomycotina	2679	8	Saccharomycotina (5 of 11)	40	43	0.4819	no
+Limtongia	Saccharomycotina	2679	9	Saccharomycotina (4 of 11)	56	37	0.6022	no
+Limtongia	Saccharomycotina	2679	10	Saccharomycotina (Kockiozyma,Limtongia,Myxozyma)	10	0	1.0000	yes
+Limtongia	Saccharomycotina	2679	11	Limtongia	168	0	1.0000	yes
+Limtongia	Saccharomycotina	2679	inside	inside	0	0	nan	yes
+Kockiozyma	Saccharomycotina	3150	0	root (all)	998	1987	0.3343	no
+Kockiozyma	Saccharomycotina	3150	1	Dikarya	585	1356	0.3014	no
+Kockiozyma	Saccharomycotina	3150	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	234	348	0.4021	no
+Kockiozyma	Saccharomycotina	3150	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	357	697	0.3387	no
+Kockiozyma	Saccharomycotina	3150	4	Saccharomycotina + Pezizomycotina + Antarctolithica	31	44	0.4133	no
+Kockiozyma	Saccharomycotina	3150	5	Saccharomycotina + Pezizomycotina	285	246	0.5367	no
+Kockiozyma	Saccharomycotina	3150	6	Saccharomycotina	191	83	0.6971	no
+Kockiozyma	Saccharomycotina	3150	7	Saccharomycotina (7 of 11)	166	87	0.6561	no
+Kockiozyma	Saccharomycotina	3150	8	Saccharomycotina (5 of 11)	49	36	0.5765	no
+Kockiozyma	Saccharomycotina	3150	9	Saccharomycotina (4 of 11)	77	17	0.8191	no
+Kockiozyma	Saccharomycotina	3150	10	Saccharomycotina (Kockiozyma,Limtongia,Myxozyma)	9	0	1.0000	no
+Kockiozyma	Saccharomycotina	3150	11	Saccharomycotina (Kockiozyma,Myxozyma)	84	0	1.0000	yes
+Kockiozyma	Saccharomycotina	3150	12	Kockiozyma	84	0	1.0000	yes
+Kockiozyma	Saccharomycotina	3150	inside	inside	0	0	nan	yes
+Myxozyma	Saccharomycotina	3125	0	root (all)	1005	1984	0.3362	no
+Myxozyma	Saccharomycotina	3125	1	Dikarya	586	1363	0.3007	no
+Myxozyma	Saccharomycotina	3125	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	234	348	0.4021	no
+Myxozyma	Saccharomycotina	3125	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	349	700	0.3327	no
+Myxozyma	Saccharomycotina	3125	4	Saccharomycotina + Pezizomycotina + Antarctolithica	31	43	0.4189	no
+Myxozyma	Saccharomycotina	3125	5	Saccharomycotina + Pezizomycotina	287	241	0.5436	no
+Myxozyma	Saccharomycotina	3125	6	Saccharomycotina	191	86	0.6895	no
+Myxozyma	Saccharomycotina	3125	7	Saccharomycotina (7 of 11)	163	88	0.6494	no
+Myxozyma	Saccharomycotina	3125	8	Saccharomycotina (5 of 11)	49	35	0.5833	no
+Myxozyma	Saccharomycotina	3125	9	Saccharomycotina (4 of 11)	81	15	0.8438	no
+Myxozyma	Saccharomycotina	3125	10	Saccharomycotina (Kockiozyma,Limtongia,Myxozyma)	8	2	0.8000	no
+Myxozyma	Saccharomycotina	3125	11	Saccharomycotina (Kockiozyma,Myxozyma)	84	0	1.0000	yes
+Myxozyma	Saccharomycotina	3125	12	Myxozyma	57	0	1.0000	yes
+Myxozyma	Saccharomycotina	3125	inside	inside	0	0	nan	yes
+Trigonopsis	Saccharomycotina	1776	0	root (all)	560	2471	0.1848	no
+Trigonopsis	Saccharomycotina	1776	1	Dikarya	300	1697	0.1502	no
+Trigonopsis	Saccharomycotina	1776	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	160	423	0.2744	no
+Trigonopsis	Saccharomycotina	1776	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	135	939	0.1257	no
+Trigonopsis	Saccharomycotina	1776	4	Saccharomycotina + Pezizomycotina + Antarctolithica	21	55	0.2763	no
+Trigonopsis	Saccharomycotina	1776	5	Saccharomycotina + Pezizomycotina	166	374	0.3074	no
+Trigonopsis	Saccharomycotina	1776	6	Saccharomycotina	175	105	0.6250	no
+Trigonopsis	Saccharomycotina	1776	7	Saccharomycotina (4 of 11)	9	0	1.0000	yes
+Trigonopsis	Saccharomycotina	1776	8	Trigonopsis	250	0	1.0000	yes
+Trigonopsis	Saccharomycotina	1776	inside	inside	0	0	nan	yes
+Alloascoidea	Saccharomycotina	1396	0	root (all)	489	2222	0.1804	no
+Alloascoidea	Saccharomycotina	1396	1	Dikarya	223	1466	0.1320	no
+Alloascoidea	Saccharomycotina	1396	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	122	343	0.2624	no
+Alloascoidea	Saccharomycotina	1396	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	94	816	0.1033	no
+Alloascoidea	Saccharomycotina	1396	4	Saccharomycotina + Pezizomycotina + Antarctolithica	7	61	0.1029	no
+Alloascoidea	Saccharomycotina	1396	5	Saccharomycotina + Pezizomycotina	119	332	0.2639	no
+Alloascoidea	Saccharomycotina	1396	6	Saccharomycotina	141	101	0.5826	no
+Alloascoidea	Saccharomycotina	1396	7	Saccharomycotina (4 of 11)	8	1	0.8889	no
+Alloascoidea	Saccharomycotina	1396	8	Saccharomycotina (Alloascoidea,Geotrichum,Yarrowia)	16	0	1.0000	yes
+Alloascoidea	Saccharomycotina	1396	9	Alloascoidea	177	0	1.0000	yes
+Alloascoidea	Saccharomycotina	1396	inside	inside	0	0	nan	yes
+Yarrowia	Saccharomycotina	282	0	root (all)	71	2881	0.0241	no
+Yarrowia	Saccharomycotina	282	1	Dikarya	24	1877	0.0126	no
+Yarrowia	Saccharomycotina	282	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	27	542	0.0475	no
+Yarrowia	Saccharomycotina	282	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	16	1006	0.0157	no
+Yarrowia	Saccharomycotina	282	4	Saccharomycotina + Pezizomycotina + Antarctolithica	3	74	0.0390	no
+Yarrowia	Saccharomycotina	282	5	Saccharomycotina + Pezizomycotina	25	467	0.0508	no
+Yarrowia	Saccharomycotina	282	6	Saccharomycotina	30	231	0.1149	no
+Yarrowia	Saccharomycotina	282	7	Saccharomycotina (4 of 11)	1	6	0.1429	no
+Yarrowia	Saccharomycotina	282	8	Saccharomycotina (Alloascoidea,Geotrichum,Yarrowia)	3	12	0.2000	no
+Yarrowia	Saccharomycotina	282	9	Saccharomycotina (Geotrichum,Yarrowia)	0	0	nan	yes
+Yarrowia	Saccharomycotina	282	10	Yarrowia	82	0	1.0000	yes
+Yarrowia	Saccharomycotina	282	inside	inside	0	0	nan	yes
+Geotrichum	Saccharomycotina	1299	0	root (all)	460	2141	0.1769	no
+Geotrichum	Saccharomycotina	1299	1	Dikarya	196	1400	0.1228	no
+Geotrichum	Saccharomycotina	1299	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	107	356	0.2311	no
+Geotrichum	Saccharomycotina	1299	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	102	754	0.1192	no
+Geotrichum	Saccharomycotina	1299	4	Saccharomycotina + Pezizomycotina + Antarctolithica	9	52	0.1475	no
+Geotrichum	Saccharomycotina	1299	5	Saccharomycotina + Pezizomycotina	107	298	0.2642	no
+Geotrichum	Saccharomycotina	1299	6	Saccharomycotina	123	110	0.5279	no
+Geotrichum	Saccharomycotina	1299	7	Saccharomycotina (4 of 11)	5	2	0.7143	no
+Geotrichum	Saccharomycotina	1299	8	Saccharomycotina (Alloascoidea,Geotrichum,Yarrowia)	15	0	1.0000	no
+Geotrichum	Saccharomycotina	1299	9	Saccharomycotina (Geotrichum,Yarrowia)	0	0	nan	yes
+Geotrichum	Saccharomycotina	1299	10	Geotrichum	175	0	1.0000	yes
+Geotrichum	Saccharomycotina	1299	inside	inside	0	0	nan	yes
+Cneoformans	Basidiomycota	8722	0	root (all)	2017	952	0.6794	no
+Cneoformans	Basidiomycota	8722	1	Dikarya	2009	33	0.9838	no
+Cneoformans	Basidiomycota	8722	2	Basidiomycota	43	0	1.0000	yes
+Cneoformans	Basidiomycota	8722	3	Cneoformans	4653	0	1.0000	yes
+Cneoformans	Basidiomycota	8722	inside	inside	0	0	nan	yes
+Smaydis	Basidiomycota	520	0	root (all)	152	2827	0.0510	no
+Smaydis	Basidiomycota	520	1	Dikarya	97	1856	0.0497	no
+Smaydis	Basidiomycota	520	2	Basidiomycota	43	0	1.0000	yes
+Smaydis	Basidiomycota	520	3	Smaydis	228	0	1.0000	yes
+Smaydis	Basidiomycota	520	inside	inside	0	0	nan	yes
+Antarctolithica	Antarctolithica	1208	0	root (all)	226	2758	0.0757	no
+Antarctolithica	Antarctolithica	1208	1	Dikarya	184	1777	0.0938	no
+Antarctolithica	Antarctolithica	1208	2	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	55	519	0.0958	no
+Antarctolithica	Antarctolithica	1208	3	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	116	935	0.1104	no
+Antarctolithica	Antarctolithica	1208	4	Saccharomycotina + Pezizomycotina + Antarctolithica	78	0	1.0000	yes
+Antarctolithica	Antarctolithica	1208	5	Antarctolithica	183	0	1.0000	yes
+Antarctolithica	Antarctolithica	1208	inside	inside	366	0	1.0000	yes

@@ -13,6 +13,23 @@ Each step has its own README in `bench/`; this page is the summary. All analyses
 - The calibrated test is **clade-specific intron retention** (R = retention of a clade's defining introns / retention of ancient introns, normalised by the lineage's own intron richness). V9, with 12 Saccharomycotina genomes: *Antarctolithica* R is 0.14 for Pezizomycotina, 0.00 for Taphrinomycetes, 0.25 for Saccharomycotina and 0.29 for Saccharomycotina + Pezizomycotina, always in the non-member range (members: 1.08-2.37, 3.96-10.56, 1.10-1.88, 0.66-1.83). It is therefore **not inside** Pezizomycotina, Saccharomycotina, Lipomycetes or Taphrinomycetes, and its retention of the Saccharomycotina + Pezizomycotina introns looks like a non-member's. It does not locate the lineage among the earlier-diverging ascomycetes.
 - Corrections made along the way (see the commit history): a re-rooting bug in my own check had produced a false "basidiomycetes nest inside Ascomycota" statement (retracted); the bootstrap penalised placements that had a tied twin tree (fixed with tie groups); V7 undercounted missed introns (pooled budget). Two independent read-only code reviews were run.
 
+## 2b. Where its introns map, and a calibrated placement test (V13)
+On the V9 tier-A matrix (42 genomes, 29,085 positions; Dollo and Fitch parsimony, no likelihood; rooted on *Mucor*):
+- **Gains and losses.** The Alith stem has 183 gains and 4,185 losses, the largest loss count on the tree. Its ancestor held about 1,367
+  positions (Dollo; MP 989) against 5,369 at its parent. Each strain carries 666-798 positions and the six together 1,208; the
+  strain-to-strain spread is best read as MAG annotation noise.
+- **Retention.** Alith keeps 8-11 % of the positions from every measurable age class (root to Ascomycota). For its intron count that is
+  among the lowest, together with *Taphrina* and the black yeasts. Unrelated groups share this, so it is not a placement signal.
+- **Placements.** Over all positions, the fewest losses put Alith next to *M. maydis*. Over the positions Alith carries, the fewest put it
+  sister to Saccharomycotina + Pezizomycotina (the gene-tree position); sister to Pezizomycotina (+50), *Neolecta* + *Saitoella* (+53)
+  and Saccharomycotina (+56) are close behind.
+- **Calibration.** 15 known lineages were thinned to Alith's intron content and placed the same way. Over all positions, they were pulled
+  to intron-poor genomes (54 of 75 age-matched runs), so the *M. maydis* result is that artefact. Over carried positions, they were never
+  placed shallower than their true position, only deeper (50-53 of 75 runs) or correctly. So the carried-positions optimum is an upper
+  bound: Alith is sister to Saccharomycotina + Pezizomycotina **or shallower** (for example sister to Pezizomycotina). The introns cannot
+  separate these two, and they do not support a position deeper than Saccharomycotina + Pezizomycotina; 22 positions pointing only to
+  *Neolecta* are the one contrary signal.
+
 ## 3. Protein-domain content (V10)
 Pfam counts for 472 genomes (the V9 genomes plus a BFD sample of up to 3 per order; 10,642 Pfams). *Antarctolithica* carries 89-98 % of the 2,500 core fungal Pfams (other genomes: median 99.4 %), so it looks like a normal fungus. In the PCoA it lies between the yeast cluster (Saccharomycotina, Taphrinomycotina) and the Pezizomycotina; its nearest genomes are early-diverging yeasts (Lipomycetes-type Saccharomycotina, *Taphrina*, *Saitoella*), *Novakomyces* and *Tortispora*. A random forest that classifies known genomes at 99-100 % (leave-one-order-out) does not assign it confidently (Taphrinomycotina 0.41, Saccharomycotina 0.22, Pezizomycotina 0.18, Basidiomycota 0.17). Pfam signatures: it carries 0.11 of the Pezizomycotina signature (members 0.65-1.00) and 0.14 of the Saccharomycotina signature (members 0.53-1.00). Best reading: a yeast-like, small-proteome ascomycete outside both groups; but Pfam content tracks lifestyle and proteome size, so this is not a calibrated placement method.
 
@@ -38,4 +55,4 @@ Supermatrix of 270 single-copy families (200,000 columns, 37 lineages, the six s
 - **Next steps that would discriminate:** the same hypothesis set under CAT-GTR on this supermatrix with posterior predictive tests on the long branch; a topology test restricted to genes with the fewest gaps; the strain-by-strain check; the V7-style error sensitivity for the V9 set.
 
 ## Where things are
-`bench/V4_annotation_accuracy`, `V6_orthology_nine_species`, `V7_annotation_error_sensitivity`, `V8_antarctolithica_placement` (31 genomes), `V9_antarctolithica_expanded` (42 genomes), `V10_antarctolithica_domains`, `V11_antarctolithica_topology_tests`, `V12_antarctolithica_composition`. Large data stays on the HPCC (purgeable folders are listed in each README); the repository holds the scripts, fixture tests and small result tables.
+`bench/V4_annotation_accuracy`, `V6_orthology_nine_species`, `V7_annotation_error_sensitivity`, `V8_antarctolithica_placement` (31 genomes), `V9_antarctolithica_expanded` (42 genomes), `V10_antarctolithica_domains`, `V11_antarctolithica_topology_tests`, `V12_antarctolithica_composition`, `V13_antarctolithica_intron_map` (figures and the calibrated intron placement test). Large data stays on the HPCC (purgeable folders are listed in each README); the repository holds the scripts, fixture tests and small result tables.

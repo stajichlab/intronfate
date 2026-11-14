@@ -1,0 +1,84 @@
+node	label	n_tips	dollo_present	mp_present	branch_gains	branch_losses	tips
+0	root (all)	42	3139	3006	3139	0	Mmucedo,Sjaponicus,Spombe,Tdeformans,Taphrina,Protomyces,Savitreella,Saitoella,Neolecta,Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum,Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9,Cneoformans,Smaydis
+1	Mmucedo	1	5121	5121	1982	0	Mmucedo
+2	Dikarya	41	5183	2908	2044	0	Sjaponicus,Spombe,Tdeformans,Taphrina,Protomyces,Savitreella,Saitoella,Neolecta,Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum,Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9,Cneoformans,Smaydis
+3	Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica	39	5247	2723	614	550	Sjaponicus,Spombe,Tdeformans,Taphrina,Protomyces,Savitreella,Saitoella,Neolecta,Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum,Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9
+4	Taphrinomycotina (6 of 8)	6	2238	730	10	3019	Sjaponicus,Spombe,Tdeformans,Taphrina,Protomyces,Savitreella
+5	Taphrinomycotina (Sjaponicus,Spombe)	2	2086	1514	190	342	Sjaponicus,Spombe
+6	Sjaponicus	1	2101	1725	234	219	Sjaponicus
+7	Spombe	1	1992	1658	161	255	Spombe
+8	Taphrinomycotina (4 of 8)	4	871	437	49	1416	Tdeformans,Taphrina,Protomyces,Savitreella
+9	Taphrinomycotina (Protomyces,Taphrina,Tdeformans)	3	922	668	121	70	Tdeformans,Taphrina,Protomyces
+10	Taphrinomycotina (Taphrina,Tdeformans)	2	1138	1085	353	137	Tdeformans,Taphrina
+11	Tdeformans	1	1200	1048	75	13	Tdeformans
+12	Taphrina	1	1196	1058	74	16	Taphrina
+13	Protomyces	1	1018	871	305	209	Protomyces
+14	Savitreella	1	505	297	149	515	Savitreella
+15	Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica	33	6265	2800	1119	101	Saitoella,Neolecta,Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum,Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9
+16	Taphrinomycotina (Neolecta,Saitoella)	2	5598	2251	38	705	Saitoella,Neolecta
+17	Saitoella	1	2016	1680	462	4044	Saitoella
+18	Neolecta	1	7558	6804	2245	285	Neolecta
+19	Saccharomycotina + Pezizomycotina + Antarctolithica	31	5369	2378	78	974	Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum,Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9
+20	Saccharomycotina + Pezizomycotina	25	5833	2733	577	113	Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea,Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum
+21	Pezizomycotina	14	5102	3338	763	1494	Pyronema,Orbilia,Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea
+22	Pezizomycotina (Orbilia,Pyronema)	2	4536	3224	91	657	Pyronema,Orbilia
+23	Pyronema	1	3688	3199	657	1505	Pyronema
+24	Orbilia	1	4483	4288	716	769	Orbilia
+25	Pezizomycotina (12 of 14)	12	4468	3368	340	974	Ncrassa,Botrytis,Antarctomyces,Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea
+26	Pezizomycotina (Antarctomyces,Botrytis,Ncrassa)	3	2916	2398	77	1629	Ncrassa,Botrytis,Antarctomyces
+27	Ncrassa	1	2571	2383	379	724	Ncrassa
+28	Pezizomycotina (Antarctomyces,Botrytis)	2	2852	2465	30	94	Botrytis,Antarctomyces
+29	Botrytis	1	2958	2812	245	139	Botrytis
+30	Antarctomyces	1	2142	1921	192	902	Antarctomyces
+31	Pezizomycotina (9 of 14)	9	4587	3808	174	55	Geoglossum,Lichina,Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea
+32	Pezizomycotina (Geoglossum,Lichina)	2	4528	4490	59	118	Geoglossum,Lichina
+33	Geoglossum	1	4661	4283	423	290	Geoglossum
+34	Lichina	1	4757	3946	609	380	Lichina
+35	Pezizomycotina (7 of 14)	7	3832	3018	29	784	Exophiala,Anidulans,Cladonia,Arthonia,Cryomyces,Zymoseptoria,Hortaea
+36	Pezizomycotina (Anidulans,Cladonia,Exophiala)	3	3685	2856	10	157	Exophiala,Anidulans,Cladonia
+37	Pezizomycotina (Anidulans,Exophiala)	2	3381	2747	10	314	Exophiala,Anidulans
+38	Exophiala	1	1898	1671	239	1722	Exophiala
+39	Anidulans	1	3490	3267	225	116	Anidulans
+40	Cladonia	1	3526	2757	368	527	Cladonia
+41	Pezizomycotina (4 of 14)	4	2243	1898	6	1595	Arthonia,Cryomyces,Zymoseptoria,Hortaea
+42	Arthonia	1	2182	1925	469	530	Arthonia
+43	Pezizomycotina (Cryomyces,Hortaea,Zymoseptoria)	3	2239	1287	1	5	Cryomyces,Zymoseptoria,Hortaea
+44	Cryomyces	1	2257	102	19	1	Cryomyces
+45	Pezizomycotina (Hortaea,Zymoseptoria)	2	1469	1273	60	830	Zymoseptoria,Hortaea
+46	Zymoseptoria	1	1598	1426	262	133	Zymoseptoria
+47	Hortaea	1	1392	1209	165	242	Hortaea
+48	Saccharomycotina	11	4966	2215	292	1159	Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma,Trigonopsis,Alloascoidea,Yarrowia,Geotrichum
+49	Saccharomycotina (7 of 11)	7	4880	2957	265	351	Neoaidaea,Babjevia,Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma
+50	Saccharomycotina (Babjevia,Neoaidaea)	2	4068	2897	47	859	Neoaidaea,Babjevia
+51	Neoaidaea	1	2688	1938	312	1692	Neoaidaea
+52	Babjevia	1	4229	3848	354	193	Babjevia
+53	Saccharomycotina (5 of 11)	5	4266	3134	94	708	Dipodascopsis,Lipomyces,Limtongia,Kockiozyma,Myxozyma
+54	Dipodascopsis	1	3020	2700	166	1412	Dipodascopsis
+55	Saccharomycotina (4 of 11)	4	4176	3706	101	191	Lipomyces,Limtongia,Kockiozyma,Myxozyma
+56	Lipomyces	1	4137	3791	232	271	Lipomyces
+57	Saccharomycotina (Kockiozyma,Limtongia,Myxozyma)	3	3674	3450	10	512	Limtongia,Kockiozyma,Myxozyma
+58	Limtongia	1	3026	2679	168	816	Limtongia
+59	Saccharomycotina (Kockiozyma,Myxozyma)	2	3394	3208	84	364	Kockiozyma,Myxozyma
+60	Kockiozyma	1	3448	3150	84	30	Kockiozyma
+61	Myxozyma	1	3418	3125	57	33	Myxozyma
+62	Saccharomycotina (4 of 11)	4	2651	1537	9	2324	Trigonopsis,Alloascoidea,Yarrowia,Geotrichum
+63	Trigonopsis	1	1962	1776	250	939	Trigonopsis
+64	Saccharomycotina (Alloascoidea,Geotrichum,Yarrowia)	3	2092	1149	16	575	Alloascoidea,Yarrowia,Geotrichum
+65	Alloascoidea	1	1843	1396	177	426	Alloascoidea
+66	Saccharomycotina (Geotrichum,Yarrowia)	2	1595	923	0	497	Yarrowia,Geotrichum
+67	Yarrowia	1	533	282	82	1144	Yarrowia
+68	Geotrichum	1	1711	1299	175	59	Geotrichum
+69	Antarctolithica	6	1367	989	183	4185	Alith_62.17,Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9
+70	Alith_62.17	1	1375	776	47	39	Alith_62.17
+71	Antarctolithica (5 of 6)	5	1298	966	83	152	Alith_14.71,Alith_17.30,Alith_52.25,Alith_55.28,Alith_82.9
+72	Antarctolithica (Alith_14.71,Alith_17.30,Alith_52.25)	3	1295	917	9	12	Alith_14.71,Alith_17.30,Alith_52.25
+73	Antarctolithica (Alith_14.71,Alith_17.30)	2	1279	854	5	21	Alith_14.71,Alith_17.30
+74	Alith_14.71	1	1287	736	60	52	Alith_14.71
+75	Alith_17.30	1	1264	729	24	39	Alith_17.30
+76	Alith_52.25	1	1297	798	36	34	Alith_52.25
+77	Antarctolithica (Alith_55.28,Alith_82.9)	2	1284	822	2	16	Alith_55.28,Alith_82.9
+78	Alith_55.28	1	1312	666	64	36	Alith_55.28
+79	Alith_82.9	1	1289	762	36	31	Alith_82.9
+80	Basidiomycota	2	4341	1267	43	885	Cneoformans,Smaydis
+81	Cneoformans	1	8894	8722	4653	100	Cneoformans
+82	Smaydis	1	771	520	228	3798	Smaydis

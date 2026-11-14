@@ -1,0 +1,7 @@
+matrix: 29085 positions x 42 genomes; gene tree: 42 tips, rooted on ['Mmucedo']
+Alith stem branch (6 strains): 183 gains, 4185 losses (Dollo, gene tree); positions present: Dollo 1367 at the Alith ancestor, 5369 at its parent (Saccharomycotina + Pezizomycotina + Antarctolithica); MP 989 and 2378
+Alith carries 1208 positions: root (all): 226 (retention 0.08); Dikarya: 184 (retention 0.09); Ascomycota: Taphrinomycotina + Saccharomycotina + Pezizomycotina + Antarctolithica: 55 (retention 0.10); Taphrinomycotina (Neolecta,Saitoella) + Saccharomycotina + Pezizomycotina + Antarctolithica: 116 (retention 0.11); Saccharomycotina + Pezizomycotina + Antarctolithica: 78; Antarctolithica: 183; inside: 366  [retention only for origins above Alith's parent; the rest are carried by construction]
+placements: 70; gene-tree position place_19 (sister of Saccharomycotina + Pezizomycotina): +3240 Dollo losses over the best (all sites), +0 (Alith-carrier sites)
+fewest Dollo losses, all sites: place_70 = sister of Smaydis
+fewest Dollo losses, Alith-carrier sites: place_19 = sister of Saccharomycotina + Pezizomycotina
+Alith-carrier positions 1208, observed absent 21093; informative (placements differ): 653 carrier, 9324 absent
