@@ -101,5 +101,27 @@ def test_doc_blocks():
         os.unlink(f.name)
 
 
+def test_align_families():
+    """With a stub mafft that copies its input: one output per family, named <family>.aln.fasta; existing outputs are kept; a failing
+    mafft fails the script and leaves no partial file."""
+    with tempfile.TemporaryDirectory() as d:
+        fam, out, bin_ = (os.path.join(d, x) for x in ("fam", "out", "bin")); os.makedirs(fam); os.makedirs(bin_)
+        for f in ("OG1", "OG2", "OG3"):
+            with open(os.path.join(fam, f + ".faa"), "w") as h: h.write(f">{f}a\nMK\n")
+        stub = os.path.join(bin_, "mafft")
+        with open(stub, "w") as h: h.write('#!/bin/sh\nfor a; do f=$a; done\ncase "$f" in *OG3*) [ -n "$FAIL_OG3" ] && exit 1;; esac\ncat "$f"\n')
+        os.chmod(stub, 0o755)
+        env = dict(os.environ, PATH=bin_ + os.pathsep + os.environ["PATH"])
+        script = os.path.join(HERE, "align_families.sh")
+        r = subprocess.run(["bash", script, fam, out, "2"], env=dict(env, FAIL_OG3="1"), capture_output=True, text=True)
+        assert r.returncode != 0
+        assert sorted(os.listdir(out)) == ["OG1.aln.fasta", "OG2.aln.fasta"], os.listdir(out)    # no OG3 temp file left
+        with open(os.path.join(out, "OG1.aln.fasta"), "w") as h: h.write("kept\n")
+        subprocess.run(["bash", script, fam, out, "2"], env=env, check=True, capture_output=True)
+        assert sorted(os.listdir(out)) == ["OG1.aln.fasta", "OG2.aln.fasta", "OG3.aln.fasta"]
+        assert open(os.path.join(out, "OG1.aln.fasta")).read() == "kept\n"
+        assert open(os.path.join(out, "OG3.aln.fasta")).read() == ">OG3a\nMK\n"
+
+
 if __name__ == "__main__":
-    test_one_protein_per_gene(); test_make_families(); test_doc_blocks(); print("ok: 3 tests")
+    test_one_protein_per_gene(); test_make_families(); test_doc_blocks(); test_align_families(); print("ok: 4 tests")
