@@ -1,5 +1,5 @@
 #!/usr/bin/bash -l
-#SBATCH -N 1 -n 1 -c 8 --mem 16gb --time 04:00:00
+#SBATCH -N 1 -n 1 -c 8 --mem 16gb --time 04:00:00 -p epyc,intel
 #SBATCH --job-name=D1_howto
 #SBATCH --output=logs/D1_howto.%j.log
 
@@ -8,6 +8,7 @@
 #   SET=fungi9 sbatch run_howto.sbatch      (Example 2)
 # Only two lines of the page are replaced: the working folder (-> $SCRATCH) and, for fungi9, the example line the page tells the reader to
 # change. `apptainer` is mapped to the site's `singularity` (the page says either works). The small results are copied to results/<SET>/.
+# Partitions epyc/intel: FAMSA (OrthoFinder's default aligner) cannot run on the old AMD nodes of `batch` (c05, 2026-11-13).
 # REPO is a copy of the repository under test in ./repo (rsync it there, then `cargo build --release` in it); absolute paths, not $0.
 set -euo pipefail
 : "${SCRATCH:?run inside a Slurm job}"

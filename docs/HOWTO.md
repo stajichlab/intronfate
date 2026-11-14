@@ -57,11 +57,12 @@ Then set `RUN`, the prefix that runs OrthoFinder and MAFFT. **With the container
 
 ```sh
 [ -s orthofinder_3.2.sif ] || curl -fL -o orthofinder_3.2.sif https://depot.galaxyproject.org/singularity/orthofinder:3.2--hdfd78af_0
-RUN="apptainer exec -B $PWD,$REPO $PWD/orthofinder_3.2.sif"
+RUN="apptainer exec --cleanenv -B $PWD,$REPO $PWD/orthofinder_3.2.sif"
 $RUN orthofinder -h > /dev/null && echo "OrthoFinder runs"
 ```
 
-Where the command is called `singularity`, write `singularity exec` instead of `apptainer exec`. You can also build the image yourself
+Where the command is called `singularity`, write `singularity exec` instead of `apptainer exec`. Keep `--cleanenv`: without it, the
+cluster's `LD_LIBRARY_PATH` and conda settings leak into the container, and OrthoFinder then fails its MCL check. You can also build the image yourself
 with `apptainer pull orthofinder_3.2.sif docker://quay.io/biocontainers/orthofinder:3.2--hdfd78af_0`.
 
 **With conda** instead:
@@ -112,13 +113,15 @@ Each line of the output reports how many genes were kept, for example
 ## 4. Find orthologs (OrthoFinder)
 
 ```sh
-$RUN orthofinder -f proteomes -s $EX/$SET.nwk -t $CPUS -a 4 -o orthofinder -n $SET > orthofinder.log 2>&1
-tail -3 orthofinder.log
+$RUN orthofinder -f proteomes -s $EX/$SET.nwk -t $CPUS -a 4 -o orthofinder -n $SET 2>&1 | tee orthofinder.log
 ls orthofinder/Results_$SET/Orthogroups/Orthogroups.tsv
 ```
 
 `-s` gives OrthoFinder the species tree, so it does not have to infer one. OrthoFinder refuses to write into an existing `-o` folder.
 To run this step again, first `rm -r orthofinder`.
+
+If OrthoFinder stops with `Cannot run MSA method 'famsa'`, the CPU is too old for FAMSA, its default aligner (seen on 2012-era AMD
+cluster nodes). Add `-A mafft` to the command, or run on a newer node.
 
 ## 5. Build single-copy families
 
