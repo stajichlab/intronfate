@@ -248,9 +248,13 @@ struct AnalyzeArgs {
     #[arg(long, default_value = "0")]
     ml_bootstrap: usize,
 
-    /// Maximum EM iterations for `-m likelihood`.
-    #[arg(long, default_value = "10000")]
+    /// Maximum EM iterations (E-steps) for `-m likelihood`.
+    #[arg(long, default_value = "50000")]
     ml_max_iter: usize,
+
+    /// Random seed for `--ml-bootstrap`.
+    #[arg(long, default_value = "1")]
+    ml_seed: u64,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -324,9 +328,13 @@ struct ScoreArgs {
     #[arg(long, default_value = "0")]
     ml_bootstrap: usize,
 
-    /// Maximum EM iterations for `-m likelihood`.
-    #[arg(long, default_value = "10000")]
+    /// Maximum EM iterations (E-steps) for `-m likelihood`.
+    #[arg(long, default_value = "50000")]
     ml_max_iter: usize,
+
+    /// Random seed for `--ml-bootstrap`.
+    #[arg(long, default_value = "1")]
+    ml_seed: u64,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -1105,6 +1113,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     error_rates: a.error_rates.clone(),
                     bootstrap: a.ml_bootstrap,
                     max_iter: a.ml_max_iter,
+                    seed: a.ml_seed,
                 },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
@@ -1134,6 +1143,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     error_rates: a.error_rates.clone(),
                     bootstrap: a.ml_bootstrap,
                     max_iter: a.ml_max_iter,
+                    seed: a.ml_seed,
                 },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
@@ -1183,6 +1193,7 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     error_rates: a.error_rates.clone(),
                     bootstrap: a.ml_bootstrap,
                     max_iter: a.ml_max_iter,
+                    seed: a.ml_seed,
                 },
                 matrix_label: format!("{} matrices combined", parts.len()),
             },
@@ -1243,6 +1254,7 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 error_rates: a.error_rates.clone(),
                 bootstrap: a.ml_bootstrap,
                 max_iter: a.ml_max_iter,
+                seed: a.ml_seed,
             },
             matrix_label: matrix.display().to_string(),
         },
@@ -1279,6 +1291,7 @@ struct MlOpts {
     error_rates: Option<PathBuf>,
     bootstrap: usize,
     max_iter: usize,
+    seed: u64,
 }
 
 /// Score one matrix; returns a one-line summary of what was computed.
@@ -1468,12 +1481,12 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
                 o.min_taxa
             );
         }
-        let err = read_error_rates(o.ml.error_rates.as_deref(), &data)?;
+        let (sens, spec) = read_error_rates(o.ml.error_rates.as_deref(), &data)?;
         let opt = intronfate_core::likelihood::FitOptions {
             max_iter: o.ml.max_iter,
             ..Default::default()
         };
-        let fit = intronfate_core::likelihood::fit(&data, &err, &opt)
+        let (fit, err) = intronfate_core::likelihood::fit_with_precision(&data, &sens, &spec, &opt)
             .map_err(|e| anyhow::anyhow!("likelihood: {e}"))?;
         if !fit.converged {
             eprintln!(
@@ -1489,7 +1502,7 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
                     &opt,
                     &fit.params,
                     o.ml.bootstrap,
-                    1,
+                    o.ml.seed,
                 )
                 .map_err(|e| anyhow::anyhow!("likelihood bootstrap: {e}"))?,
             )
@@ -1502,10 +1515,21 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         tables::likelihood_site_table(&data, &fit).write(dir.join("likelihood_sites.tsv"))?;
         let root = data.tree.root();
         let gains: f64 = (0..data.tree.len())
-            .filter(|&v| v != root)
+            .filter(|&v| v != root && fit.nodes[v].has_data)
             .map(|v| fit.nodes[v].expected_gains)
             .sum();
-        let losses: f64 = fit.nodes.iter().map(|n| n.expected_losses).sum();
+        let losses: f64 = fit
+            .nodes
+            .iter()
+            .filter(|n| n.has_data)
+            .map(|n| n.expected_losses)
+            .sum();
+        let no_data = fit.nodes.iter().filter(|n| !n.has_data).count();
+        if no_data > 0 {
+            eprintln!(
+                "note: likelihood: {no_data} branch(es) have no observed tip below them; fixed at no change and marked has_data=no"
+            );
+        }
         summary.push(("ml_log_likelihood", format!("{:.6}", fit.log_lik)));
         summary.push(("ml_iterations", fit.iterations.to_string()));
         summary.push((
@@ -1513,7 +1537,7 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
             if fit.converged { "yes" } else { "no" }.to_string(),
         ));
         summary.push((
-            "ml_root_present",
+            "ml_root_expected_present",
             format!("{:.2}", fit.nodes[root].expected_present),
         ));
         summary.push(("ml_expected_gains", format!("{gains:.2}")));
@@ -1609,15 +1633,19 @@ fn resolve_methods(requested: &[String]) -> Result<Vec<Method>> {
     Ok(out)
 }
 
-/// Per-tip error rates for `-m likelihood` from a TSV (`taxon`, `sensitivity`, `false_rate` or `precision`); unlisted taxa have none.
+/// Per-tip annotation error for `-m likelihood` from a TSV (`taxon`, `sensitivity`, and `false_rate` or `precision`).
+/// Unlisted taxa are error-free. Precision is converted to a false-intron rate inside the fit (`fit_with_precision`).
 fn read_error_rates(
     path: Option<&Path>,
     data: &ScoringData,
-) -> Result<intronfate_core::likelihood::ErrorRates> {
-    use intronfate_core::likelihood::{false_rate_from_precision, ErrorRates};
-    use intronfate_core::score::{MISSING, PRESENT};
-    let mut err = ErrorRates::none(data.tips.len());
-    let Some(path) = path else { return Ok(err) };
+) -> Result<(Vec<f64>, Vec<intronfate_core::likelihood::FalseSpec>)> {
+    use intronfate_core::likelihood::FalseSpec;
+    let n = data.tips.len();
+    let mut sens = vec![1.0; n];
+    let mut spec = vec![FalseSpec::Rate(0.0); n];
+    let Some(path) = path else {
+        return Ok((sens, spec));
+    };
     let text = std::fs::read_to_string(path)
         .with_context(|| format!("could not read {}", path.display()))?;
     let mut lines = text
@@ -1644,7 +1672,7 @@ fn read_error_rates(
         );
     }
     let mut seen = std::collections::HashSet::new();
-    for (n, line) in lines.enumerate() {
+    for (k, line) in lines.enumerate() {
         let f: Vec<&str> = line.split('\t').map(str::trim).collect();
         let get = |i: usize| f.get(i).copied().unwrap_or("");
         let num = |i: usize, what: &str| -> Result<f64> {
@@ -1652,7 +1680,7 @@ fn read_error_rates(
                 format!(
                     "{} line {}: {what} {:?} is not a number",
                     path.display(),
-                    n + 2,
+                    k + 2,
                     get(i)
                 )
             })
@@ -1665,33 +1693,28 @@ fn read_error_rates(
             );
             continue;
         };
-        let s = num(si, "sensitivity")?;
-        let fr = match (fi, pi) {
-            (Some(fi), _) if !get(fi).is_empty() => num(fi, "false_rate")?,
-            (_, Some(pi)) => {
-                let carried = data
-                    .characters
-                    .iter()
-                    .filter(|c| c.states[i] == PRESENT)
-                    .count();
-                let observed = data
-                    .characters
-                    .iter()
-                    .filter(|c| c.states[i] != MISSING)
-                    .count();
-                false_rate_from_precision(carried as f64, observed as f64, s, num(pi, "precision")?)
-            }
+        sens[i] = num(si, "sensitivity")?;
+        spec[i] = match (fi, pi) {
+            (Some(fi), _) if !get(fi).is_empty() => FalseSpec::Rate(num(fi, "false_rate")?),
+            (_, Some(pi)) if !get(pi).is_empty() => FalseSpec::Precision(num(pi, "precision")?),
             _ => bail!(
                 "{} line {}: no false_rate or precision",
                 path.display(),
-                n + 2
+                k + 2
             ),
         };
-        err.sensitivity[i] = s;
-        err.false_rate[i] = fr;
+        if let FalseSpec::Precision(p) = spec[i] {
+            if !(p > 0.0 && p <= 1.0) {
+                bail!(
+                    "{} line {}: precision {p} must be in (0, 1]",
+                    path.display(),
+                    k + 2
+                );
+            }
+        }
         seen.insert(i);
     }
-    let missing: Vec<&str> = (0..data.tips.len())
+    let missing: Vec<&str> = (0..n)
         .filter(|i| !seen.contains(i))
         .map(|i| data.tip_names[i].as_str())
         .collect();
@@ -1703,9 +1726,7 @@ fn read_error_rates(
             intronfate_core::util::ellipsis(&missing.join(", "), 200)
         );
     }
-    err.validate(data.tips.len())
-        .map_err(|e| anyhow::anyhow!("{}: {e}", path.display()))?;
-    Ok(err)
+    Ok((sens, spec))
 }
 
 fn resolve_weights(requested: &[String]) -> Result<Vec<(u32, u32)>> {
@@ -2097,7 +2118,8 @@ mod tests {
             gain_loss_weights: vec!["1:1".into()],
             error_rates: None,
             ml_bootstrap: 0,
-            ml_max_iter: 10000,
+            ml_max_iter: 50000,
+            ml_seed: 1,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,
@@ -2133,7 +2155,8 @@ mod tests {
             gain_loss_weights: vec!["1:1".into()],
             error_rates: None,
             ml_bootstrap: 0,
-            ml_max_iter: 10000,
+            ml_max_iter: 50000,
+            ml_seed: 1,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -2167,7 +2190,8 @@ mod tests {
             gain_loss_weights: vec!["1:1".into()],
             error_rates: None,
             ml_bootstrap: 0,
-            ml_max_iter: 10000,
+            ml_max_iter: 50000,
+            ml_seed: 1,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -2231,7 +2255,8 @@ mod tests {
             gain_loss_weights: vec!["1:1".into()],
             error_rates: None,
             ml_bootstrap: 0,
-            ml_max_iter: 10000,
+            ml_max_iter: 50000,
+            ml_seed: 1,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,

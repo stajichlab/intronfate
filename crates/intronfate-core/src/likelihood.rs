@@ -43,7 +43,7 @@
 use rayon::prelude::*;
 use rustc_hash::FxHashMap;
 
-use crate::score::{ScoringData, ABSENT, PRESENT};
+use crate::score::{ScoringData, ABSENT, MISSING, PRESENT};
 use crate::tree::{NodeId, Tree};
 
 /// Probabilities are kept inside `[CLAMP, 1 − CLAMP]` so that every transition stays possible.
@@ -135,8 +135,8 @@ pub struct FitOptions {
 impl Default for FitOptions {
     fn default() -> Self {
         FitOptions {
-            max_iter: 10_000,
-            tol: 1e-4,
+            max_iter: 50_000,
+            tol: 1e-6,
             init: None,
         }
     }
@@ -153,6 +153,9 @@ pub struct NodeStats {
     pub expected_losses: f64,
     /// Expected number of observed positions present at the node.
     pub expected_present: f64,
+    /// `false` when no tip below the node has any observed cell: the branch is fixed at "no change" and its numbers are not
+    /// estimates.
+    pub has_data: bool,
 }
 
 /// Posterior expectations for one tip.
@@ -162,6 +165,8 @@ pub struct TipStats {
     pub expected_missed: f64,
     /// Positions observed present (1) that are expected to be false introns.
     pub expected_false: f64,
+    /// Expected never-seen positions at which this genome is observable (not `?`): where a false intron could have appeared.
+    pub unseen_observable: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -388,6 +393,8 @@ struct Acc {
     present: Vec<f64>,
     missed: Vec<f64>,
     false_: Vec<f64>,
+    /// Never-seen positions per tip where the tip is observable.
+    unseen_obs: Vec<f64>,
     log_lik: f64,
     unobserved: f64,
 }
@@ -402,6 +409,7 @@ impl Acc {
             present: vec![0.0; n],
             missed: vec![0.0; tips],
             false_: vec![0.0; tips],
+            unseen_obs: vec![0.0; tips],
             log_lik: 0.0,
             unobserved: 0.0,
         }
@@ -433,6 +441,10 @@ impl Acc {
             .iter_mut()
             .zip(&o.false_)
             .for_each(|(x, y)| *x += y);
+        self.unseen_obs
+            .iter_mut()
+            .zip(&o.unseen_obs)
+            .for_each(|(x, y)| *x += y);
         self.log_lik += o.log_lik;
         self.unobserved += o.unobserved;
         self
@@ -444,7 +456,7 @@ fn column_terms(ctx: &Ctx, p: &Params, col: &[u8], w: &mut Work) -> (f64, f64) {
     let ln_l = ctx.upward(p, col, w);
     let ph = phantom(col);
     let mut w2 = Work::new(ctx.tree.len());
-    let z = ctx.upward(p, &ph, &mut w2).exp().min(1.0 - 1e-15);
+    let z = ctx.upward(p, &ph, &mut w2).exp().min(1.0 - 1e-9);
     (ln_l - (1.0 - z).ln(), z)
 }
 
@@ -462,11 +474,17 @@ fn e_step(ctx: &Ctx, pats: &Patterns, p: &Params) -> Acc {
                 let ln_l = ctx.upward(p, col, &mut w);
                 ctx.accumulate(p, col, &mut w, cnt, true, &mut acc);
                 let ph = phantom(col);
-                let z = ctx.upward(p, &ph, &mut wp).exp().min(1.0 - 1e-15);
+                // Z is capped so that one nearly unobservable pattern cannot dominate the M-step (weight at most 1e9 per column)
+                let z = ctx.upward(p, &ph, &mut wp).exp().min(1.0 - 1e-9);
                 let wt = cnt * z / (1.0 - z);
                 ctx.accumulate(p, &ph, &mut wp, wt, false, &mut acc);
                 acc.log_lik += cnt * (ln_l - (1.0 - z).ln());
                 acc.unobserved += wt;
+                for (i, &c) in col.iter().enumerate() {
+                    if c != MISSING {
+                        acc.unseen_obs[i] += wt;
+                    }
+                }
                 (acc, w, wp)
             },
         )
@@ -474,11 +492,8 @@ fn e_step(ctx: &Ctx, pats: &Patterns, p: &Params) -> Acc {
         .reduce(|| Acc::new(n, tips), Acc::add)
 }
 
-fn m_step(tree: &Tree, acc: &Acc, p: &mut Params, fixed: Option<NodeId>) {
-    for v in 0..tree.len() {
-        if tree.parent(v).is_none() || Some(v) == fixed {
-            continue;
-        }
+fn m_step(acc: &Acc, p: &mut Params, free: &[NodeId]) {
+    for &v in free {
         let c = acc.n[v];
         let from0 = c[0][0] + c[0][1];
         let from1 = c[1][0] + c[1][1];
@@ -520,38 +535,160 @@ pub fn log_likelihood(data: &ScoringData, err: &ErrorRates, p: &Params) -> f64 {
         .sum()
 }
 
-/// Fit the model by EM and return the parameters with the posterior expectations at the optimum.
+/// Nodes with at least one observed (non-`?`) cell among the tips below them, in any character.
+///
+/// A branch with nothing observed below it carries no information: its part of the likelihood sums to one whatever its
+/// probabilities, so it is fixed to "no change" and reported as having no data instead of returning its starting values as estimates.
+fn nodes_with_data(data: &ScoringData) -> Vec<bool> {
+    let tree = &data.tree;
+    let mut has = vec![false; tree.len()];
+    for (i, &t) in data.tips.iter().enumerate() {
+        has[t] = data.characters.iter().any(|c| c.states[i] != MISSING);
+    }
+    for &v in tree.postorder() {
+        let below = tree.children(v).iter().any(|&c| has[c]);
+        has[v] = has[v] || below;
+    }
+    has
+}
+
+/// The parameters EM may change, as one vector: free gains, free losses, then the root probability.
+fn pack(p: &Params, free: &[NodeId]) -> Vec<f64> {
+    let mut x: Vec<f64> = free.iter().map(|&v| p.gain[v]).collect();
+    x.extend(free.iter().map(|&v| p.loss[v]));
+    x.push(p.root_present);
+    x
+}
+
+fn unpack(x: &[f64], free: &[NodeId], p: &mut Params) {
+    let k = free.len();
+    for (j, &v) in free.iter().enumerate() {
+        p.gain[v] = x[j].clamp(CLAMP, 1.0 - CLAMP);
+        p.loss[v] = x[k + j].clamp(CLAMP, 1.0 - CLAMP);
+    }
+    p.root_present = x[2 * k].clamp(CLAMP, 1.0 - CLAMP);
+}
+
+/// Fit the model by EM (accelerated with SQUAREM, Varadhan & Roland 2008, and never accepting a step that lowers the
+/// log-likelihood) and return the parameters with the posterior expectations at the optimum.
+///
+/// Stops when one acceleration cycle improves the log-likelihood by less than `tol` *and* moves no parameter by more than 1e-7;
+/// the gain/root direction is flat with annotation error, so a log-likelihood criterion alone stops too early. `iterations` counts
+/// E-steps.
 pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<FitResult, String> {
     err.validate(data.tips.len())?;
     if data.characters.is_empty() {
         return Err("no characters to fit".into());
     }
     let tree = &data.tree;
+    if let Some(v) = (0..tree.len()).find(|&v| tree.children(v).len() == 1) {
+        return Err(format!(
+            "node {v} has a single child; only the product of its two branches is identifiable (remove unary nodes from the tree)"
+        ));
+    }
     let ctx = Ctx::new(data, err);
     let pats = compress(data);
-    let mut p = opt
-        .init
-        .clone()
-        .unwrap_or_else(|| Params::uniform(tree, 0.05, 0.2, 0.5));
+    let has_data = nodes_with_data(data);
+    let mut p = match &opt.init {
+        Some(init) => {
+            let ok = |x: f64| x > 0.0 && x < 1.0;
+            if init.gain.len() != tree.len()
+                || init.loss.len() != tree.len()
+                || !ok(init.root_present)
+                || (0..tree.len())
+                    .any(|v| tree.parent(v).is_some() && !(ok(init.gain[v]) && ok(init.loss[v])))
+            {
+                return Err("starting parameters must be strictly between 0 and 1, one gain and loss per node".into());
+            }
+            init.clone()
+        }
+        None => Params::uniform(tree, 0.05, 0.2, 0.5),
+    };
     let fixed = fixed_root_branch(tree);
-    if let Some(f) = fixed {
-        p.gain[f] = CLAMP;
-        p.loss[f] = CLAMP;
+    let free: Vec<NodeId> = (0..tree.len())
+        .filter(|&v| tree.parent(v).is_some() && Some(v) != fixed && has_data[v])
+        .collect();
+    for v in 0..tree.len() {
+        if tree.parent(v).is_some() && !free.contains(&v) {
+            p.gain[v] = CLAMP;
+            p.loss[v] = CLAMP;
+        }
     }
-    let mut prev = f64::NEG_INFINITY;
-    let mut iterations = 0;
+    // the EM map: parameters -> (parameters after one M-step, E-step at the input)
+    let em = |p: &Params| -> (Params, Acc) {
+        let acc = e_step(&ctx, &pats, p);
+        let mut q = p.clone();
+        m_step(&acc, &mut q, &free);
+        (q, acc)
+    };
+    let mut iterations = 0usize;
     let mut converged = false;
-    let mut acc = e_step(&ctx, &pats, &p);
+    let (mut p1, mut acc0) = em(&p);
+    iterations += 1;
     while iterations < opt.max_iter {
-        if acc.log_lik - prev < opt.tol && iterations > 0 {
+        let (p2, acc1) = em(&p1);
+        iterations += 1;
+        let (x0, x1, x2) = (pack(&p, &free), pack(&p1, &free), pack(&p2, &free));
+        let r: Vec<f64> = x1.iter().zip(&x0).map(|(a, b)| a - b).collect();
+        let v: Vec<f64> = x2
+            .iter()
+            .zip(&x1)
+            .zip(&r)
+            .map(|((a, b), c)| a - b - c)
+            .collect();
+        let (nr, nv) = (
+            r.iter().map(|x| x * x).sum::<f64>().sqrt(),
+            v.iter().map(|x| x * x).sum::<f64>().sqrt(),
+        );
+        // candidate: the SQUAREM extrapolation, falling back towards the plain double EM step (alpha = -1 gives x2)
+        let mut best = (p2.clone(), None::<Acc>);
+        if nv > 0.0 {
+            let mut alpha = (-nr / nv).min(-1.0);
+            for _ in 0..6 {
+                let x: Vec<f64> = (0..x0.len())
+                    .map(|i| x0[i] - 2.0 * alpha * r[i] + alpha * alpha * v[i])
+                    .collect();
+                let mut cand = p.clone();
+                unpack(&x, &free, &mut cand);
+                let (stab, _) = em(&cand); // one stabilising EM step
+                iterations += 1;
+                let acc_s = e_step(&ctx, &pats, &stab);
+                iterations += 1;
+                if acc_s.log_lik >= acc1.log_lik - 1e-9 {
+                    best = (stab, Some(acc_s));
+                    break;
+                }
+                if alpha >= -1.0 {
+                    break;
+                }
+                alpha = (alpha - 1.0) / 2.0;
+            }
+        }
+        let (new_p, new_acc) = match best {
+            (q, Some(a)) => (q, a),
+            (q, None) => {
+                let a = e_step(&ctx, &pats, &q);
+                iterations += 1;
+                (q, a)
+            }
+        };
+        let dlnl = new_acc.log_lik - acc0.log_lik;
+        let dx = pack(&new_p, &free)
+            .iter()
+            .zip(&x0)
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0, f64::max);
+        p = new_p;
+        acc0 = new_acc;
+        if dlnl < opt.tol && dx < 1e-7 {
             converged = true;
             break;
         }
-        prev = acc.log_lik;
-        m_step(tree, &acc, &mut p, fixed);
-        acc = e_step(&ctx, &pats, &p);
-        iterations += 1;
+        let mut q = p.clone();
+        m_step(&acc0, &mut q, &free); // the next EM step comes from the E-step just done
+        p1 = q;
     }
+    let acc = acc0;
     let nodes = (0..tree.len())
         .map(|v| {
             let root = tree.parent(v).is_none();
@@ -561,6 +698,7 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
                 expected_gains: if root { acc.present[v] } else { acc.gains[v] },
                 expected_losses: if root { 0.0 } else { acc.losses[v] },
                 expected_present: acc.present[v],
+                has_data: has_data[v],
             }
         })
         .collect();
@@ -568,6 +706,7 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
         .map(|i| TipStats {
             expected_missed: acc.missed[i],
             expected_false: acc.false_[i],
+            unseen_observable: acc.unseen_obs[i],
         })
         .collect();
     let mut w = Work::new(tree.len());
@@ -587,6 +726,80 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
         site_log_lik,
         unobserved_positions: acc.unobserved,
     })
+}
+
+/// How a tip's false-intron rate is given.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum FalseSpec {
+    /// The per-position rate itself.
+    Rate(f64),
+    /// Annotation precision (fraction of annotated introns that are real); converted inside the fit.
+    Precision(f64),
+}
+
+/// [`fit`] with false-intron rates given as precision where wanted.
+///
+/// Precision fixes the number of false introns in a genome, `carried·(1 − precision)`. The model applies the false-intron rate to
+/// every position the genome truly lacks, including positions nobody shows (they exist but are not in the matrix), so the rate is
+/// `carried·(1 − precision) / (truly absent positions in the matrix + never-seen positions where the genome is observable)`. The
+/// never-seen count comes from the fit itself, so the rate and the fit are iterated to a fixed point (at most 20 rounds, until no
+/// rate changes by more than 0.1 %), each fit starting from the last. Returns the fit and the rates used.
+pub fn fit_with_precision(
+    data: &ScoringData,
+    sensitivity: &[f64],
+    spec: &[FalseSpec],
+    opt: &FitOptions,
+) -> Result<(FitResult, ErrorRates), String> {
+    let n = data.tips.len();
+    if sensitivity.len() != n || spec.len() != n {
+        return Err(format!(
+            "error specification for {} / {} tips, the tree has {n}",
+            sensitivity.len(),
+            spec.len()
+        ));
+    }
+    let count = |i: usize, f: &dyn Fn(u8) -> bool| {
+        data.characters.iter().filter(|c| f(c.states[i])).count() as f64
+    };
+    let carried: Vec<f64> = (0..n).map(|i| count(i, &|s| s == PRESENT)).collect();
+    let observed: Vec<f64> = (0..n).map(|i| count(i, &|s| s != MISSING)).collect();
+    let rate = |i: usize, unseen: f64| -> f64 {
+        match spec[i] {
+            FalseSpec::Rate(f) => f,
+            FalseSpec::Precision(pr) => {
+                let false_ones = carried[i] * (1.0 - pr);
+                let truly_absent =
+                    (observed[i] - carried[i] * pr / sensitivity[i]).max(0.0) + unseen;
+                (false_ones / truly_absent.max(false_ones.max(1.0))).clamp(0.0, 0.5)
+            }
+        }
+    };
+    let mut err = ErrorRates {
+        sensitivity: sensitivity.to_vec(),
+        false_rate: (0..n).map(|i| rate(i, 0.0)).collect(),
+    };
+    let mut o = opt.clone();
+    let mut r = fit(data, &err, &o)?;
+    if spec.iter().all(|s| matches!(s, FalseSpec::Rate(_))) {
+        return Ok((r, err));
+    }
+    for _ in 0..20 {
+        let next: Vec<f64> = (0..n)
+            .map(|i| rate(i, r.tips[i].unseen_observable))
+            .collect();
+        let change = next
+            .iter()
+            .zip(&err.false_rate)
+            .map(|(a, b)| if *b > 0.0 { (a - b).abs() / b } else { a.abs() })
+            .fold(0.0, f64::max);
+        err.false_rate = next;
+        o.init = Some(r.params.clone());
+        r = fit(data, &err, &o)?;
+        if change < 1e-3 {
+            break;
+        }
+    }
+    Ok((r, err))
 }
 
 /// Percentile intervals over bootstrap replicates, per node.
@@ -1206,5 +1419,236 @@ mod tests {
         assert!((log_likelihood(&d, &err, &p) - log_likelihood(&full, &err5, &p)).abs() < 1e-12);
         let (lik, z, _, _) = brute(&full, &err5, &p, &[1, 0, 1, 1, MISSING]);
         assert!((log_likelihood(&full, &err5, &p) - (lik.ln() - (1.0 - z).ln())).abs() < 1e-10);
+    }
+
+    #[test]
+    fn polytomy_posteriors_match_brute_force() {
+        // an internal node with three children, a three-child root, missing cells (from the independent review)
+        let nwk = "(A,(B,C,D),E);";
+        let cols: &[&[u8]] = &[
+            &[1, 0, 1, MISSING, 0],
+            &[0, 1, 1, 1, 0],
+            &[MISSING, 1, 0, 0, 1],
+        ];
+        let d = data(nwk, cols);
+        let err = some_errors();
+        let p = some_params(&d.tree);
+        let ctx = Ctx::new(&d, &err);
+        for col in cols {
+            let (lik, _, present, pairs) = brute(&d, &err, &p, col);
+            let mut w = Work::new(d.tree.len());
+            assert!((ctx.upward(&p, col, &mut w) - lik.ln()).abs() < 1e-10);
+            let mut acc = Acc::new(d.tree.len(), 5);
+            ctx.accumulate(&p, col, &mut w, 1.0, true, &mut acc);
+            for v in 0..d.tree.len() {
+                assert!((acc.present[v] - present[v]).abs() < 1e-10, "present {v}");
+                if d.tree.parent(v).is_some() {
+                    for a in 0..2 {
+                        for b in 0..2 {
+                            assert!((acc.n[v][a][b] - pairs[v][a][b]).abs() < 1e-10, "pair {v}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn truth_with_fixed_root(t: &Tree, gain: f64, loss: f64, root: f64) -> Params {
+        let mut p = Params::uniform(t, gain, loss, root);
+        let f = fixed_root_branch(t).unwrap();
+        p.gain[f] = CLAMP;
+        p.loss[f] = CLAMP;
+        p
+    }
+
+    #[test]
+    fn a_tip_without_data_is_marked_and_adds_nothing() {
+        let t = tree(NWK);
+        let err = ErrorRates::none(5);
+        let mut cols = simulate(
+            &t,
+            &truth_with_fixed_root(&t, 0.05, 0.15, 0.7),
+            &err,
+            5000,
+            3,
+        );
+        for c in cols.iter_mut() {
+            c[4] = MISSING; // E is never observed
+        }
+        cols.retain(|c| c.contains(&PRESENT));
+        let d = sim_data(NWK, cols);
+        let r = fit(&d, &err, &FitOptions::default()).unwrap();
+        let e = t.tip_index("E").unwrap();
+        assert!(!r.nodes[e].has_data && r.nodes.iter().filter(|n| !n.has_data).count() == 1);
+        assert_eq!((r.params.gain[e], r.params.loss[e]), (CLAMP, CLAMP));
+        assert!(
+            r.nodes[e].expected_gains < 1e-3 && r.nodes[e].expected_losses < 1e-3,
+            "{:?}",
+            r.nodes[e]
+        );
+        // the same fit as with E left out of the data (its branch integrates out)
+        let keep: Vec<NodeId> = d.tips[..4].to_vec();
+        let d4 = ScoringData {
+            tips: keep,
+            tip_names: d.tip_names[..4].to_vec(),
+            annotated_tip: vec![true; 4],
+            characters: d
+                .characters
+                .iter()
+                .map(|c| Character {
+                    states: c.states[..4].to_vec(),
+                    ..c.clone()
+                })
+                .collect(),
+            tree: d.tree.clone(),
+        };
+        let r4 = fit(&d4, &ErrorRates::none(4), &FitOptions::default()).unwrap();
+        assert!(
+            (r.log_lik - r4.log_lik).abs() < 1e-4,
+            "{} vs {}",
+            r.log_lik,
+            r4.log_lik
+        );
+    }
+
+    #[test]
+    fn precision_is_converted_with_the_never_seen_positions() {
+        // tip A has 1 % false introns; its precision is measured from the simulated truth, then converted inside the fit
+        let t = tree(NWK);
+        let truth = truth_with_fixed_root(&t, 0.02, 0.15, 0.7);
+        let err = ErrorRates {
+            sensitivity: vec![0.9, 1.0, 0.9, 0.9, 0.9],
+            false_rate: vec![0.01, 0.0, 0.0, 0.0, 0.0],
+        };
+        let tips = t.tips();
+        let order: Vec<NodeId> = t.postorder().iter().rev().copied().collect();
+        let mut rng = Rng(9);
+        let (mut carried, mut real) = (0.0, 0.0);
+        let mut cols = Vec::new();
+        while cols.len() < 100_000 {
+            let mut st = vec![0u8; t.len()];
+            for &v in &order {
+                st[v] = match t.parent(v) {
+                    None => (rng.f() < truth.root_present) as u8,
+                    Some(u) if st[u] == 0 => (rng.f() < truth.gain[v]) as u8,
+                    Some(_) => (rng.f() >= truth.loss[v]) as u8,
+                };
+            }
+            let col: Vec<u8> = tips
+                .iter()
+                .enumerate()
+                .map(|(i, &v)| {
+                    if st[v] == 1 {
+                        (rng.f() < err.sensitivity[i]) as u8
+                    } else {
+                        (rng.f() < err.false_rate[i]) as u8
+                    }
+                })
+                .collect();
+            if col.contains(&PRESENT) {
+                if col[0] == 1 {
+                    carried += 1.0;
+                    real += (st[tips[0]] == 1) as u8 as f64;
+                }
+                cols.push(col);
+            }
+        }
+        let d = sim_data(NWK, cols);
+        let mut spec = vec![FalseSpec::Rate(0.0); 5];
+        spec[0] = FalseSpec::Precision(real / carried);
+        let (r, used) =
+            fit_with_precision(&d, &err.sensitivity, &spec, &FitOptions::default()).unwrap();
+        let f = used.false_rate[0];
+        assert!(
+            (f - 0.01).abs() < 0.002,
+            "converted false rate {f}, true 0.01 (the seen-only formula gave ~0.023)"
+        );
+        let false_true = carried - real;
+        assert!(
+            (r.tips[0].expected_false - false_true).abs() < 0.15 * false_true,
+            "{} vs {false_true}",
+            r.tips[0].expected_false
+        );
+        // rates given directly are passed through unchanged
+        let (_, used) = fit_with_precision(
+            &d,
+            &err.sensitivity,
+            &[FalseSpec::Rate(0.01); 5],
+            &FitOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(used.false_rate, vec![0.01; 5]);
+    }
+
+    #[test]
+    fn the_fit_is_a_stationary_point() {
+        let t = tree(NWK);
+        let err = some_errors();
+        let d = sim_data(
+            NWK,
+            simulate(
+                &t,
+                &truth_with_fixed_root(&t, 0.05, 0.15, 0.7),
+                &err,
+                20_000,
+                5,
+            ),
+        );
+        let r = fit(&d, &err, &FitOptions::default()).unwrap();
+        assert!(r.converged, "{} iterations", r.iterations);
+        let base = log_likelihood(&d, &err, &r.params);
+        assert!((base - r.log_lik).abs() < 1e-6 * base.abs());
+        let f = fixed_root_branch(&t).unwrap();
+        for v in 0..t.len() {
+            if t.parent(v).is_none() || v == f {
+                continue;
+            }
+            for (which, h) in [(0, 1e-4), (0, -1e-4), (1, 1e-4), (1, -1e-4)] {
+                let mut q = r.params.clone();
+                if which == 0 {
+                    q.gain[v] += h
+                } else {
+                    q.loss[v] += h
+                }
+                assert!(
+                    log_likelihood(&d, &err, &q) <= base + 1e-6,
+                    "moving node {v} ({which}) by {h} improves the fit"
+                );
+            }
+        }
+        // a far stricter run (tolerance 1e-12) ends at the same log-likelihood
+        let slow = {
+            let mut o = FitOptions {
+                max_iter: 400_000,
+                tol: 1e-12,
+                init: None,
+            };
+            o.max_iter = 400_000;
+            fit(&d, &err, &o).unwrap()
+        };
+        assert!(
+            (slow.log_lik - r.log_lik).abs() < 1e-3,
+            "{} vs {}",
+            slow.log_lik,
+            r.log_lik
+        );
+    }
+
+    #[test]
+    fn unary_nodes_and_bad_starting_values_are_refused() {
+        let d = data("((A,B),((C)));", &[&[1, 0, 1]]);
+        assert!(fit(&d, &ErrorRates::none(3), &FitOptions::default())
+            .unwrap_err()
+            .contains("single child"));
+        let d = data(NWK, &[&[1, 0, 1, 0, 0]]);
+        let mut p = Params::uniform(&d.tree, 0.05, 0.2, 0.5);
+        p.loss[2] = 0.0;
+        let o = FitOptions {
+            init: Some(p),
+            ..Default::default()
+        };
+        assert!(fit(&d, &ErrorRates::none(5), &o)
+            .unwrap_err()
+            .contains("strictly between"));
     }
 }

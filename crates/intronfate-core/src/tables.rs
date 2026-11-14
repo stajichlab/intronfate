@@ -514,6 +514,7 @@ pub fn likelihood_branch_table(
         "expected_gains",
         "expected_losses",
         "expected_present",
+        "has_data",
     ];
     if boot.is_some() {
         head.extend([
@@ -547,6 +548,7 @@ pub fn likelihood_branch_table(
             c.push(f(n.expected_gains));
             c.push(f(n.expected_losses));
             c.push(f(n.expected_present));
+            c.push(cell(if n.has_data { "yes" } else { "no" }));
             if let Some(b) = boot {
                 for (lo, hi) in [b.gains[v], b.losses[v], b.present[v]] {
                     c.push(f(lo));

@@ -121,7 +121,8 @@ makes them so). Likewise each `-p` file is read in parallel and merged in the or
 | `--reconstructions` | off | Also write per-node ancestral states. |
 | `--error-rates FILE` | – | `-m likelihood`: per-taxon annotation error (§11). |
 | `--ml-bootstrap N` | 0 | `-m likelihood`: bootstrap replicates for intervals on gains, losses and presence. |
-| `--ml-max-iter N` | 10000 | `-m likelihood`: EM iteration limit. |
+| `--ml-max-iter N` | 50000 | `-m likelihood`: limit on EM steps (E-steps). |
+| `--ml-seed N` | 1 | `-m likelihood`: random seed of `--ml-bootstrap`. |
 
 ## 5. Reading the results
 
@@ -283,7 +284,9 @@ Anidulans    0.89         0.91
 
 - `sensitivity`: the fraction of real introns the annotation finds (e.g. gffcompare intron Sn against a reference).
 - `precision` (fraction of annotated introns that are real), or `false_rate` directly: the probability that a genome shows an intron
-  at a position where it has none. From precision it is computed as `carried·(1 − precision) / (observed − carried·precision/sensitivity)`.
+  at a position where it has none. Precision fixes the number of false introns, `carried·(1 − precision)`; the rate divides that by
+  every position the genome truly lacks, including the positions nobody shows (estimated by the fit), so it is iterated together
+  with the fit until it settles. (Dividing by the matrix columns alone would roughly double the rate.)
 - Error rates must be supplied: from the matrix alone a miss and a loss on the genome's own branch cannot be told apart. To see how
   much they matter, rerun with a range of values.
 
@@ -296,6 +299,8 @@ Read with care:
   positions never seen and the root probability. Use `--ml-bootstrap` and quote the interval.
 - **The root**: the branch from the root to its larger child is fixed to "no change" (`ml_fixed_root_branch`), so `root` means the
   ingroup ancestor and all change between outgroup and ingroup is on the outgroup's branch.
+- **Branches with no data**: a genome (or clade) with only `?` cells has a branch the data say nothing about. It is fixed at
+  no change, marked `has_data no` and left out of the totals; a note says how many there are.
 - No rate variation across positions yet; `--min-taxa` must be 1 (each position is conditioned on being seen at least once).
 - `--ml-bootstrap` resamples whole families when the matrix is combined (`<family>:<column>:<phase>` labels), single positions
   otherwise. Each replicate is a full EM fit, so 100 replicates take about 100 times as long as one fit.
