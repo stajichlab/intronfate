@@ -310,7 +310,7 @@ Read with care:
 - **Rate variation across positions** (`--ml-rate-categories 4`): positions get one of 4 rate classes from a gamma with shape `α`
   (`ml_gamma_shape`; small means very heterogeneous). Without it, a few fast positions and many slow ones are averaged into one rate;
   slowly changing positions then look like recent gains, so ancestors usually come out poorer and losses fewer than with classes
-  (on the Antarctolithica data, `bench/V15_rate_variation`, the classes made deep ancestors richer and losses larger). Compare the two fits' `ml_log_likelihood`: the classes
+  (on a 42-genome fungal data set, four classes made deep ancestors richer and losses larger). Compare the two fits' `ml_log_likelihood`: the classes
   add one parameter. Branch probabilities in `likelihood_branches.tsv` are then those at the mean rate, and
   `likelihood_sites.tsv` gets each position's posterior rate (`rate`, above 1 = changes more readily). A fit with classes takes
   several times longer; `-vv` prints one line per EM cycle.
