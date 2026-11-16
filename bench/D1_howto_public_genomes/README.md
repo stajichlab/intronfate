@@ -41,7 +41,7 @@ Both examples ran from download to the tier B rescore without error.
 - **Diagnostics** (`check_unmatched.sh`): the 101 `protein_not_in_fasta` transcripts (63 *A. nidulans*, 32 *S. pombe*, 6 *S. cerevisiae*)
   are pseudogenes (`pseudo=true` CDS rows, no protein); the ~10,000 `no_cds` are tRNA/rRNA/ncRNA. No `row_sequence_mismatch`, no
   `length_mismatch`.
-- **fungi9 against the README's funannotate run** (V6 tier A): terminal losses *M. maydis* 3,864 (4,055), *S. cerevisiae* 1,452 (1,447),
+- **fungi9 against the funannotate run of [V6](../V6_orthology_nine_species/README.md)** (tier A): terminal losses *Mycosarcoma maydis* 3,864 (4,055), *S. cerevisiae* 1,452 (1,447),
   *M. mucedo* 1,479 (1,516), *C. neoformans* 1,010 (1,091), Ascomycota stem 2,455 (2,569); 1,103 strict families (1,106). Two independent
   annotations of the same strains give nearly the same loss pattern. Gains differ more (e.g. *C. cinerea* 1,855 here against 1,799), as
   expected from V4/V7.

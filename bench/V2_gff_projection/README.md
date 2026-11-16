@@ -1,4 +1,4 @@
-# V2 — projection on real annotation (nine fungal genomes)
+# V2: projection on real annotation (nine fungal genomes)
 
 Purpose: V1 validated scoring and MALIN interop. This tests the tool's main job — GFF3 → protein space →
 alignment columns — on real annotation, and gives the first real timings. **Purgeable** (`data/` holds only
@@ -31,7 +31,7 @@ mkdir -p logs && sbatch -p highclock run.sbatch      # on 2026-11-11 `batch` was
 
 ## First result (2026-11-11, job 32023112, `highclock`, 34 s for the projection step; `REPORT.2026-11-11.txt`)
 
-- 739 BUSCO families (single-copy in ≥ 7 of 9 genomes), 6 363 protein rows; every row joined to its transcript
+- 739 BUSCO families (single-copy in ≥ 7 of 9 genomes), 6,363 protein rows; every row joined to its transcript
   and only **one** was refused: a *C. cinerea* model with an internal stop codon, which MAFFT dropped from the
   row, so the row no longer equalled the protein (`row_sequence_mismatch`; the taxon was scored missing for that
   family instead of projecting through a shifted sequence). `make_families.py` now skips such proteins.
@@ -43,13 +43,9 @@ mkdir -p logs && sbatch -p highclock run.sbatch      # on 2026-11-11 `batch` was
 - Biology agrees with the literature on every point checked by eye: phase 0 commonest (0.36–0.46) and phase 2
   rarest or near-rarest (0.22–0.28); *S. cerevisiae* has 407 introns in 335 intron-containing genes against ~5.5
   introns per intron-containing gene in *C. neoformans* and *S. punctatus*; Dollo losses are largest on the
-  *S. maydis* (2 883), Ascomycota-stem (1 654) and *S. cerevisiae* (1 030) branches.
-- **Annotation accuracy** (colleague's gffcompare scores vs RefSeq, measured over the genes in these alignments; `bench/V4_annotation_accuracy/`):
-  intron sensitivity / precision at the V2 genes is 94–99 % for *C. neoformans*, *S. pombe*, *N. crassa* (99 / 99), 93–95 % for *M. mucedo*
-  (Pr 89 %), *C. cinerea* and *S. punctatus*, and ~89 % for *A. nidulans* and *M. maydis*; errors do not depend much on phase or position.
-  Annotation misses can explain at most a few percent of the terminal-branch losses of *N. crassa*, *C. neoformans*, *S. pombe*,
-  *M. maydis* (and ~14 % for *M. mucedo*), but **not rule out** that all of the terminal losses of *C. cinerea* and *A. nidulans* are
-  misses — treat those two as unreliable. *S. cerevisiae* (an assembly with no RefSeq annotation) is unscored.
+  *My. maydis* (2,883), Ascomycota-stem (1,654) and *S. cerevisiae* (1,030) branches.
+- **Annotation accuracy** at these genes is measured in [V4](../V4_annotation_accuracy/README.md), and how far it can move the Dollo
+  counts in [V7](../V7_annotation_error_sensitivity/README.md).
 - Caveats: funannotate predictions, not curated gene sets; a taxonomic (not inferred) tree; Dollo only; untrimmed
   alignments; `--flank 1` unvalidated. This shows the projection behaves sensibly on real data; it does not
   validate any particular count.
