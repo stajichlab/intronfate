@@ -12,7 +12,8 @@ cd "$HERE"
 mkdir -p results figures
 for d in place/*/; do
   set_=$(basename "$d")
-  ids=$(ls -d "place/$set_"/place_*/ | xargs -n1 basename | paste -sd, -)
+  ids=$(ls "place/$set_"/place_*/likelihood_sites.tsv | xargs -n1 dirname | xargs -n1 basename | paste -sd, -)
+  n=$(echo "$ids" | tr ',' '\n' | wc -l); [ "$n" -lt 70 ] && echo "warning: place/$set_ has $n of 70 placements" >&2
   python3 -I "$V14/rell.py" --score "place/$set_" --ids "$ids" --reps 1000 > "results/rell_$set_.tsv"
 done
 for k in 1 "$K"; do

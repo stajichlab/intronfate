@@ -145,6 +145,7 @@ These are validation and first-use results, not a finished biological study.
 | [V11](bench/V11_antarctolithica_topology_tests/README.md) | Likelihood tests of nine candidate placements (IQ-TREE, RAxML-NG cross-check; C60 PMSF, site removal, recoding) | Same best tree in every variant; the gap to the alternative published placement narrows with a better model but does not close. |
 | [V13](bench/V13_antarctolithica_intron_map/README.md) | Antarctolithica's introns mapped on gains, losses and ancestral states; placement test calibrated with known lineages thinned to its intron content | The all-positions optimum (next to intron-poor *M. maydis*) is an artefact the calibration reproduces. The carried-positions test only errs towards the root, so Alith is sister to Saccharomycotina + Pezizomycotina or shallower. |
 | [V14](bench/V14_likelihood_alith/README.md) | The likelihood model with per-genome annotation error (`-m likelihood`) on the same data | Sister to Saccharomycotina + Pezizomycotina best (RELL 0.86-0.91), sister to Pezizomycotina second (Δ lnL 4.5-4.9), regardless of Alith's assumed annotation quality; no attraction to intron-poor genomes. Alith's intron poverty is not an annotation artefact. |
+| [V15](bench/V15_rate_variation/README.md) | Rate variation across positions (`--ml-rate-categories`), and the likelihood placement test calibrated with V13's thinned stand-ins | Rate classes fit far better (+1,876 lnL) and make ancestors richer; sister to Saccharomycotina + Pezizomycotina stays best with a doubled margin (Δ ≈ 10). Calibrated, the likelihood is right twice as often as Dollo and errs only towards the root, so Alith is sister to Saccharomycotina + Pezizomycotina or shallower. |
 | [V12](bench/V12_antarctolithica_composition/README.md) | Genome traits, amino-acid / codon / Pfam composition, isolation test, random forest | Compact yeast-like genome; composition does not mark a separate group, only the Pfam repertoire is isolated (as reduced-genome lineages are). |
 
 Summary of V4-V12 and what they do and do not show: [`docs/ANTARCTOLITHICA_PLACEMENT.md`](docs/ANTARCTOLITHICA_PLACEMENT.md).
@@ -162,7 +163,7 @@ The other counts need the limits below before they are interpreted.
 - Annotation error is measured, not removed: V7 shows which loss counts survive it and which do not. Terminal gains are less certain than
   losses, because false introns move them in no consistent direction.
 - *S. cerevisiae* has so few introns that its scores rest on a few dozen introns and are noisy.
-- Nothing here validates the evolutionary model itself (Dollo parsimony assumes one gain per site). A likelihood model with annotation error (`-m likelihood`) exists and has been run on the Antarctolithica set (V14); it has no rate variation across positions yet.
+- Nothing here validates the evolutionary model itself (Dollo parsimony assumes one gain per site). A likelihood model with annotation error and rate variation across positions (`-m likelihood`, `--ml-rate-categories`) exists and has been run and calibrated on the Antarctolithica set (V14, V15).
 
 ## Layout
 

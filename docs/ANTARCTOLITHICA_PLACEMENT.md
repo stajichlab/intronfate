@@ -44,6 +44,23 @@ rest, Alith swept from 1.0 to 0.7):
   strain-level Dollo events being annotation noise.
 - No rate variation across positions in V14; V15 adds it (deep ancestors then come out richer and losses larger; see §2d).
 
+## 2d. Rate variation across positions, and the likelihood test calibrated (V15)
+- **Rate classes** (4 gamma classes, α ≈ 2.8) fit much better (+1,876 lnL). They make deep ancestors richer and losses larger.
+  - Alith's parent: about 8,700 positions [8,000-9,300].
+  - Alith's stem: about 7,600 losses [7,000-8,200].
+  - Alith's own ancestor stays near 1,400 positions.
+- **Placement with classes:** still sister to Saccharomycotina + Pezizomycotina (RELL 0.96 without error). The margin over sister to
+  Pezizomycotina or to Saccharomycotina doubles to about 10 lnL.
+- **Calibration** (V13's thinned stand-ins, with the likelihood):
+  - On age-matched stand-ins, the likelihood is right twice as often as Dollo (39 vs 19 of 75).
+  - Its errors point one way: 24 deeper, 2 shallower, against Dollo's 25 deeper, 26 shallower.
+  - Four rate classes push errors further towards the root (right 17 of 45, 22 deeper, 3 shallower).
+  - Wrong deeper picks win by a median of 2.5-4.3 lnL (up to about 50).
+- **Reading for Alith:** the test errs towards the root, so its best placement means Alith attaches there or shallower. That is
+  sister to Saccharomycotina + Pezizomycotina, or sister to Pezizomycotina or to Saccharomycotina. Deeper positions are 35-41 lnL
+  worse even though the bias favours them. The intron data alone cannot choose among the three shallow options; V11's sequence
+  likelihood prefers the first.
+
 ## 3. Protein-domain content (V10)
 Pfam counts for 472 genomes (the V9 genomes plus a BFD sample of up to 3 per order; 10,642 Pfams). *Antarctolithica* carries 89-98 % of the 2,500 core fungal Pfams (other genomes: median 99.4 %), so it looks like a normal fungus. In the PCoA it lies between the yeast cluster (Saccharomycotina, Taphrinomycotina) and the Pezizomycotina; its nearest genomes are early-diverging yeasts (Lipomycetes-type Saccharomycotina, *Taphrina*, *Saitoella*), *Novakomyces* and *Tortispora*. A random forest that classifies known genomes at 99-100 % (leave-one-order-out) does not assign it confidently (Taphrinomycotina 0.41, Saccharomycotina 0.22, Pezizomycotina 0.18, Basidiomycota 0.17). Pfam signatures: it carries 0.11 of the Pezizomycotina signature (members 0.65-1.00) and 0.14 of the Saccharomycotina signature (members 0.53-1.00). Best reading: a yeast-like, small-proteome ascomycete outside both groups; but Pfam content tracks lifestyle and proteome size, so this is not a calibrated placement method.
 
@@ -69,4 +86,4 @@ Supermatrix of 270 single-copy families (200,000 columns, 37 lineages, the six s
 - **Next steps that would discriminate:** the same hypothesis set under CAT-GTR on this supermatrix with posterior predictive tests on the long branch; a topology test restricted to genes with the fewest gaps; the strain-by-strain check; the V7-style error sensitivity for the V9 set.
 
 ## Where things are
-`bench/V4_annotation_accuracy`, `V6_orthology_nine_species`, `V7_annotation_error_sensitivity`, `V8_antarctolithica_placement` (31 genomes), `V9_antarctolithica_expanded` (42 genomes), `V10_antarctolithica_domains`, `V11_antarctolithica_topology_tests`, `V12_antarctolithica_composition`, `V13_antarctolithica_intron_map` (figures and the calibrated intron placement test), `V14_likelihood_alith` (the likelihood model with annotation error). Large data stays on the HPCC (purgeable folders are listed in each README); the repository holds the scripts, fixture tests and small result tables.
+`bench/V4_annotation_accuracy`, `V6_orthology_nine_species`, `V7_annotation_error_sensitivity`, `V8_antarctolithica_placement` (31 genomes), `V9_antarctolithica_expanded` (42 genomes), `V10_antarctolithica_domains`, `V11_antarctolithica_topology_tests`, `V12_antarctolithica_composition`, `V13_antarctolithica_intron_map` (figures and the calibrated intron placement test), `V14_likelihood_alith` (the likelihood model with annotation error), `V15_rate_variation` (rate classes and the likelihood calibration). Large data stays on the HPCC (purgeable folders are listed in each README); the repository holds the scripts, fixture tests and small result tables.

@@ -1,0 +1,51 @@
+control	variant	categories	replicates	true_is_best	median_edges_from_true	median_depth_best_minus_true	most_common_best_sister
+Anidulans	age	1	5	0	2	-2	Arthonia,Cladonia,Cryomyces,Exophiala,Hortaea,Zymoseptoria
+Anidulans	full	1	1	1	0	0	Exophiala
+Anidulans	uniform	1	5	0	2	-2	Arthonia,Cladonia,Cryomyces,Exophiala,Hortaea,Zymoseptoria
+Babjevia	age	1	5	5	0	0	Neoaidaea
+Babjevia	full	1	1	1	0	0	Neoaidaea
+Babjevia	uniform	1	5	4	0	0	Neoaidaea
+Botrytis	age	1	5	1	1	-1	Antarctomyces,Ncrassa
+Botrytis	full	1	1	0	1	-1	Antarctomyces,Ncrassa
+Botrytis	uniform	1	5	0	1	-1	Antarctomyces,Ncrassa
+Geoglossum	age	1	5	2	2	-2	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomy...
+Geoglossum	full	1	1	0	2	-2	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomy...
+Geoglossum	uniform	1	5	0	2	-2	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomy...
+Geotrichum	age	1	5	1	1	-1	Alloascoidea,Yarrowia
+Geotrichum	full	1	1	1	0	0	Yarrowia
+Geotrichum	uniform	1	5	5	0	0	Yarrowia
+Lipomyces	age	1	5	5	0	0	Kockiozyma,Limtongia,Myxozyma
+Lipomyces	full	1	1	1	0	0	Kockiozyma,Limtongia,Myxozyma
+Lipomyces	uniform	1	5	4	0	0	Kockiozyma,Limtongia,Myxozyma
+Ncrassa	age	1	5	3	0	0	Antarctomyces,Botrytis
+Ncrassa	full	1	1	0	1	1	Antarctomyces
+Ncrassa	uniform	1	5	1	1	1	Botrytis
+Neoaidaea	age	1	5	5	0	0	Babjevia
+Neoaidaea	full	1	1	1	0	0	Babjevia
+Neoaidaea	uniform	1	5	5	0	0	Babjevia
+Neolecta	age	1	5	0	2	0	Alloascoidea,Anidulans,Antarctomyces,Arthonia,Babjevia,Bo...
+Neolecta	full	1	1	0	2	-2	Alloascoidea,Anidulans,Antarctomyces,Arthonia,Babjevia,Bo...
+Neolecta	uniform	1	5	0	2	0	Alloascoidea,Anidulans,Antarctomyces,Arthonia,Babjevia,Bo...
+Orbilia	age	1	5	1	1	-1	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomy...
+Orbilia	full	1	1	0	1	-1	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomy...
+Orbilia	uniform	1	5	0	1	-1	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomy...
+Pyronema	age	1	5	1	2	0	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomy...
+Pyronema	full	1	1	0	2	0	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomy...
+Pyronema	uniform	1	5	1	1	0	Anidulans,Antarctomyces,Arthonia,Botrytis,Cladonia,Cryomy...
+Saitoella	age	1	5	0	3	-1	Protomyces,Savitreella,Sjaponicus,Spombe,Taphrina,Tdeform...
+Saitoella	full	1	1	0	3	-1	Protomyces,Savitreella,Sjaponicus,Spombe,Taphrina,Tdeform...
+Saitoella	uniform	1	5	0	3	-1	Protomyces,Savitreella,Sjaponicus,Spombe,Taphrina,Tdeform...
+Spombe	age	1	5	5	0	0	Sjaponicus
+Spombe	full	1	1	1	0	0	Sjaponicus
+Spombe	uniform	1	5	5	0	0	Sjaponicus
+Taphrina	age	1	5	5	0	0	Tdeformans
+Taphrina	full	1	1	1	0	0	Tdeformans
+Taphrina	uniform	1	5	5	0	0	Tdeformans
+Yarrowia	age	1	5	5	0	0	Geotrichum
+Yarrowia	full	1	1	1	0	0	Geotrichum
+Yarrowia	uniform	1	5	5	0	0	Geotrichum
+
+# variant	categories	runs	true_is_best	placed_deeper	placed_shallower
+# age	1	75	39	24	2
+# full	1	15	8	5	1
+# uniform	1	75	35	31	4
