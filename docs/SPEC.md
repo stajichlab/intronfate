@@ -1,7 +1,10 @@
 # intronfate — design specification
 
-Version 0.1 · Nov 2026 · status: projection + Dollo/MP/count scoring implemented and tested;
-database sources and model-based scoring planned.
+Version 0.1 · Nov 2026 · status: projection, Dollo (classic and weighted), Fitch parsimony, counts and a likelihood model
+with annotation error and rate classes implemented and tested; database sources planned (§12).
+
+This page holds design and rationale. How to run the tool is in [`USAGE.md`](USAGE.md), every output column in
+[`OUTPUTS.md`](OUTPUTS.md), and the test layers in [`TESTING.md`](TESTING.md).
 
 > `Malin/` in the working tree is third-party reference data (MALIN distribution + test datasets),
 > not project source: it is git-ignored, and it is the basis of the interop/validation plan in §6b.
@@ -47,7 +50,7 @@ An intron interrupts a coding sequence at a specific nucleotide. Walk the CDS in
 and count coding bases before the intron. That count, `cds_offset`, is the canonical position: it is
 strand-independent, UTR-independent, and lossless.
 
-```
+```text
 CDS (transcript order):   [ exon1: 12 nt ][ intron ][ exon2: 15 nt ][ intron ][ exon3: 12 nt ]
 coding bases before:         0········12              12··········27            27········39
 
@@ -196,7 +199,7 @@ every projected position in the row; the semantics are pinned by a unit test.
 
 ## 4. Architecture
 
-```
+```text
 GFF3/GTF ──► gff::GffReader ──► annotation::GffSource ─┐
                                                        ├─► annotation::AnnotationSource (trait)
    (future: SQL/Chado/Ensembl reader) ─────────────────┘          │ transcript-level structure
@@ -213,9 +216,13 @@ MSA ─► msa::Alignment (residue↔column maps) ──► project::project_int
                                              │           │            │
                               pairwise/──────┘  score::prepare ───────└──► tables::*  (TSV/NEXUS)
                               Jaccard                │
-                                              score::{score_dollo, score_mp, score_counts}
+                                              score::{score_dollo, score_mp, score_counts, dollo_weighted}
+                                              likelihood::{fit, bootstrap}  (EM, annotation error, rate classes)
                                                      ▲
                                      tree::Tree ◄────┘  (Newick, --outgroup re-rooting)
+
+malin (MALIN tables) ◄──► matrix::SiteMatrix          (`convert`)
+inputs: expands --x / --x-list / --x-dir into file lists before any reader runs
 ```
 
 ### The seam
@@ -240,6 +247,8 @@ in-memory sink; `MemorySource` is the cached source, which also makes fixtures c
 
 | module          | responsibility                                                       |
 |-----------------|----------------------------------------------------------------------|
+| `model`         | core data types: strands, introns, intron positions in protein space |
+| `inputs`        | file, list-file and folder forms of every multi-file input           |
 | `gff`           | byte-level GFF3/GTF line parsing, zero allocation in the hot loop     |
 | `annotation`    | grouping by transcript, CDS ordering/merging, intron + offset derivation, the checks in §3 |
 | `seqio`         | protein FASTA, dual (exact/version-stripped) id index                  |
@@ -248,8 +257,11 @@ in-memory sink; `MemorySource` is the cached source, which also makes fixtures c
 | `matrix`        | `SiteMatrix`, bitsets, conservation spectrum, pairwise sharing, NEXUS  |
 | `tree`          | Newick parse, MRCA, monophyly, edge-splitting re-rooting               |
 | `score`         | Dollo, weighted-Dollo, Fitch MP, counts, missing-data handling         |
+| `likelihood`    | gain/loss likelihood with annotation error, rate classes, EM, bootstrap (§5.5, §5.5b) |
+| `malin`         | MALIN intron table import and export (§6b)                             |
 | `tables`        | TSV/NEXUS serialisation of everything                                   |
 | `report`        | diagnostics with counts, capped retained rows                          |
+| `util`, `error` | shared IO/text helpers (atomic writes, lossy UTF-8), error types       |
 
 Workspace: `crates/intronfate-core` (the library, publishable) and `crates/intronfate-cli` (the
 `intronfate` binary). Dependencies are deliberately few: `rayon`, `flate2`, `rustc-hash`,
@@ -262,7 +274,7 @@ line-oriented and control over tolerance/performance matters more than reuse.
 
 Each site is a binary character over taxa. What differs between models is the cost scheme.
 
-### Dollo parsimony (implemented — classic form)
+### 5.1 Dollo parsimony (implemented — classic form)
 
 Assumption: a position-with-phase arises **once** and is never regained after loss.
 
@@ -270,7 +282,7 @@ The gain is pinned at the **MRCA of the taxa carrying the site** — any deeper 
 losses, any shallower one cannot cover all carriers. Below the MRCA a two-state irreversible DP
 minimises losses (`present → lost` allowed, `lost → present` forbidden):
 
-```
+```text
 costP(v) = Σ_children min( costP(c), costL(c) + 1 )     // +1 = a loss on the edge to c
 costL(v) = Σ_children costL(c)                          // lost lineages stay lost
 tips:  present → (0, ∞)   absent → (∞, 0)   missing → (0, 0)
@@ -292,7 +304,7 @@ statistic is the **loss count**, and the only way to get a real gain/loss trade-
 Three states — `U` not yet gained, `P` present, `L` lost-and-terminal — with a gain costing
 `gain_weight` and a loss `loss_weight`; regaining a lost position is structurally impossible.
 
-```
+```text
 U(v) = Σ min( U(c), gw + P(c) )      P(v) = Σ min( P(c), lw + L(c) )      L(v) = Σ L(c)
 ```
 
@@ -343,7 +355,7 @@ stationary point (no ±1e-4 change of any parameter improves it) that a far stri
 nothing and giving the same log-likelihood as leaving it out; the precision conversion recovering a simulated 1 % false-intron rate
 within 0.002;
 simulation recovery (losses within a few percent; with error modelled, the total number of gains is weakly identified: fitted/true
-0.67-1.24 over three seeds of 60,000 positions, 0.97-1.04 at 1.5 million, so gains need the bootstrap interval); and a
+0.67–1.24 over three seeds of 60,000 positions, 0.97–1.04 at 1.5 million, so gains need the bootstrap interval); and a
 simulation in which ignoring a 30 % miss rate raises that genome's terminal loss probability from 0.1 to above 0.3, while
 the error model recovers 0.1 (within 0.04). An independent review (a separate agent reading the code without the author's reasoning) checked the derivations
 and found two bugs (prior-only counts on branches with no data; the precision conversion ignoring never-seen positions) and a too
@@ -369,7 +381,7 @@ parameter vector. `K = 1` is exactly the §5.5 model. Output: `ml_gamma_shape`, 
 Validated by: the incomplete gamma function and quantiles against closed forms; the four-class rates against Yang (1994, Table 1)
 for α = 0.5 and 1; class transitions composing as a continuous-time process (`T(r1)T(r2) = T(r1+r2)`); the class mixture, `Z`,
 posterior presence and posterior rates against brute-force enumeration under each class; seen patterns summing to 1; on a simulated
-8-tip data set with α = 0.5 (40,000 positions), EM never decreasing, α recovered (0.3-0.8), rate-1 losses within 0.06, a gain of >50
+8-tip data set with α = 0.5 (40,000 positions), EM never decreasing, α recovered (0.3–0.8), rate-1 losses within 0.06, a gain of >50
 lnL units over the one-class model, a stationary point in α and every branch, and higher posterior rates for changing positions than
 for all-present ones; on homogeneous data, a large α (> 5) and a log-likelihood within 5 units of the one-class fit; fixed α kept.
 
@@ -377,10 +389,10 @@ for all-present ones; on homogeneous data, a large α (> 5) and a log-likelihood
 
 - **Separate rate factors for gain and loss** (MALIN allows both); branch lengths shared between gain and loss.
 - **A likelihood-ratio test** of "ancient intron" vs "convergent insertion" per position.
-- **Bias correction**: positions in poorly aligned or gappy columns are under-called. Plan:
-  per-column observability from the alignment and an explicit "scorable site" set.
 - **Probabilistic projection**: propagate annotation uncertainty into the sharing matrix rather than
   treating every boundary as exact.
+
+Done and removed from this list: the bias correction for gappy, poorly aligned columns (per-cell observability with the flank rule, §2).
 
 ---
 
@@ -404,28 +416,13 @@ nodes; pairwise O(t² · S̄) for t taxa.
 
 ### Measured
 
-Scoring the intron table distributed with MALIN as `rogozin_introns_table` (derived from the 684-KOG,
-8-genome analysis of Rogozin et al. 2003 [R4]; the Ecdysozoa tree comes from Roy & Gilbert 2005 [R7]) (7 taxa × 7 236 alignment columns → 7 221 scorable
-sites) from a `matrix.tsv`: convert 0.04 s, score (counts + Dollo + MP + all writers) 0.05 s. The 23-taxon
-`Chromo23.table` over 405 alignments: import 0.74 s, scoring all 405 alignments one process each 8.3 s, export
-0.06 s. **Measured on the HPCC** (job 32011208, `epyc` partition, release build, 2026-11-11; full report in
-`bench/V1_malin_validation/REPORT.2026-11-11.txt`); these are wall times of the whole process including
-start-up. Parse vs project vs score is not separated within a run (only whole-process wall time exists).
-
-**Projection on real annotation (V2, HPCC `highclock`, 2026-11-11, `bench/V2_gff_projection/REPORT.2026-11-11.txt`).**
-Nine fungal genomes (funannotate GFF3, 5.9–74 k CDS rows each): GFF parse + protein-space projection takes
-0.05–0.32 s and 18–125 MB peak RSS per genome. 739 BUSCO ortholog families (6 363 protein rows) through
-`analyze` in one process: 8.4 s and 507 MB (a binary built before the per-alignment memory release, parallel
-pairwise, O(k) `mrca` and streaming-writer fixes took 34 s and 3.7 GB on the same data — two changes, not
-isolated). **Genome scale (V3, same node type, `bench/V3_gff_scale`).** The largest GFF3 among 23 600 funannotate annotations is
-14 MB gzipped / 165 MB plain (*Phakopsora pachyrhizi*, ~108 k transcripts, ~520 k introns): `project` takes ~2.0 s
-and ~400 MB (parse 1.2 s ≈ 140 MB/s plain; gzip decoding is ~11 % of parse). Wall time does not improve with threads
-(1→16: 1.00→1.02×; parsing is single-threaded). 10 / 100 / 1 000 genomes in one process: 1.8 s, 0.3 GB / 19.7 s,
-2.9 GB / 226 s, 32.5 GB (10.9 M transcripts, 23.4 M introns) — linear in time, memory-bound; before the streaming
-`introns.tsv` writer and early transcript release the 1 000-genome run needed 55.8 GB. After files were read in
-parallel and the annotation streamed into the join, it takes **52 s and 7.0 GB** (0.64 KB per transcript; with 100
-genomes 3.5 s from 12.3 s as threads go 1→16). Still open: a mammalian-sized
-GFF (the BFD has none), `matrix`/`analyze` scaling in taxa and sites, and a synthetic generator.
+Measured times and memory are kept in the bench READMEs, not here, so that each number has one home (index:
+[`bench/README.md`](../bench/README.md)): MALIN's published tables are imported, scored and exported in seconds
+([V1](../bench/V1_malin_validation/README.md), timings in its `REPORT.2026-11-11.txt`); nine fungal genomes and 739 families run through `analyze` in seconds
+([V2](../bench/V2_gff_projection/README.md)); genome-scale `project`, up to 1,000 genomes in one process, with the effect of each
+memory and parallelism change, is in [V3](../bench/V3_gff_scale/README.md). A single large GFF is parsed on one thread, so it does
+not speed up with more threads; many files do. Still open: a mammalian-sized GFF (the BFD has none), `matrix`/`analyze` scaling in
+taxa and sites, and a synthetic generator.
 
 ---
 
@@ -437,7 +434,7 @@ MALIN (Csűrös 2008 [R1]; BSD-licensed) is a closely related prior tool and shi
 **Different input side.** MALIN consumes intron positions that someone else already derived, carried
 in FASTA headers:
 
-```
+```text
 >gi|124423860|emb|CAK88653.1| … [Paramecium tetraurelia] /organism=Ptet … {i 384,1535,1584 i} /intron-length=28,23,37
 ```
 
@@ -459,12 +456,12 @@ one `0/1` column per taxon. A MALIN site is therefore already a (column, phase) 
 encodings correspond directly: `alipos = 3·codon_index0 + phase` (checked against the first three `#MAP`
 rows of `Chromo23.table`; a full cross-check is part of the validation plan). A taxon has its own cell in
 each site row, so two introns of one taxon on one column with different phases (very short exons, or
-`TailPolicy::Clamp`) are two separate MALIN sites, not a conflict. What does not round-trip yet is the `?`
-per-cell state (next section) and the KOG/`#MAP` bookkeeping.
+`TailPolicy::Clamp`) are two separate MALIN sites, not a conflict. The `?`
+per-cell state and the `#MAP` bookkeeping were the gaps; both now round-trip (next section; §6b validation item 2).
 
-*Not re-verified:* alphabet frequencies for `Chromo23.table` (an earlier version of this spec quoted
-counts and described phase 2 as common; both were wrong or unchecked). Phase 0 is the commonest class in
-the literature, and phase 2 the rarest [R16]. Recount on the HPCC before quoting any figure.
+Alphabet frequencies for `Chromo23.table`: an earlier version of this spec quoted counts and described phase 2 as common; both
+were wrong. They have since been recounted on the HPCC (validation item 2 below). Phase 0 is the commonest class in the literature,
+and phase 2 the rarest [R16].
 
 ### Missing data in MALIN tables (now supported on the matrix side)
 
@@ -473,8 +470,7 @@ alignment uncertainty). `SiteMatrix` now stores that per cell (§2) and `matrix.
 `scripts/malin_to_matrix.py` converts a MALIN table with `#MAP` lines into one `matrix.tsv` per alignment,
 using `(column, phase) = (alipos // 3, alipos % 3)` and the phase codes `3`→0, `1`→1, `2`→2; it rejects a table
 whose phase code contradicts its `alipos`. MALIN also requires a minimum number of unambiguous sequences per
-site before calling presence/absence (guide §2.3.8); the corresponding `--min-observed` filter is not
-implemented yet.
+site before calling presence/absence (guide §2.3.8); the corresponding filter here is `--min-observed`.
 
 A related correction made on the way: "annotated" used to be derived from "has introns", so a gene that lost *every*
 intron was scored as missing data — discarding exactly the negative evidence intron-loss analysis is made of.
@@ -483,53 +479,34 @@ intron was scored as missing data — discarding exactly the negative evidence i
 
 ### Validation plan
 
-1. `rogozin_introns_table` (7 taxa × 7 236 columns, alphabet `0/1` only, so the conversion is exact)
-   converted to `matrix.tsv` and scored on `Rogozin-ecdysozoa.tre`: 7 221 sites, 7 221 gains,
-   **2 770 independent losses**, 1 619 positions (22 %) not explainable without at least one loss,
-   9 007 MP steps — **re-derived on the HPCC and confirmed** (`bench/V1_malin_validation`, 2026-11-11). The source analysis [R4] concluded that many ancestral introns were lost in fungi, nematodes and
+1. `rogozin_introns_table` (7 taxa × 7,236 columns, alphabet `0/1` only, so the conversion is exact)
+   converted to `matrix.tsv` and scored on `Rogozin-ecdysozoa.tre`: 7,221 sites, 7,221 gains,
+   **2,770 independent losses**, 1,619 positions (22 %) not explainable without at least one loss,
+   9,007 MP steps — **re-derived on the HPCC and confirmed** (`bench/V1_malin_validation`, 2026-11-11). The source analysis [R4] concluded that many ancestral introns were lost in fungi, nematodes and
    arthropods (not in Ecdysozoa as a clade); the Ecdysozoa-vs-Coelomata reading of this table is
    contested [R7, R8]. **Cross-check against MALIN itself:** the guide (p. 27) shows MALIN's own Dollo run on
    this table. All nine per-branch loss counts visible there — Sp 796, Ecdysozoa 568, Diptera 436, Ce 411,
    Ag 194, Dm 156, Hs 112, At 46, Pf 0 — are reproduced **exactly** by `dollo_branches.tsv`. The visible rows
-   sum to 2 719; the remaining 51 losses are on two branches the guide's page does not show (Bilatera 27,
-   Opisthokont 24), which gives our total of 2 770. This agrees with MALIN's Dollo on branch counts, not just
+   sum to 2,719; the remaining 51 losses are on two branches the guide's page does not show (Bilatera 27,
+   Opisthokont 24), which gives our total of 2,770. This agrees with MALIN's Dollo on branch counts, not just
    on the total (it is evidence that classic Dollo with the one-gain-at-MRCA rule matches MALIN's; it says
-   nothing about the likelihood models, which are not implemented). Site-by-site agreement with MALIN's own
+   nothing about the likelihood models, §5.5). Site-by-site agreement with MALIN's own
    output files has not been compared.
-2. Native `--from-malin` / `--format malin` (the Python converter covers import today). Per-cell missing
-   data has landed and the import is native: `Chromo23.table` (23 taxa, 9 256 sites over **405** alignments in
-   its `#MAP` block — an earlier draft of this spec said 394, which was wrong) imports, scores (8 686 of the
-   9 256 sites have a carrier and are scored: 8 686 gains, 6 475 losses, 11 760 MP steps) and exports back with
-   every `(alignment, alipos)` row identical. Its alphabet counts (`0` 160 418, `?` 33 102, `3` 10 493,
-   `2` 4 568, `1` 4 307) were also re-counted and match.
+2. Native import and export (`intronfate convert --from-malin` / `--to-malin`; `scripts/malin_to_matrix.py` is an independent
+   importer kept as a cross-check). Per-cell missing data is kept: `Chromo23.table` (23 taxa, 9,256 sites over **405** alignments in
+   its `#MAP` block — an earlier draft of this spec said 394, which was wrong) imports, scores (8,686 of the
+   9,256 sites have a carrier and are scored: 8,686 gains, 6,475 losses, 11,760 MP steps) and exports back with
+   every `(alignment, alipos)` row identical. Its alphabet counts (`0` 160,418, `?` 33,102, `3` 10,493,
+   `2` 4,568, `1` 4,307) were also re-counted and match.
 3. Compare against `*.rates` (MALIN's maximum-likelihood gain/loss rate estimates, produced from
-   `table + newick`) once §5.5 exists — that is the direct quantitative cross-check on the model side.
+   `table + newick`) with §5.5 — the direct quantitative cross-check on the model side. Not done yet (§12).
 4. Cross-check the projection: run this tool's GFF path over a species whose MALIN `.faa` headers
    carry known positions, and diff derived `cds_offset` against theirs.
 
 ## 7. Outputs
 
-All TSV: `# key=value` metadata first line where the format has nowhere else for it, one header row,
+Every file and column is listed in [`OUTPUTS.md`](OUTPUTS.md). The design points: all TSV, `# key=value` metadata first line where the format has nowhere else for it, one header row,
 absolute coordinates, no wrapped lines, stable ordering (diffable between runs).
-
-| file                       | contents                                                            |
-|----------------------------|---------------------------------------------------------------------|
-| `introns.tsv`              | every coding intron: genomic coords + `cds_offset`/`phase`/`codon`/`residue_before`/`residue_after`/`site_key` |
-| `unmatched.tsv`            | both sides of every failed join, with a reason code                  |
-| `diagnostics.tsv` / `_detail.tsv` | counts by kind, then the individual records                  |
-| `<aln>/sites.tsv`          | long form: taxon × projected site (keeps the protein-space audit)    |
-| `<aln>/taxa.tsv`           | per taxon: annotated?, aligned residues, sites placed, tail dropped  |
-| `<aln>/matrix.tsv`         | the binary `site × taxon` matrix + `pattern` string; re-readable by `score` |
-| `<aln>/presence.tsv`       | presence-only long form                                              |
-| `<aln>/pairwise.tsv`, `sharing_matrix.tsv` | sharing counts, Jaccard, fraction-of-smaller, `n_both_observable` |
-| `<aln>/spectrum.tsv`       | sites shared by exactly *k* taxa                                     |
-| `<aln>/counts_sites.tsv`   | tree-free frequency table                                            |
-| `<aln>/dollo_sites.tsv`    | gains, losses, monophyletic, compatible, gained_at, lost_in          |
-| `<aln>/mp_sites.tsv`       | steps, informative, ambiguous                                        |
-| `<aln>/reconstructions.tsv`| per-node ancestral states (with `--reconstructions`)                 |
-| `<aln>/tree_gains.nwk`     | Newick with `[gains=N]` annotations                                  |
-| `<aln>/characters.nex`     | NEXUS discrete-character block for external phylogenetics            |
-| `combined/*`               | with `--combine`: all families stacked into one matrix (`family`, `family_column`) and scored once; see below |
 
 **Combined matrix (`--combine`, `SiteMatrix::combine`).** A run over many gene families needs the totals per lineage; summing per-family tables
 afterwards is error-prone, and the right unit for it is one matrix. Design decisions: (1) Dollo, Fitch and counts are per-site, so scoring the stacked
@@ -549,26 +526,18 @@ schemes never re-parses a GFF.
 
 ## 8. CLI
 
-```
-intronfate project --gff sp.gff.gz -p sp.faa -o out                 # protein space only
-intronfate matrix  --gff sp.gff.gz -p sp.faa --msa fam.faa -o out   # + alignment matrices
-intronfate score   --matrix out/fam/matrix.tsv -t fam.nwk --outgroup SP_X
-intronfate analyze --gff ... -p ... --msa ... -t ... --reconstructions
-intronfate convert  --from-malin t.table -o dir                      # MALIN table <-> matrix.tsv
-intronfate demo     -o intron_demo                                   # built-in worked example
-```
-
-Multiple `--gff` / `--proteins` / `--msa` values are accepted for multi-species runs; ids must be
-globally unique; a transcript id repeated across annotation files is kept as separate records and reported (`transcript_id_collision`) — files are independent and read in parallel, which also bounds parse memory to one file per worker thread. `--ignore-phase`, `--clamp-tail`, `--tolerance`,
-`--min-taxa`, `--length-slack none`, `--strict`, and the attribute-configurable join keys expose
-every modelling decision made above. `demo` is a self-check: it prints three sites whose expected
-Dollo/MP values are asserted by the test suite.
+Commands, flags and input forms are documented in [`USAGE.md`](USAGE.md) §3–§4. The design points: multiple `--gff` / `--proteins` /
+`--msa` values (or list files and folders) for multi-species runs; ids must be globally unique; a transcript id repeated across
+annotation files is kept as separate records and reported (`transcript_id_collision`), because files are independent and read in
+parallel, which also bounds parse memory to one file per worker thread. Every modelling decision above is exposed as an option
+(`--ignore-phase`, `--clamp-tail`, `--tolerance`, `--flank`, `--min-taxa`, `--length-slack none`, `--strict`, the join keys). `demo` is a
+self-check: it prints three sites whose expected Dollo/MP values are asserted by the test suite.
 
 ---
 
 ## 9. Correctness strategy
 
-248 tests pass (181 core unit, 23 + 4 core integration in `crates/intronfate-core/tests/per_cell_missing.rs` and `combined.rs`, 10 CLI unit, 27 CLI end-to-end in `crates/intronfate-cli/tests/cli.rs`, 3 doc) plus 3 Python converter tests (`scripts/test_malin_to_matrix.py`); last verified 2026-11-12. The layers are described in [`TESTING.md`](TESTING.md). Layers:
+How to run the tests and what each layer covers is in [`TESTING.md`](TESTING.md). The strategy:
 
 1. **Property/consistency tests on the coordinate model.** `cds_offset == codon_index0*3 + phase` for
    every offset; every derived view agrees with the emitted table columns.
@@ -681,8 +650,8 @@ comparison the tool exists to make mechanically repeatable.
 2. **MALIN interop** — table import/export is done (`convert`, `malin.rs`, §6b). Still open: reading
    `/organism=` + `{i … i}` FASTA headers as an `AnnotationSource`, which would make the two tools directly
    comparable on MALIN's own inputs, and running `Chromo23.table` as a regression fixture on the HPCC.
-3. **Benchmark + synthetic generator** — scale taxa/sites independently; time the GFF path on a real
-   genome (§6).
+3. **Synthetic generator and scaling benchmark** — scale taxa and sites independently. Timing the GFF path at genome scale is
+   done ([V3](../bench/V3_gff_scale/README.md), §6).
 4. **`AnnotationSource` for SQL/Chado/Ensembl** — the seam exists; needs a schema decision.
 5. **Likelihood-based scoring**: v1 done (§5.5: branch-specific probabilities, annotation error, ascertainment, EM, bootstrap).
    Rate variation across positions done (§5.5b). Remaining: separate gain/loss rate factors (§5.6), validation against MALIN's

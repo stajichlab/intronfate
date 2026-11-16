@@ -15,12 +15,7 @@ codon), looks up the alignment column of that codon in each ortholog, and builds
 
 ## 2. Install
 
-```sh
-cargo build --release            # binary: target/release/intronfate
-cargo test --workspace           # the full suite (see TESTING.md)
-```
-
-Requires Rust 1.85 or newer. There are no runtime dependencies.
+See [Install](../README.md#install) in the README (one `cargo build --release`; Rust 1.85 or newer; no runtime dependencies).
 
 ## 3. What you must provide
 
@@ -29,7 +24,7 @@ Requires Rust 1.85 or newer. There are no runtime dependencies.
 | Annotation | `--gff` (repeatable; also `--gff-list`, `--gff-dir`) | GFF3 or GTF, optionally gzip. Needs `CDS` features grouped by transcript. `exon` features are used to find UTR introns. |
 | Proteins | `-p` / `--proteins` (repeatable; also `--proteins-list`, `--proteins-dir`) | FASTA of the proteins those transcripts encode. |
 | Alignment | `--msa` (repeatable; also `--msa-list`, `--msa-dir`) | Aligned FASTA or Stockholm of the orthologs. Row ids must equal the protein ids. |
-| Tree (to score) | `-t` / `--tree` | Newick. Tip names must equal the alignment row ids exactly. |
+| Tree (to score) | `-t` / `--tree` | Newick. Tip names must equal the matrix taxon names exactly: the alignment row ids, or the names `--taxon-map` gives them (§9). |
 
 ### Many input files: lists and folders
 
@@ -68,8 +63,9 @@ Three requirements that cause most problems:
    a `polypeptide` child feature, or `--id-map`) must name a sequence in the FASTA. Failures are listed
    in `unmatched.tsv`. The CDS length must be about `3 × protein length` (±3 residues by default,
    `--length-slack`); a larger gap is the signature of joining to the wrong paralog.
-3. **Names must match exactly** between alignment rows, protein ids and tree tips. Nothing is fuzzily
-   matched, because a wrong match would place introns on the wrong species.
+3. **Names must match exactly** between alignment rows and protein ids, and between taxon names (row ids, or the
+   `--taxon-map` names) and tree tips. Nothing is fuzzily matched, because a wrong match would place introns on the
+   wrong species.
 
 ### GFF conventions that are handled
 
@@ -81,10 +77,10 @@ the first complete codon. Both strands, gzip, CRLF and stray Latin-1 bytes are f
 
 ## 4. Commands
 
-```
+```sh
 intronfate project  --gff a.gff3 -p a.faa -o out                    # introns -> protein space
 intronfate matrix   --gff a.gff3 -p a.faa --msa fam.aln -o out      # -> alignment columns, site x taxon
-intronfate score    --matrix out/fam/matrix.tsv -t fam.nwk          # -> Dollo / MP / counts
+intronfate score    --matrix out/fam/matrix.tsv -t fam.nwk          # -> scores (methods: -m, below)
 intronfate analyze  --gff ... -p ... --msa ... -t ...               # all of the above in one pass
 intronfate convert  --from-malin t.table -o dir | --to-malin m.tsv... -o t.table
 intronfate demo     -o intron_demo                                  # built-in worked example
@@ -100,6 +96,28 @@ parallel. A transcript id that appears in two files is therefore two records —
 and is reported as `transcript_id_collision`; ids should be unique across species (funannotate's locus-tag prefix
 makes them so). Likewise each `-p` file is read in parallel and merged in the order given.
 
+### Scoring methods (`-m`)
+
+These names are used throughout the documentation. `-m` takes a comma-separated list; the default is `dollo,mp,counts`.
+
+| `-m` | Method | Needs a tree | Writes |
+|---|---|---|---|
+| `dollo` | Dollo parsimony (classic): one gain per site at the common ancestor of its carriers, then the fewest losses | yes | `dollo_sites.tsv`, `dollo_branches.tsv`, `tree_gains.nwk` |
+| `mp` | Fitch parsimony (maximum parsimony with gain and loss at equal cost; Hartigan's rule at polytomies) | yes | `mp_sites.tsv` |
+| `dollo_weighted` | Weighted Dollo: the cheapest history at each gain:loss cost in `--gain-loss-weights`, a lost site never coming back | yes | `dollo_weighted.tsv`, `dollo_weighted_sites.tsv` |
+| `counts` | Tree-free counts: frequency among observed taxa, and the carriers | no | `counts_sites.tsv` |
+| `likelihood` | Gain/loss likelihood model with per-genome annotation error and optional rate classes (§11) | yes | `likelihood_*.tsv` |
+
+Every column of these files is in [`OUTPUTS.md`](OUTPUTS.md); the models and their assumptions are in [`SPEC.md`](SPEC.md) §5.
+
+### Verbosity and threads
+
+- `-v` prints, on stderr, one `[time] <stage>\t<seconds>` line per stage (and `[mem]` resident memory where the system reports it), the
+  total run time, and up to 25 individual diagnostic records. `-vv` adds, for `-m likelihood`, one line per EM cycle (E-steps,
+  log-likelihood, gamma shape, change in log-likelihood and parameters).
+- The tool uses every core. Set `RAYON_NUM_THREADS=N` to use fewer, for example to match a batch job's CPU request. Results do not
+  depend on the thread count (tested).
+
 ### Options that change the result
 
 | Option | Default | Effect |
@@ -114,14 +132,14 @@ makes them so). Likewise each `-p` file is read in parallel and merged in the or
 | `--taxon-map FILE` | – | Two-column `alignment_row_id → taxon`. **Needed for one-alignment-per-gene-family runs**, where each species' row carries its own protein id but the tree's tips are species. Rows not listed keep their id; two rows of one alignment may not map to one taxon. See §9. |
 | `--strict` | off | Abort on a malformed annotation line instead of counting it. |
 | `--outgroup NAME` | – | Root the tree on a tip (or a set that forms a split). **Dollo results depend on rooting**; a tree that looks unrooted triggers a warning. |
-| `-m dollo,mp,counts` | `dollo,mp,counts` | Which scoring methods to run. `dollo_weighted` is also available, never by default. |
+| `-m LIST` | `dollo,mp,counts` | Which scoring methods to run (table above). `dollo_weighted` and `likelihood` run only when asked for. |
 | `--gain-loss-weights G:L,...` | `1:1,2:1,5:1,10:1` | The gain:loss costs swept by `-m dollo_weighted` (a gain costs G, a loss L; G ≥ 1). Per site, the cheapest history in which a lost position never comes back. |
 | `--min-taxa N` | 1 | Skip sites carried by fewer than N scored taxa (`2` drops lineage-specific singletons). |
 | `--min-observed N` | 0 | Skip sites observed (`1` or `0`, not `?`) in fewer than N taxa. |
 | `--reconstructions` | off | Also write per-node ancestral states. |
 | `--error-rates FILE` | – | `-m likelihood`: per-taxon annotation error (§11). |
 | `--ml-bootstrap N` | 0 | `-m likelihood`: bootstrap replicates for intervals on gains, losses and presence. |
-| `--ml-max-iter N` | 50000 | `-m likelihood`: limit on EM steps (E-steps). |
+| `--ml-max-iter N` | 50,000 | `-m likelihood`: limit on EM steps (E-steps). |
 | `--ml-seed N` | 1 | `-m likelihood`: random seed of `--ml-bootstrap`. |
 | `--ml-rate-categories K` | 1 | `-m likelihood`: rate classes across positions (discrete gamma; 4 is usual, 1 = none). |
 | `--ml-gamma-shape A` | estimated | `-m likelihood`: fix the gamma shape instead of estimating it. |
@@ -138,11 +156,16 @@ Start with `out/<alignment>/summary_score.tsv`, then `dollo_sites.tsv`.
   `dollo_compatible = yes` needs none. Many losses means either that the intron really was ancestral and
   lost repeatedly, or that it arose more than once (parallel gain), or that the tree is wrong. Dollo is
   known to under-estimate ancestral intron density; treat it as one model among several.
-- **Maximum parsimony** (`mp_sites.tsv`) allows gain and loss at equal cost. Compare it with Dollo on
+- **Fitch parsimony** (`mp`, `mp_sites.tsv`) allows gain and loss at equal cost. Compare it with Dollo on
   the same matrix: where they disagree, the Dollo assumption is doing the work.
+- **Weighted Dollo** (`dollo_weighted.tsv`) shows how the totals move as a second origin of a site gets cheaper; where they stop
+  changing, the loss counts do not depend on the weighting.
+- **Likelihood** (`likelihood_branches.tsv`) gives expected gains and losses per branch, with annotation error modelled (§11).
 - **Counts** (`counts_sites.tsv`) need no tree: per-site frequency among *observed* taxa, and the carriers.
 - **`pairwise.tsv`** — shared sites, Jaccard and shared/min per taxon pair. Compare pairs only when
   `n_both_observable` is similar: a pair with little overlap looks dissimilar for the wrong reason.
+
+Every column of every file: [`OUTPUTS.md`](OUTPUTS.md).
 
 ## 6. Missing data: `?` is not `0`
 
@@ -182,10 +205,23 @@ without `#MAP` lines produces a phase-less matrix (`phase_mode=ignore`). See
 
 ## 8. Troubleshooting
 
-`diagnostics.tsv` counts every kind of problem; `diagnostics_detail.tsv` lists examples (`-v` prints some).
+`diagnostics.tsv` counts every kind of problem; `diagnostics_detail.tsv` lists examples (`-v` prints up to 25). Annotation-reader
+records first, then the join and the alignment step:
 
 | Diagnostic | Meaning | What to do |
 |---|---|---|
+| `source_summary` | Informational: transcripts kept, feature rows, lines, malformed lines and directives per annotation file. | Nothing; check the counts look right. |
+| `empty_file` | No feature lines were parsed from an annotation file. | Wrong file or format. |
+| `no_transcript_key` | A feature has none of the `--transcript-attrs` attributes (default `Parent`, `transcript_id`, ...), so it cannot be grouped. | Usually harmless (stray rows); otherwise set `--transcript-attrs`. |
+| `transcript_id_collision` | A transcript id also appears in an earlier annotation file; both records are kept. | Make ids unique across species (e.g. a locus-tag prefix). |
+| `strand_unknown` | A transcript had no strand; one was inferred. | Check the GFF. |
+| `cds_from_exons` | No CDS features: exons were treated as coding (`--derive-cds-from-exons`). | Expected with that flag; translation is assumed to start at the first exon base. |
+| `overlapping_cds` | Two CDS features of a transcript overlap; they were merged. | Usually a malformed model; its offsets may be unreliable. |
+| `overlapping_exons` | Overlapping or touching exon features were merged. | Usually harmless (duplicated exon rows). |
+| `cds_gap_not_exon_gap` | A gap between CDS features is not a gap between exons: CDS and exon features disagree. The CDS gap is still used as an intron. | Inspect the model. |
+| `intron_feature_mismatch` | A coding gap has no matching explicit `intron` feature. | Explicit introns are only a cross-check; inspect the model. |
+| `zero_length_cds` | A joined protein has a transcript with no coding length. | Inspect the model. |
+| `protein_without_annotation` | Proteins in the FASTA that no transcript names (listed in `unmatched.tsv`). | Normal when the FASTA has more than the annotation; otherwise check ids. |
 | `protein_not_in_fasta` | A transcript names a protein that is not in the FASTA. | Check ids; try `--strip-version` or `--id-map`. |
 | `protein_id_fallback_transcript` | Transcripts with no protein id were joined on their transcript id (one informational record per annotation file, with the count). | Normal for funannotate and most GTF, whose protein FASTA ids are transcript ids; otherwise add `protein_id` or use `--id-map`. |
 | `length_mismatch` | Protein length ≠ CDS/3 beyond the slack. | Wrong paralog or isoform? Check the join; raise `--length-slack` only if the annotation really omits stops/UTR. |
@@ -207,7 +243,7 @@ Exit status: `0` success, `1` the run failed (message on stderr), `2` command-li
 
 The usual real-data layout is one alignment per ortholog family, with each species' protein in it:
 
-```
+```text
 fam0001.aln.fasta   >Smaydis_g123-T1  >Scerevisiae_g88-T1  ...     (row ids = protein ids)
 species.nwk         ((Smaydis,...),Scerevisiae)...                  (tips = species)
 taxon_map.tsv       Smaydis_g123-T1<TAB>Smaydis   Scerevisiae_g88-T1<TAB>Scerevisiae ...
@@ -259,12 +295,13 @@ or afterwards from per-family matrices, with any of the input forms: `intronfate
 loss, and a spurious predicted intron looks like a gain, so per-genome intron sensitivity and precision (for example from
 `gffcompare` against a reference annotation) bound how far to trust per-branch loss and gain counts — most of all on the terminal
 branches of the least accurate genomes, since internal branches need several species to agree. Report the accuracy of the
-annotations you analyse alongside the results. A worked example, with measured numbers for eight fungal genomes (accuracy over just the genes analysed, which can differ a lot
-from the genome-wide rate), is in `bench/V4_annotation_accuracy/README.md`.
+annotations you analyse alongside the results. Measure accuracy over just the genes analysed, which can differ a lot from the
+genome-wide rate; [`bench/V4_annotation_accuracy`](../bench/V4_annotation_accuracy/README.md) shows how, and
+[`bench/V7_annotation_error_sensitivity`](../bench/V7_annotation_error_sensitivity/README.md) how far the measured error moves the Dollo counts.
 
 CDS features define protein space; UTR introns are reported but never projected. One protein per id
 (isoforms are unioned and flagged). The likelihood model (`-m likelihood`, §11) allows rate variation across positions with `--ml-rate-categories`.
-Analyses on real genomes belong on a cluster: nothing here has been benchmarked at genome scale yet.
+Time and memory at genome scale (up to 1,000 genomes in one process) are measured in [`bench/V3_gff_scale`](../bench/V3_gff_scale/README.md).
 
 ## 11. Likelihood with annotation error (`-m likelihood`)
 
@@ -279,7 +316,7 @@ intronfate score --matrix out/combined/matrix.tsv -t species.nwk -m dollo,likeli
 
 `errors.tsv` (tab-separated, one row per taxon; taxa not listed are error-free):
 
-```
+```text
 taxon        sensitivity  precision
 Ncrassa      0.99         0.99
 Anidulans    0.89         0.91
@@ -292,6 +329,10 @@ Anidulans    0.89         0.91
   with the fit until it settles. (Dividing by the matrix columns alone would roughly double the rate.)
 - Error rates must be supplied: from the matrix alone a miss and a loss on the genome's own branch cannot be told apart. To see how
   much they matter, rerun with a range of values.
+- **Where the numbers come from.** Compare each annotation with a reference annotation of the same assembly (for example `gffcompare`,
+  intron level) and restrict the comparison to the genes in your alignments, which are usually modelled much better than the genome
+  average. [`bench/V4_annotation_accuracy`](../bench/V4_annotation_accuracy/README.md) does exactly this (`busco_gene_accuracy.py`). A genome
+  with no reference cannot be scored; give it a plausible range and compare fits.
 
 Outputs (OUTPUTS.md): `likelihood_branches.tsv` (per branch: gain/loss probability, expected gains, losses and positions present at
 the node below, with bootstrap intervals), `likelihood_tips.tsv` (expected misses and false introns per genome),
@@ -309,8 +350,8 @@ Read with care:
 - `--min-taxa` must be 1 (each position is conditioned on being seen at least once).
 - **Rate variation across positions** (`--ml-rate-categories 4`): positions get one of 4 rate classes from a gamma with shape `α`
   (`ml_gamma_shape`; small means very heterogeneous). Without it, a few fast positions and many slow ones are averaged into one rate;
-  slowly changing positions then look like recent gains, so ancestors usually come out poorer and losses fewer than with classes
-  (on a 42-genome fungal data set, four classes made deep ancestors richer and losses larger). Compare the two fits' `ml_log_likelihood`: the classes
+  slowly changing positions then look like recent gains, so ancestors usually come out poorer and losses fewer than with classes.
+  Compare the two fits' `ml_log_likelihood`: the classes
   add one parameter. Branch probabilities in `likelihood_branches.tsv` are then those at the mean rate, and
   `likelihood_sites.tsv` gets each position's posterior rate (`rate`, above 1 = changes more readily). A fit with classes takes
   several times longer; `-vv` prints one line per EM cycle.

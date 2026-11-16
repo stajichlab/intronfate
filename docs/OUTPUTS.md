@@ -1,5 +1,8 @@
 # Output reference
 
+This page is the reference for every file, column and summary key the tool writes; other pages link here instead of repeating it.
+How to *read* the results is in [`USAGE.md`](USAGE.md) §5 and the walk-throughs ([`HOWTO.md`](HOWTO.md) §8, [`TUTORIAL.md`](TUTORIAL.md) §7).
+
 Every file is tab-separated text with one header row, stable row order (diffable between runs) and
 absolute 1-based inclusive genomic coordinates. A leading `# key=value ...` line carries metadata where
 a file has nowhere else to put it. Files are written atomically (temp file, then rename).
@@ -16,7 +19,8 @@ complete codon.
 | `introns.tsv` | Every coding intron: `protein_id gene_id transcript_id seqid strand intron_rank coding_rank genomic_start genomic_end intron_len cds_offset phase codon residue_before residue_after site_key protein_len in_range`. `intron_rank` counts all introns of the transcript (UTR included), `coding_rank` only coding ones. `codon`, `residue_before/after` are 1-based; `site_key` is `cds_offset`. These numbers are **per protein** — compare species through `matrix.tsv`, not here. |
 | `unmatched.tsv` | `transcript_id gene_id attempted_protein_id reason source` for every transcript that failed to join a sequence. |
 | `diagnostics.tsv` | `kind count` per kind of problem, covering the annotation reader (`frame_mismatch`, `no_cds`, `strand_unknown`, `protein_id_fallback_transcript`, `intron_before_first_codon`, `transcript_id_collision`, `invalid_utf8`, …), the join (`protein_not_in_fasta`, `length_mismatch`, `site_beyond_protein_end`, …) and the alignment step. Written only when at least one warning or error was raised (informational records alone, such as the transcripts-retained summary, do not create it); a stale file from an earlier run is removed. |
-| `diagnostics_detail.tsv` | Retained examples: level, kind, subject, message. |
+| `diagnostics_detail.tsv` | Retained examples: level, kind, subject, message. Every kind is explained in [`USAGE.md`](USAGE.md) §8. |
+| `summary_project.tsv` | (`project` only) `key value`: `stage transcripts_read proteins_in_fasta proteins_with_introns intron_records introns_total introns_in_utr unmatched_records out_dir`. |
 
 ## Per alignment: `<out>/<alignment>/`
 
@@ -59,6 +63,11 @@ Written by `matrix`/`analyze --combine`, or by `score --combine -o DIR`. It hold
 - In every other file the `site`/`label` is that same `<family>:<column>:<phase>` and `column` is the family-local column.
 - `pairwise.tsv`, `sharing_matrix.tsv`: `n_a`, `n_b`, `shared`, `n_both_observable` are sums over families (sites of different families never pair).
 - No `taxa.tsv`, `sites.tsv` or `characters.nex`: those are per-alignment projection records.
+
+## Demo
+
+`demo -o DIR` writes its generated inputs (`demo.gff3`, `demo.faa`, `demo.aln.fasta`, `demo.nwk`), a subset of the tables above, and
+`summary.tsv` (`key value` totals of the run).
 
 ## MALIN export
 
