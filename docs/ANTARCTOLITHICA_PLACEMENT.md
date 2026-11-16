@@ -49,7 +49,7 @@ rest, Alith swept from 1.0 to 0.7):
   - Alith's parent: about 8,700 positions [8,000-9,300].
   - Alith's stem: about 7,600 losses [7,000-8,200].
   - Alith's own ancestor stays near 1,400 positions.
-- **Placement with classes:** still sister to Saccharomycotina + Pezizomycotina (RELL 0.96 without error). The margin over sister to
+- **Placement with classes:** still sister to Saccharomycotina + Pezizomycotina (RELL 0.96 without error, 0.97 with measured error). The margin over sister to
   Pezizomycotina or to Saccharomycotina doubles to about 10 lnL.
 - **Calibration** (V13's thinned stand-ins, with the likelihood):
   - On age-matched stand-ins, the likelihood is right twice as often as Dollo (39 vs 19 of 75).
@@ -57,7 +57,7 @@ rest, Alith swept from 1.0 to 0.7):
   - Four rate classes push errors further towards the root (right 17 of 45, 22 deeper, 3 shallower).
   - Wrong deeper picks win by a median of 2.5-4.3 lnL (up to about 50).
 - **Reading for Alith:** the test errs towards the root, so its best placement means Alith attaches there or shallower. That is
-  sister to Saccharomycotina + Pezizomycotina, or sister to Pezizomycotina or to Saccharomycotina. Deeper positions are 35-41 lnL
+  sister to Saccharomycotina + Pezizomycotina, or sister to Pezizomycotina or to Saccharomycotina. Deeper positions are 28-41 lnL
   worse even though the bias favours them. The intron data alone cannot choose among the three shallow options; V11's sequence
   likelihood prefers the first.
 

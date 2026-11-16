@@ -69,16 +69,18 @@ win fraction is in brackets where it is at least 0.01.
 
 | Alith sister of | Δ lnL, 1 class (V14, none) | Δ lnL, 4 classes, none | RELL, 4 classes, none | Δ lnL / RELL, 4 classes, measured |
 |---|---|---|---|---|
-| **Saccharomycotina + Pezizomycotina** | 0 | 0 | **0.96** | MEASURED_19 |
-| Pezizomycotina | 4.5 | 10.1 | 0.03 | MEASURED_20 |
-| Saccharomycotina | 5.1 | 10.7 | 0.003 | MEASURED_47 |
-| *Neolecta* | 40.7 | 35.3 | 0.003 | MEASURED_18 |
-| *Neolecta* + *Saitoella* | 41.2 | 40.6 | 0 | MEASURED_16 |
-| *M. maydis* | 197 | 207 | 0 | MEASURED_70 |
-| *Yarrowia* | 448 | 356 | 0 | MEASURED_66 |
+| **Saccharomycotina + Pezizomycotina** | 0 | 0 | **0.96** | 0 / **0.97** |
+| Pezizomycotina | 4.5 | 10.1 | 0.03 | 10.5 / 0.01 |
+| Saccharomycotina | 5.1 | 10.7 | 0.003 | 10.6 / 0.004 |
+| *Neolecta* | 40.7 | 35.3 | 0.003 | 27.7 / 0.01 |
+| *Neolecta* + *Saitoella* | 41.2 | 40.6 | 0 | 33.9 / 0 |
+| *M. maydis* | 197 | 207 | 0 | 177 / 0 |
+| *Yarrowia* | 448 | 356 | 0 | 314 / 0 |
 
 Rate classes keep the same best placement and **double the margin over both shallower alternatives**: sister to Pezizomycotina goes
-from Δ 4.5 to 10.1, RELL 0.13 → 0.03. Attraction to intron-poor genomes stays absent.
+from Δ 4.5 to 10.1 (no error) or 10.5 (measured error), RELL 0.13 → 0.01–0.03. The deeper positions next to *Neolecta* come
+somewhat closer under measured error (Δ 27.7) but win at most 1 % of resamples. Attraction to intron-poor genomes stays absent. All
+71 fits per error set converged.
 
 ## 3. Calibration: does the likelihood put intron-poor lineages in the right place?
 
@@ -115,7 +117,7 @@ is V13's every-position test, which picks the fewest losses.
 **What this means for Alith.**
 - The calibrated likelihood test errs towards the root, almost never away from it. A best placement as sister to Saccharomycotina +
   Pezizomycotina therefore means Alith attaches there **or shallower**: as sister to Pezizomycotina or to Saccharomycotina.
-- Deeper positions are not supported. Next to *Neolecta*/*Saitoella* or at the base of the Ascomycota they are 35–41 lnL worse, and
+- Deeper positions are not supported. Next to *Neolecta*/*Saitoella* or at the base of the Ascomycota they are 28–41 lnL worse (RELL ≤ 0.01), and
   the test's bias would favour them, not penalise them.
 - This is the same bound V13 found with Dollo's carried-positions test, now from a model that handles annotation error and rate
   variation. The intron data cannot by themselves choose between sister to Saccharomycotina + Pezizomycotina and sister to
