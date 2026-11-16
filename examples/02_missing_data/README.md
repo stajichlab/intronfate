@@ -1,4 +1,4 @@
-# Example 2 — a gap is missing data, not a loss
+# Example 2: a gap is missing data, not a loss
 
 `A`, `B` and `C` share an intron **inside residue 6** (`cds_offset 16`, so codon 5, **phase 1**, alignment column 5).
 Their exons are 16 + 20 nt — not multiples of 3, so the second exon's GFF `phase` is `2`

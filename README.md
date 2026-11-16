@@ -1,48 +1,57 @@
 # intronfate
 
-*Formerly `intron-projector`.* Working folders on the laptop and the HPCC are still named `intron_projector`; only the repository, crates, binary and environment variable (`INTRONFATE`) changed name.
-
-Project annotated intron positions into protein sequences and alignment columns, then score whether
-those positions are **shared** across orthologs — under Dollo parsimony, maximum parsimony, or plain
-counts.
+Project annotated intron positions into protein sequences and alignment columns, then score whether those positions are
+**shared** across orthologs: Dollo parsimony (`dollo`), Fitch parsimony (`mp`), weighted Dollo (`dollo_weighted`), plain counts
+(`counts`), or a likelihood model with per-genome annotation error (`likelihood`).
 
 Rust workspace, no runtime dependencies beyond the binary.
 
-**Documentation:** [`docs/HOWTO.md`](docs/HOWTO.md) start here: copy-paste steps on complete public genomes (five or nine fungi, downloaded from NCBI) ·
-[`docs/TUTORIAL.md`](docs/TUTORIAL.md) the same pipeline explained, for your own genomes ·
-[`docs/USAGE.md`](docs/USAGE.md) user guide ·
-[`docs/OUTPUTS.md`](docs/OUTPUTS.md) every output column · [`examples/`](examples/) runnable, hand-checked
-examples · [`docs/SPEC.md`](docs/SPEC.md) design, assumptions and references ·
-[`docs/TESTING.md`](docs/TESTING.md) the test suite · [`docs/HANDOFF.md`](docs/HANDOFF.md) current state.
+## Start here
+
+1. **See it work (5 minutes):** run the demo ([Try it](#try-it)) and the hand-checked [`examples/`](examples/README.md).
+2. **A full run on public genomes:** [`docs/HOWTO.md`](docs/HOWTO.md), copy-paste steps from NCBI download to gains and losses per
+   branch, for five or nine fungi. Needs OrthoFinder and MAFFT; run it on a cluster node.
+3. **Your own genomes:** [`docs/TUTORIAL.md`](docs/TUTORIAL.md) explains each step of the pipeline and what to check.
+4. **Reference:** [`docs/USAGE.md`](docs/USAGE.md) (commands, options, methods, diagnostics) and [`docs/OUTPUTS.md`](docs/OUTPUTS.md)
+   (every output file and column).
+
+Also: [`docs/SPEC.md`](docs/SPEC.md) design, assumptions and references · [`docs/TESTING.md`](docs/TESTING.md) the test suite ·
+[`bench/README.md`](bench/README.md) validation runs on real data · [`docs/HANDOFF.md`](docs/HANDOFF.md) current state of the work.
 
 ## What it does
 
-```
+```text
 GFF3/GTF ──► intron ──► cds_offset ──► (codon, phase) ──► MSA column ──► site × taxon matrix ──► scores
-             genome      coding bases    0/1/2 nt         homology        0/1 per taxon        Dollo / MP /
-             space       into the CDS    into the codon   unit            per position         counts
+             genome      coding bases    0/1/2 nt         homology        1 / 0 / ? per taxon     dollo, mp, dollo_weighted,
+             space       into the CDS    into the codon   unit            per position            counts, likelihood
 ```
 
 The key idea: genome coordinates are useless across species, and residue numbers drift with indels —
 **alignment columns** are the homology unit. An intron's position is its CDS nucleotide offset, split
 into codon + phase, looked up in the protein alignment.
 
-## Install / build
+## Install
+
+Requires Rust 1.85 or newer ([rustup.rs](https://rustup.rs), or `conda install -c conda-forge rust`).
 
 ```sh
+git clone https://github.com/stajichlab/intronfate.git
+cd intronfate
 cargo build --release          # binary at target/release/intronfate
 cargo test --workspace         # full suite, see docs/TESTING.md
 ```
 
+The binary has no runtime dependencies; copy it or put `target/release` on your `PATH`.
+
 ## Try it
 
 ```sh
-cargo run -p intronfate-cli -- demo -o intron_demo
+cargo run --release -p intronfate-cli -- demo -o intron_demo
 ```
 
 Writes a worked five-species example (inputs + every table) and prints the interesting ones:
 
-```
+```text
 site    column  phase  n_taxa  n_observable  pattern  species1  species2  species3  species4  outgroup
 4:0     4       0      4       5            11101    1         1         1         0         1
 6:0     6       0      2       5            01100    0         1         1         0         0
@@ -62,122 +71,76 @@ site    column  phase  n_present  n_missing  steps  informative  ambiguous
 Three intron positions: two ancestral (each lost once) and one derived insertion on the
 species2/species3 stem. The annotated tree shows where the origins were placed:
 
-```
+```text
 (outgroup,((species1,(species2,species3)[gains=1])A,species4))[gains=2];
 ```
 
 ## Real data
 
-For a complete run on public genomes, from download to results, follow [`docs/HOWTO.md`](docs/HOWTO.md). The commands in short:
-
-```sh
-# 1. intron positions in protein space (no alignment needed yet)
-intronfate project --gff species.gff.gz -p species.faa -o out
-
-# 2. project onto an ortholog alignment and build the matrices
-intronfate matrix --gff a.gff.gz --gff b.gff.gz \
-                        -p a.faa -p b.faa \
-                        --msa family.fasta -o out
-
-# 3. score sharing on a tree
-intronfate score --matrix out/family/matrix.tsv \
-                       --tree family.nwk --outgroup Species_x \
-                       --methods dollo,mp -o out/family
-```
-
-Or one pass with `analyze`. For many families or genomes, give lists or folders instead of repeating flags
-(`--msa-dir alignments/ --msa-ext aln.fasta`, `--msa-list families.txt`, likewise `--gff-dir/--gff-list` and `--proteins-dir/--proteins-list`), and add
-`--combine` to also stack every family into one matrix, scored once (`out/combined/`; see [`docs/USAGE.md`](docs/USAGE.md) §9):
+One pass over many gene-family alignments, with every family also stacked into one matrix (`out/combined/`):
 
 ```sh
 intronfate analyze --gff-dir genomes/ --proteins-dir genomes/ --proteins-ext faa \
                    --msa-dir alignments/ --msa-ext aln.fasta --taxon-map taxon_map.tsv \
-                   -t species.nwk --combine -o out        # out/<family>/... and out/combined/dollo_branches.tsv
+                   -t species.nwk --outgroup Spunctatus --combine -o out
 ```
 
-`matrix.tsv` is the interchange format, so step 3 is cheap and can be
-re-run over rootings, tolerances and methods without re-parsing annotation.
+`matrix.tsv` is the interchange format: `intronfate score --matrix out/combined/matrix.tsv ...` re-scores it under another tree,
+rooting or method in seconds, without re-reading any annotation. The separate `project`, `matrix` and `score` commands, every option
+and the input forms (files, list files, folders) are in [`docs/USAGE.md`](docs/USAGE.md); the whole pipeline from download to results
+is [`docs/HOWTO.md`](docs/HOWTO.md).
 
 ## Output
 
-Per alignment, in `out/<alignment>/`: `matrix.tsv` (binary site × taxon), `sites.tsv` (long form with
-the full coordinate stack), `taxa.tsv` (what was projected and what was dropped), `pairwise.tsv` +
-`sharing_matrix.tsv` (shared counts, Jaccard), `spectrum.tsv` (sites shared by *k* taxa),
-`counts_sites.tsv`, `characters.nex` (NEXUS for external phylogenetics). With `score`/`analyze`:
-`dollo_sites.tsv`, `mp_sites.tsv`, `reconstructions.tsv`, `tree_gains.nwk`, `summary_score.tsv`.
-Globally: `introns.tsv`, `unmatched.tsv`, `diagnostics.tsv` (+ `_detail`).
-
-`demo` writes a focused subset of these so the interesting tables print next to the inputs it
-generates (`demo.gff3`, `demo.faa`, `demo.aln.fasta`, `demo.nwk`).
+Read these first: `diagnostics.tsv` and `unmatched.tsv` (what failed to join, and why), then `combined/dollo_branches.tsv` (gains and
+losses per branch) or, per family, `<family>/summary_score.tsv` and `dollo_sites.tsv`. Every file and column is described in
+[`docs/OUTPUTS.md`](docs/OUTPUTS.md).
 
 ## Things that will bite you if you don't read them
 
 - **Phase is part of site identity.** `codon 5 phase 0` and `codon 5 phase 1` are different sites.
   Use `--ignore-phase` deliberately, not by accident.
-- **Missing is `?`, never `0`.** An unannotated taxon, a gap around the site, or an alignment row that
-  is not the annotated protein is *no observation*; treating it as "intron lost" invents losses.
-  `--flank` controls how much alignment around a site a taxon needs. See `docs/USAGE.md` §6.
-- **Classic Dollo minimises losses, not gains.** With gain cost 1 and loss cost 0 and free losses,
-  one gain at the root explains any pattern — the min-gain score is degenerate at exactly 1 for every
-  site. The informative statistic is the loss count given one origin; `-m dollo_weighted` sweeps the
-  gain/loss ratio (`--gain-loss-weights`) when you need a real trade-off.
-- **Dollo gain placement depends on rooting.** Pass `--outgroup`; if the Newick looks unrooted the
-  tool warns instead of guessing.
+- **Missing is `?`, never `0`.** An unannotated taxon, a gap around the site, or an alignment row that is not the annotated protein
+  is *no observation*; scoring it as "intron lost" would invent losses. `--flank` sets how much alignment around a site a taxon needs.
+  Details: [`docs/USAGE.md`](docs/USAGE.md) §6.
+- **Classic Dollo minimises losses, not gains.** One gain per site is assumed, so the informative statistic is the loss count;
+  `-m dollo_weighted` sweeps the gain:loss cost when you need a real trade-off ([`docs/SPEC.md`](docs/SPEC.md) §5.1–5.2).
+- **Dollo gain placement depends on rooting.** Pass `--outgroup`; if the Newick looks unrooted the tool warns instead of guessing.
 - **`introns.tsv` numbers are per-protein.** Cross-species comparisons use `matrix.tsv` columns.
-- **Annotation/sequence must correspond.** `unmatched.tsv` and the `length_mismatch` diagnostic exist
-  because a join onto the wrong paralog otherwise yields plausible-looking tables.
+- **Annotation and sequence must correspond.** `unmatched.tsv` and the `length_mismatch` diagnostic exist because a join onto the
+  wrong paralog otherwise yields plausible-looking tables.
+- **The result is only as good as the annotated introns.** A missed intron looks like a loss and a false one like a gain;
+  [`bench/V7`](bench/V7_annotation_error_sensitivity/README.md) measures how far that moves the counts, and `-m likelihood`
+  with `--error-rates` models it ([`docs/USAGE.md`](docs/USAGE.md) §11).
 
-## Results so far
+## Validation
 
-Everything below was run on a university HPC cluster; the scripts, the small result tables and a README for each step are in [`bench/`](bench/).
-These are validation and first-use results, not a finished biological study.
-
-| Step | What was tested | Result |
-|---|---|---|
-| [V1](bench/V1_malin_validation/README.md) | Scoring and MALIN interop on MALIN's published test data | Every figure in the spec reproduced. Per-branch Dollo losses match the MALIN guide exactly (Rogozin table: 7,221 sites, 2,770 losses); MALIN tables round-trip losslessly. |
-| [V2](bench/V2_gff_projection/README.md) | GFF3 to protein space to alignment columns on nine fungal genomes | 739 BUSCO families (single-copy in at least 7 of 9 genomes), 6,363 protein rows, every row joined to its transcript; all families through `analyze` in 8.4 s and 507 MB. |
-| [V3](bench/V3_gff_scale/README.md) | Genome-scale `project` | 1,000 genomes in one process: 294 s and 55.8 GB at the start, **52 s and 7.0 GB** after the optimisations (the largest GFF3 in the BFD, 165 MB uncompressed, takes 1.6 s). A single file does not scale with threads. |
-| [V4](bench/V4_annotation_accuracy/README.md) | How accurate are the annotated introns? (funannotate against RefSeq, at the genes actually used) | Intron sensitivity at those genes is 89-99 % for eight of the nine species (*S. cerevisiae* is scored separately, over very few introns); per-species figures and the resulting ceilings on how many apparent losses could be annotation misses are in the README. |
-| [V6](bench/V6_orthology_nine_species/README.md) | Ortholog families that are as single-copy as possible (OrthoFinder, synteny refinement, tiers) | 8,766 orthogroups; 1,106 single-copy in all 9 species, 689 more in 7-8, 401 more from splitting multi-copy orthogroups. Synteny refinement added none (166 groups of about two genes). |
-| [V7](bench/V7_annotation_error_sensitivity/README.md) | How much could annotation error change the Dollo losses and gains? | Terminal losses in *S. maydis*, *S. cerevisiae*, *C. neoformans*, *S. pombe* and *N. crassa* move by at most 6 % even when every missed intron is assumed to hide a loss; *M. mucedo* by about 15 %; for *C. cinerea* and *A. nidulans* the ceiling removes all of their terminal losses, so those counts cannot be told from annotation misses. |
-
-The application of these tools to the placement of the Antarctic ascomycete *Antarctolithica obscura* (formerly `bench/V8`–`V15`) is a separate research project, `antarctolithica_genomics`; it uses V4, V6 and V7 here as inputs.
-
-**A worked result.** On the 1,106 single-copy families (nine fungal genomes; 15,697 inferred intron gains and 14,316 losses in total) the largest
-terminal-branch loss counts are in *Mycosarcoma maydis* (4,055), *M. mucedo* (1,516), *S. cerevisiae* (1,447) and *C. neoformans* (1,091). For
-*M. maydis* and *S. cerevisiae*, whose low intron density is well known, that is the expected direction, and V7 shows these counts are not
-artefacts of missed introns. The per-lineage totals come from one command (`analyze --combine`, see below) with nothing to sum afterwards.
-The other counts need the limits below before they are interpreted.
-
-**What the results do and do not show.**
-
-- The annotations are funannotate predictions, compared with RefSeq where a RefSeq annotation exists. RefSeq is not truth, and the scores come from
-  exact-coordinate matching at conserved single-copy genes, which are the genes the analysis uses but not representative of whole genomes.
-- Annotation error is measured, not removed: V7 shows which loss counts survive it and which do not. Terminal gains are less certain than
-  losses, because false introns move them in no consistent direction.
-- *S. cerevisiae* has so few introns that its scores rest on a few dozen introns and are noisy.
-- Nothing here validates the evolutionary model itself (Dollo parsimony assumes one gain per site). A likelihood model with annotation error and rate variation across positions (`-m likelihood`, `--ml-rate-categories`) exists and has been applied to real data in a separate project (Antarctolithica placement), including a calibration with lineages of known position.
+Every step was run on a university HPC cluster; scripts, small result tables and a README per step are in [`bench/`](bench/), indexed
+with one-line results in [`bench/README.md`](bench/README.md): agreement with MALIN's published Dollo results, projection on nine
+fungal genomes, genome-scale timing, annotation accuracy and its effect on the counts, ortholog tiers, and the how-to run end to end.
+These are validation and first-use results, not a finished biological study. The tools have also been applied to a separate
+research project.
 
 ## Layout
 
-```
-crates/intronfate-core/  library: gff, annotation, seqio, msa, project, matrix, tree, score, tables
+```text
+crates/intronfate-core/  library: gff, annotation, seqio, msa, project, matrix, tree, score, likelihood, malin, tables, inputs, ...
 crates/intronfate-cli/   the `intronfate` binary
-docs/                 USAGE, OUTPUTS, TESTING, SPEC (design + references), HANDOFF (state)
-examples/             three runnable examples with committed expected output, plus 04_public_genomes (inputs for docs/HOWTO.md)
-tests/data/           tiny synthetic fixtures
-scripts/              helpers for docs/HOWTO.md (one_protein_per_gene.py, make_families.py, align_families.sh, doc_blocks.py);
-                      malin_to_matrix.py — independent MALIN importer used as a cross-check
+docs/                    HOWTO, TUTORIAL, USAGE, OUTPUTS, SPEC (design + references), TESTING, HANDOFF (state)
+examples/                three runnable examples with committed expected output, plus 04_public_genomes (inputs for docs/HOWTO.md)
+bench/                   validation runs on the HPCC (index: bench/README.md)
+tests/data/              tiny synthetic fixtures
+scripts/                 helpers for docs/HOWTO.md (one_protein_per_gene.py, make_families.py, align_families.sh, doc_blocks.py);
+                         malin_to_matrix.py, an independent MALIN importer used as a cross-check
 ```
 
 ## Status
 
-Implemented: GFF3/GTF ingestion with frame/exon/length cross-checks, protein-space projection,
-FASTA/Stockholm alignments, site × taxon matrices, pairwise sharing, Dollo (classic + weighted),
-Fitch MP with ancestral reconstruction, counts, TSV/NEXUS output, a weighted Dollo sweep (`-m dollo_weighted`), and a
-likelihood model with per-genome annotation error (`-m likelihood`, `--error-rates`; USAGE §11).
+Implemented: GFF3/GTF ingestion with frame/exon/length cross-checks, protein-space projection, FASTA/Stockholm alignments,
+site × taxon matrices with per-cell missing data, pairwise sharing, the five scoring methods above (`likelihood` with
+`--error-rates`, bootstrap intervals and gamma rate classes), TSV/NEXUS output, MALIN import/export (`convert`), and combined
+matrices over many families (`--combine`).
 
-Also: per-cell missing data (alignment gaps are `?`), MALIN import/export (`convert`), `--min-observed`.
-
-Not yet: SQL/Chado/Ensembl sources (the `AnnotationSource` seam is there), rate variation across positions
-in the likelihood model, benchmarks on real genomes (run those on the HPCC), stdin support.
+Not yet: SQL/Chado/Ensembl annotation sources (the `AnnotationSource` seam is there), separate gain and loss rate factors in the
+likelihood model, validation against MALIN's `*.rates`, stdin/stdout support. The full list: [`docs/HANDOFF.md`](docs/HANDOFF.md) and
+[`docs/SPEC.md`](docs/SPEC.md) §12.

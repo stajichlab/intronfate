@@ -1,4 +1,4 @@
-# Example 1 — quickstart
+# Example 1: quickstart
 
 Four species, a 10-residue protein each (`MKVLGAWEHT`), aligned without gaps, on the tree
 `((A,B),(C,D));`. Files: `family.gff3`, `proteins.faa`, `family.aln.fasta`, `family.nwk`. Run `./run.sh`.
@@ -19,7 +19,7 @@ of 3, so all introns have phase 0: offset 12 is after codon 4 (column 4), offset
 
 ## The matrix
 
-```
+```text
 site  column phase pattern  A B C D
 4:0   4      0     1101     1 1 0 1      carried by A, B, D
 7:0   7      0     1110     1 1 1 0      carried by A, B, C
@@ -32,7 +32,7 @@ Each site is carried by three species and absent from the fourth, and no clade o
 
 - **Dollo**: site `4:0` — the carriers' common ancestor is the root; C lost it → 1 loss. Site `7:0` — D lost it
   → 1 loss. Total **2 gains, 2 losses**; neither site is Dollo-compatible.
-- **Maximum parsimony**: one change per site (a loss on one branch) → **2 steps**.
+- **Fitch parsimony** (`mp`): one change per site (a loss on one branch) → **2 steps**.
 
 `summary_score.tsv` reports `dollo_gains 2`, `dollo_losses 2`, `mp_steps 2`. `tree_gains.nwk` shows
 both origins placed at the root.

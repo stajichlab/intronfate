@@ -8,8 +8,8 @@ downloaded in step 2. Two examples use the same steps:
 | **1. five fungi** (`fungi5`) | *Cryptococcus neoformans* (outgroup), *S. pombe*, *S. cerevisiae*, *N. crassa*, *A. nidulans* | 14 min (OrthoFinder 10) | 0.4 GB |
 | **2. nine fungi** (`fungi9`) | the five above, plus *Spizellomyces punctatus* (outgroup), *Mucor mucedo*, *Mycosarcoma maydis*, *Coprinopsis cinerea* | 37 min (OrthoFinder 30) | 0.7 GB |
 
-Example 2 is the species set of the worked result in the [README](../README.md) (which used funannotate annotation; here RefSeq is used, so
-the numbers differ a little, see step 8). Times and sizes are from the test run on a cluster node; the container adds 0.65 GB. The genome lists and trees are in [`examples/04_public_genomes/`](../examples/04_public_genomes/).
+Example 2 is the species set of [`bench/V6`](../bench/V6_orthology_nine_species/README.md) (which used funannotate annotation; here RefSeq
+is used, so the numbers differ a little, see step 8). Times and sizes are from the test run on a cluster node; the container adds 0.65 GB. The genome lists and trees are in [`examples/04_public_genomes/`](../examples/04_public_genomes/).
 
 What you get at the end: for every branch of the species tree, how many intron positions were gained and lost, with the table of positions
 behind it. For the reasoning behind each step, see [`TUTORIAL.md`](TUTORIAL.md). For every option, see [`USAGE.md`](USAGE.md).
@@ -20,7 +20,9 @@ your site's equivalent) or as one batch job ([at the end](#running-it-as-one-bat
 
 ## 0. Install (once)
 
-**intronfate** is one Rust binary. If `cargo` is missing, install Rust from <https://rustup.rs>, or use conda: `conda install -c conda-forge rust`.
+**intronfate** is one Rust binary. The [README](../README.md#install) is the reference for installing it; the commands below do the same
+in the form this page is tested with. If `cargo` is missing, install Rust (1.85 or newer) from <https://rustup.rs>, or use conda:
+`conda install -c conda-forge rust`.
 
 ```sh
 git clone https://github.com/stajichlab/intronfate.git
@@ -93,7 +95,8 @@ done
 ls -l genomes
 ```
 
-The label (first column) is the species name used from here on: proteome file names, tree tips and output columns.
+The label (first column) is the species name used from here on: proteome file names, tree tips and output columns. *Mycosarcoma maydis*
+(*My. maydis* below) has the label `Smaydis`; the label is historical and is kept so that results match earlier runs.
 
 ## 3. One protein per gene
 
@@ -200,17 +203,18 @@ descendant that lacks it.
 The outgroup's own branch (here *C. neoformans*, 8,342 gains) holds every position found only in the outgroup. With a single outgroup these
 cannot be dated, so do not read them as lineage-specific gains. Add a second outgroup (Example 2) to see more of the deep history.
 
-In Example 2, the RefSeq annotation gives almost the same terminal losses as the funannotate run behind the README's worked result:
+In Example 2, the RefSeq annotation gives almost the same terminal losses as the funannotate run of
+[V6](../bench/V6_orthology_nine_species/README.md):
 
-| Branch | Losses, this how-to (RefSeq) | Losses, README (funannotate) |
+| Branch | Losses, this how-to (RefSeq) | Losses, V6 (funannotate) |
 |---|---|---|
-| *M. maydis* | 3,864 | 4,055 |
+| *My. maydis* | 3,864 | 4,055 |
 | *S. cerevisiae* | 1,452 | 1,447 |
 | *M. mucedo* | 1,479 | 1,516 |
 | *C. neoformans* | 1,010 | 1,091 |
 | Ascomycota (*S. pombe*, *S. cerevisiae*, *N. crassa*, *A. nidulans*) | 2,455 | 2,569 |
 
-with 1,103 strict single-copy families (README: 1,106). The full tables of both examples are in
+with 1,103 strict single-copy families (V6: 1,106). The full tables of both examples are in
 [`bench/D1_howto_public_genomes/results/`](../bench/D1_howto_public_genomes/results/).
 
 The other tables:
@@ -234,7 +238,7 @@ All columns are explained in [`OUTPUTS.md`](OUTPUTS.md). With RefSeq, expect the
 | `present_not_observable` | 624 | introns in a stretch where that species is not aligned (gaps around the site): scored `?`, not counted |
 
 There are also a few dozen minor records (`site_beyond_protein_end`, `cds_gap_not_exon_gap`, `overlapping_exons`, `frame_mismatch`, ...; see
-[`USAGE.md`](USAGE.md) for each). Neither example had a `row_sequence_mismatch` or `length_mismatch`; many of those would mean that the
+[`USAGE.md`](USAGE.md) §8 for each). Neither example had a `row_sequence_mismatch` or `length_mismatch`; many of those would mean that the
 annotation and the protein file do not match.
 
 **Before you interpret a number:** RefSeq annotation is not truth. A missed intron looks exactly like a loss, and a false intron looks like a
@@ -252,6 +256,10 @@ intronfate score --matrix results/A_strict/combined/matrix.tsv -t $EX/$SET.nwk -
 column -t results/A_strict/rescored/dollo_weighted.tsv
 ```
 
+**Model annotation error.** `-m likelihood` fits a gain/loss model in which each genome has its own intron sensitivity and false-intron
+rate (`--error-rates`), and reports expected gains and losses per branch with bootstrap intervals. How to get the error rates and how to
+read the result: [`USAGE.md`](USAGE.md) §11.
+
 **Use another tier.** Align and run it the same way, for example tier B:
 
 ```sh
@@ -267,7 +275,7 @@ RefSeq `GCF_...` accession with its assembly name, as in the folder name under
 
 - A **GenBank** (`GCA_`) assembly with annotation works the same way.
 - For **Ensembl** genomes, download the GFF3 and the `pep.all` FASTA. `one_protein_per_gene.py` reads Ensembl's `protein_id`.
-- For **your own annotation** (funannotate, BRAKER, MAKER), see [`TUTORIAL.md`](TUTORIAL.md) §1-2. If the protein FASTA already has one
+- For **your own annotation** (funannotate, BRAKER, MAKER), see [`TUTORIAL.md`](TUTORIAL.md) §1–2. If the protein FASTA already has one
   protein per gene, copy it into `proteomes/` instead of running step 3.
 
 ## Running it as one batch job
