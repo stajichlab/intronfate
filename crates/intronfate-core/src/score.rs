@@ -1,4 +1,4 @@
-//! Scoring shared intron positions: Dollo parsimony, maximum parsimony, and counts.
+//! Scoring shared intron positions: Dollo parsimony (classic and weighted), maximum parsimony (Fitch), and counts. The likelihood model is in `likelihood.rs`.
 //!
 //! Each intron position becomes a discrete binary character ("is there an intron at alignment
 //! column *c*, phase *p*?") whose states are observed in the aligned taxa. What differs between
@@ -285,7 +285,8 @@ pub struct DolloSite {
 #[derive(Clone, Debug)]
 pub struct BranchTally {
     pub node: NodeId,
-    /// Tip name, non-numeric node label, or `node<id>` for an unlabelled internal branch.
+    /// Unique branch name from `Tree::node_names`: `root`, a tip name, a non-numeric node label, or the node's tip list,
+    /// with `#<node id>` appended where two would print alike.
     pub name: String,
     /// Every tip below the branch.
     pub tips: Vec<String>,

@@ -35,7 +35,8 @@ use intronfate_core::tree::Tree;
     about = "Project intron positions from annotation into protein alignments, then score how they are shared.",
     long_about = "Project intron positions from GFF3/GTF annotation into protein space, map them onto \
                   MSA columns for a set of orthologs, and score which positions are shared using Dollo \
-                  parsimony, maximum parsimony, or plain counts.\n\n\
+                  parsimony (classic or weighted), Fitch parsimony, counts, or a likelihood model with \
+                  per-genome annotation error.\n\n\
                   A position is reported as cds_offset (coding bases 5' of the intron), codon, and \
                   phase (0/1/2), plus the alignment column it lands in. Two introns count as the same \
                   site when they share a column, and — unless --ignore-phase is given — a phase too."
@@ -55,7 +56,7 @@ enum Command {
     Project(ProjectArgs),
     /// Project intron positions onto alignments and write site x taxon matrices.
     Matrix(MatrixArgs),
-    /// Score an existing matrix with Dollo parsimony, maximum parsimony and/or counts.
+    /// Score an existing matrix: Dollo, Fitch parsimony, weighted Dollo, counts and/or likelihood.
     Score(ScoreArgs),
     /// Run project + matrix + score in one pass.
     Analyze(Box<AnalyzeArgs>),
@@ -226,7 +227,7 @@ struct AnalyzeArgs {
     #[arg(long, short = 't', value_name = "FILE")]
     tree: Option<PathBuf>,
 
-    /// Scoring method(s): dollo, mp, counts, dollo_weighted. Defaults to dollo, mp and counts.
+    /// Scoring method(s): dollo, mp, counts, dollo_weighted, likelihood. Defaults to dollo, mp and counts.
     #[arg(long, short = 'm', value_delimiter = ',')]
     methods: Vec<String>,
 
@@ -323,7 +324,7 @@ struct ScoreArgs {
     #[arg(long, short = 't', value_name = "FILE")]
     tree: Option<PathBuf>,
 
-    /// Scoring method(s): dollo, mp, counts, dollo_weighted. Defaults to dollo, mp and counts.
+    /// Scoring method(s): dollo, mp, counts, dollo_weighted, likelihood. Defaults to dollo, mp and counts.
     #[arg(long, short = 'm', value_delimiter = ',')]
     methods: Vec<String>,
 
