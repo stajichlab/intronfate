@@ -301,6 +301,12 @@ struct AnalyzeArgs {
     #[arg(long, default_value = "1")]
     ml_loss_levels: usize,
 
+    /// How `-m likelihood` models positions that were never seen: `per-pattern` (default) conditions each position on being seen given its
+    /// own pattern of missing cells; `global` is MALIN's correction (one probability that a position has no intron at any genome). They
+    /// agree when no cell is missing.
+    #[arg(long, default_value = "per-pattern", value_parser = ["per-pattern", "global"])]
+    ml_never_seen: String,
+
     /// With rate classes, do not fix the larger root branch to "no change" (as MALIN does not). The two root branches are then only
     /// weakly identifiable, so the fit is slower and the root branches poorly determined; the likelihood can be slightly higher.
     #[arg(long)]
@@ -429,6 +435,12 @@ struct ScoreArgs {
     /// Free loss levels (see `--ml-gain-levels`); MALIN's published runs use two loss levels and one gain level.
     #[arg(long, default_value = "1")]
     ml_loss_levels: usize,
+
+    /// How `-m likelihood` models positions that were never seen: `per-pattern` (default) conditions each position on being seen given its
+    /// own pattern of missing cells; `global` is MALIN's correction (one probability that a position has no intron at any genome). They
+    /// agree when no cell is missing.
+    #[arg(long, default_value = "per-pattern", value_parser = ["per-pattern", "global"])]
+    ml_never_seen: String,
 
     /// With rate classes, do not fix the larger root branch to "no change" (as MALIN does not). The two root branches are then only
     /// weakly identifiable, so the fit is slower and the root branches poorly determined; the likelihood can be slightly higher.
@@ -1222,6 +1234,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     gain_levels: a.ml_gain_levels,
                     loss_levels: a.ml_loss_levels,
                     free_root_branch: a.ml_free_root_branch,
+                    never_seen_global: a.ml_never_seen == "global",
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1263,6 +1276,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     gain_levels: a.ml_gain_levels,
                     loss_levels: a.ml_loss_levels,
                     free_root_branch: a.ml_free_root_branch,
+                    never_seen_global: a.ml_never_seen == "global",
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1324,6 +1338,7 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     gain_levels: a.ml_gain_levels,
                     loss_levels: a.ml_loss_levels,
                     free_root_branch: a.ml_free_root_branch,
+                    never_seen_global: a.ml_never_seen == "global",
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1396,6 +1411,7 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 gain_levels: a.ml_gain_levels,
                 loss_levels: a.ml_loss_levels,
                 free_root_branch: a.ml_free_root_branch,
+                never_seen_global: a.ml_never_seen == "global",
                 tol: a.ml_tol,
                 param_tol: a.ml_param_tol,
             },
@@ -1444,6 +1460,7 @@ struct MlOpts {
     gain_levels: usize,
     loss_levels: usize,
     free_root_branch: bool,
+    never_seen_global: bool,
     tol: f64,
     param_tol: f64,
 }
@@ -1647,6 +1664,11 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
             free_gain_levels: o.ml.gain_levels.max(1),
             free_loss_levels: o.ml.loss_levels.max(1),
             free_root_branch: o.ml.free_root_branch,
+            never_seen: if o.ml.never_seen_global {
+                intronfate_core::likelihood::NeverSeen::Global
+            } else {
+                intronfate_core::likelihood::NeverSeen::PerPattern
+            },
             tol: o.ml.tol,
             param_tol: o.ml.param_tol,
             trace: verbose > 1,
@@ -1723,6 +1745,9 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
                     if o.ml.shape.is_some() { " (fixed)" } else { "" }
                 ),
             ));
+        }
+        if o.ml.never_seen_global {
+            summary.push(("ml_never_seen", "global (MALIN's correction)".to_string()));
         }
         if fit.params.rates.is_free() {
             let fmt = |lv: &[(f64, f64)]| {
@@ -2379,6 +2404,7 @@ mod tests {
             ml_gain_levels: 1,
             ml_loss_levels: 1,
             ml_free_root_branch: false,
+            ml_never_seen: "per-pattern".to_string(),
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],
@@ -2427,6 +2453,7 @@ mod tests {
             ml_gain_levels: 1,
             ml_loss_levels: 1,
             ml_free_root_branch: false,
+            ml_never_seen: "per-pattern".to_string(),
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2473,6 +2500,7 @@ mod tests {
             ml_gain_levels: 1,
             ml_loss_levels: 1,
             ml_free_root_branch: false,
+            ml_never_seen: "per-pattern".to_string(),
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2549,6 +2577,7 @@ mod tests {
             ml_gain_levels: 1,
             ml_loss_levels: 1,
             ml_free_root_branch: false,
+            ml_never_seen: "per-pattern".to_string(),
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],

@@ -30,25 +30,24 @@ is the same.
 `Rog-ecdysozoa1000.rates` (Rogozin table) and `Chromo23.rates` (Chromo23 table, 23 taxa) come from `calculateRASRates`: classes indexed by loss
 level and gain level, each level with its own probability and multiplier. Both have two loss levels and one gain level. This tool's free-level model
 (SPEC §5.5d, `--ml-loss-levels 2`) is compared with them by `run_rates.sbatch` (`results_rates_3.txt`), using the same test as above
-(`INTRONFATE_MALIN_MIN_OBSERVED` selects MALIN's table filter).
+(`INTRONFATE_MALIN_MIN_OBSERVED` selects MALIN's table filter, `INTRONFATE_MALIN_NEVER_SEEN=global` MALIN's never-seen correction; `results_rates_4.txt` is the global run).
 
 | | Rogozin | Chromo23 |
 |---|---|---|
 | positions | 7,221 | 7,030 (the 9,256-site table filtered to positions observed in at least 18 taxa; MALIN reports 7,030) |
 | loss levels, MALIN (probability @ multiplier) | 0.798 @ 1, 0.202 @ 0.402 | 0.845 @ 1, 0.155 @ 0.387 |
-| loss levels, this tool | 0.815 @ 1, 0.185 @ 0.401 (root branch free, started at MALIN's parameters) | 0.849 @ 1, 0.151 @ 0.386 (root branch free, started at MALIN's parameters) |
-| lnL at MALIN's parameters | -17796.1286 | -27985.6768 |
-| lnL at this tool's maximum, root branch free | -17796.0627 (+0.066) | -27959.6099 (+26.07) |
-| lnL at this tool's maximum, larger root branch fixed (default) | -17796.7474 (-0.62) | not run |
+| loss levels, this tool, MALIN's never-seen correction | 0.815 @ 1, 0.185 @ 0.401 (root branch free, started at MALIN's parameters) | 0.8446 @ 1, 0.1554 @ 0.3876 |
+| lnL at MALIN's parameters | -17796.1286 | **-28430.9249** (MALIN prints -28430.9249; uncorrected -40617.5994, MALIN -40617.5994; p0 0.823339, MALIN 0.82334; never-seen 32,763.79, MALIN 32,763.79) |
+| lnL at this tool's maximum | -17796.0627 (+0.066; root branch free) | -28430.9159 (+0.009; the same with the larger root branch fixed or free) |
+| lnL at this tool's maximum, larger root branch fixed (default) | -17796.7474 (-0.62) | -28430.9159 (no cost) |
 
-On the Rogozin table MALIN's parameters sit at this tool's optimum (within 0.07 log-likelihood units, with the same two-level structure), and the
-default fit (larger root branch fixed) is 0.7 lower, the cost of that restriction once the root branches are scaled differently by the classes
-(SPEC §5.5d). On `Chromo23` the level structure and most branch probabilities agree (for example Osat loss 0.02682 / 0.02700, Hsap 0.20106 / 0.19901) but
-this tool's optimum is 26 units higher than its value at MALIN's parameters, with a few branches clearly different (Chlorophyta gain 0.036 / 0.053,
-Alveolata loss 0.038 / 0.015), and MALIN's own reported log-likelihood (-28430.9) is a different quantity from this tool's (-27959.6). A likely cause is the treatment
-of missing data: MALIN's output reports one global estimate of the never-seen positions ("predicted missing", p0 0.823), while this tool conditions each position
-on its own pattern of missing cells (SPEC §5.5). That was not tested here (it would need a MALIN-style correction as an option). The Rogozin table has no missing
-cells, and there the two agree.
+On both tables MALIN's parameters sit at this tool's optimum (within 0.07 and 0.01 log-likelihood units, with the same two-level structure), and on `Chromo23`
+the likelihood this tool computes at MALIN's parameters equals the value MALIN prints to four decimals, including its uncorrected value and its
+estimate of the never-seen positions. Two details matter. (1) The never-seen correction: `Chromo23` has missing cells, and MALIN corrects the whole table with one
+probability `p0` that a position has no intron at any genome (log-likelihood = uncorrected - N ln(1 - p0); its "predicted missing" is N p0 / (1 - p0)); this tool's
+default conditions each position on its own pattern of missing cells, which gave an optimum 26 log-likelihood units above its value at MALIN's parameters and a
+different quantity from MALIN's printed -28430.9. With `--ml-never-seen global` the two coincide; without missing cells (Rogozin) there is no difference. (2) The larger
+root branch: fixing it (the default) cost 0.7 units on the Rogozin table once the classes scale the two root branches differently (SPEC §5.5d) and nothing on `Chromo23`.
 
 ## Rate classes on the Rogozin table (`run_classes.sbatch`, `results_classes.txt`)
 

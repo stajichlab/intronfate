@@ -73,6 +73,14 @@
 //! spreads of the multipliers (or from the levels carried by `FitOptions::init`) and keeps the best. With rate classes the larger root
 //! branch is only weakly identifiable; it stays fixed unless [`FitOptions::free_root_branch`] is set.
 //!
+//! # Never-seen positions: per pattern or MALIN's global correction
+//!
+//! By default each position is conditioned on being seen given its own pattern of missing cells ([`NeverSeen::PerPattern`]). MALIN
+//! instead corrects the whole table with one probability `p0` that a position has no intron at any genome, all genomes being
+//! observable ([`NeverSeen::Global`]): corrected log-likelihood = uncorrected − `N ln(1 − p0)`, and `N p0 / (1 − p0)` never-seen positions
+//! (MALIN's "predicted missing"). The two agree when no cell is missing; with `?` cells they differ, and only the global form reproduces
+//! MALIN's printed log-likelihood (SPEC §6b).
+//!
 //! Not modelled: dependence between neighbouring positions.
 
 use rayon::prelude::*;
@@ -279,6 +287,8 @@ pub struct FitOptions {
     pub free_loss_levels: usize,
     /// Do not fix the larger root branch (see [`fixed_branches_with`]). Only meaningful with rate classes; slows the fit.
     pub free_root_branch: bool,
+    /// How never-seen positions are modelled (see [`NeverSeen`]).
+    pub never_seen: NeverSeen,
     /// Print one line per acceleration cycle to stderr (log-likelihood, shape, time in E- and M-steps).
     pub trace: bool,
 }
@@ -299,6 +309,7 @@ impl Default for FitOptions {
             free_gain_levels: 1,
             free_loss_levels: 1,
             free_root_branch: false,
+            never_seen: NeverSeen::PerPattern,
             trace: false,
         }
     }
@@ -675,10 +686,29 @@ struct Ctx<'a> {
     /// Tip index (into the column) of each node, if it is a scored tip.
     tip_of: Vec<Option<usize>>,
     err: &'a ErrorRates,
+    never_seen: NeverSeen,
+}
+
+/// How the positions that were never seen (no intron at any observed genome) are modelled.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum NeverSeen {
+    /// Each position is conditioned on being seen given its own pattern of missing cells: the probability that nobody shows it is
+    /// computed over the genomes observable at that position. The default (SPEC §5.5).
+    #[default]
+    PerPattern,
+    /// MALIN's correction: one probability `p0` that a position has no intron at any genome, all genomes being observable, for every
+    /// position; the expected number of never-seen positions is `N p0 / (1 − p0)` and the log-likelihood is the uncorrected one minus
+    /// `N ln(1 − p0)`. The same as `PerPattern` when no cell is missing.
+    Global,
 }
 
 impl<'a> Ctx<'a> {
+    #[cfg(test)]
     fn new(data: &'a ScoringData, err: &'a ErrorRates) -> Self {
+        Self::with(data, err, NeverSeen::PerPattern)
+    }
+
+    fn with(data: &'a ScoringData, err: &'a ErrorRates, never_seen: NeverSeen) -> Self {
         let mut tip_of = vec![None; data.tree.len()];
         for (i, &t) in data.tips.iter().enumerate() {
             tip_of[t] = Some(i);
@@ -687,6 +717,15 @@ impl<'a> Ctx<'a> {
             tree: &data.tree,
             tip_of,
             err,
+            never_seen,
+        }
+    }
+
+    /// The "nobody shows an intron" column that goes with `col`.
+    fn phantom_of(&self, col: &[u8]) -> Vec<u8> {
+        match self.never_seen {
+            NeverSeen::PerPattern => phantom(col),
+            NeverSeen::Global => vec![ABSENT; col.len()],
         }
     }
 
@@ -920,7 +959,7 @@ fn column_terms(
     col: &[u8],
     w: &mut Work,
 ) -> (f64, f64, (f64, f64)) {
-    let ph = phantom(col);
+    let ph = ctx.phantom_of(col);
     let mut w2 = Work::new(ctx.tree.len());
     let lk: Vec<f64> = cs.iter().map(|c| ctx.upward(c, col, w)).collect();
     let z = cs
@@ -958,7 +997,7 @@ fn e_step(ctx: &Ctx, pats: &Patterns, p: &Params) -> Acc {
             for &k in chunk {
                 let col = &pats.columns[k];
                 let cnt = pats.counts[k];
-                let ph = phantom(col);
+                let ph = ctx.phantom_of(col);
                 for c in 0..kk {
                     lk[c] = ctx.upward(&cs[c], col, &mut w[c]);
                     zk[c] = ctx.upward(&cs[c], &ph, &mut wp[c]).exp();
@@ -1316,7 +1355,29 @@ pub fn fixed_root_branch(tree: &Tree) -> Option<NodeId> {
 
 /// Conditional log-likelihood of the data under fixed parameters (no fitting).
 pub fn log_likelihood(data: &ScoringData, err: &ErrorRates, p: &Params) -> f64 {
-    let ctx = Ctx::new(data, err);
+    log_likelihood_with(data, err, p, NeverSeen::PerPattern)
+}
+
+/// The probability that a position shows no intron at any genome, all genomes being observable (MALIN's `p0`; the expected number
+/// of never-seen positions is `N p0 / (1 − p0)`).
+pub fn no_intron_probability(data: &ScoringData, err: &ErrorRates, p: &Params) -> f64 {
+    let ctx = Ctx::with(data, err, NeverSeen::Global);
+    let mut w = Work::new(data.tree.len());
+    let ph = vec![ABSENT; data.tips.len()];
+    cats(p)
+        .iter()
+        .map(|c| c.w * ctx.upward(c, &ph, &mut w).exp())
+        .sum()
+}
+
+/// [`log_likelihood`] with the never-seen positions modelled as given.
+pub fn log_likelihood_with(
+    data: &ScoringData,
+    err: &ErrorRates,
+    p: &Params,
+    never_seen: NeverSeen,
+) -> f64 {
+    let ctx = Ctx::with(data, err, never_seen);
     let mut w = Work::new(data.tree.len());
     let (cs, rates) = (cats(p), class_factors(&p.rates));
     data.characters
@@ -1662,7 +1723,7 @@ fn fit_once(
             "node {v} has a single child; only the product of its two branches is identifiable (remove unary nodes from the tree)"
         ));
     }
-    let ctx = Ctx::new(data, err);
+    let ctx = Ctx::with(data, err, opt.never_seen);
     let pats = compress(data);
     let has_data = nodes_with_data(data);
     let informative = data.tips.iter().filter(|&&t| has_data[t]).count();
@@ -3184,6 +3245,119 @@ mod tests {
         check_class_mixture(&with_separate(some_params(&t), 1, 1.0, 3, 0.5));
         check_class_mixture(&with_separate(some_params(&t), 3, 0.7, 1, 1.0));
         check_class_mixture(&with_separate(some_params(&t), 2, 0.4, 3, 1.5));
+    }
+
+    #[test]
+    fn global_never_seen_correction_matches_brute_force() {
+        // MALIN's correction: log-likelihood = sum of ln P(column) minus N ln(1 - p0), p0 = P(no intron at any genome, all observable)
+        let t = tree(NWK);
+        let p = some_params(&t);
+        let err = some_errors();
+        let with_missing: &[&[u8]] = &[
+            &[1, 0, 1, MISSING, 0],
+            &[0, 0, 0, 1, 1],
+            &[1, MISSING, 1, 1, MISSING],
+            &[1, 1, 1, 1, 1],
+        ];
+        let d = data(NWK, with_missing);
+        let (_, p0, _, _) = brute(&d, &err, &p, &[ABSENT; 5]);
+        let want: f64 = with_missing
+            .iter()
+            .map(|c| brute(&d, &err, &p, c).0.ln() - (1.0 - p0).ln())
+            .sum();
+        let got = log_likelihood_with(&d, &err, &p, NeverSeen::Global);
+        assert!((got - want).abs() < 1e-10, "{got} vs {want}");
+        // with missing cells the per-pattern conditioning differs; without them the two are the same function
+        let per = log_likelihood_with(&d, &err, &p, NeverSeen::PerPattern);
+        assert!((per - got).abs() > 1e-4, "{per} vs {got}");
+        let full: &[&[u8]] = &[&[1, 0, 1, 0, 0], &[0, 0, 0, 1, 1], &[1, 1, 1, 1, 1]];
+        let df = data(NWK, full);
+        let (a, b) = (
+            log_likelihood_with(&df, &err, &p, NeverSeen::Global),
+            log_likelihood_with(&df, &err, &p, NeverSeen::PerPattern),
+        );
+        assert!((a - b).abs() < 1e-12, "{a} vs {b}");
+        // the expected number of never-seen positions is N p0 / (1 - p0), as MALIN's "predicted missing"
+        let ctx = Ctx::with(&d, &err, NeverSeen::Global);
+        let acc = e_step(&ctx, &compress(&d), &p);
+        let n = with_missing.len() as f64;
+        assert!(
+            (acc.unobserved - n * p0 / (1.0 - p0)).abs() < 1e-9 * n,
+            "{} vs {}",
+            acc.unobserved,
+            n * p0 / (1.0 - p0)
+        );
+        assert!((no_intron_probability(&d, &err, &p) - p0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn em_with_the_global_correction_never_decreases_and_reaches_a_stationary_point() {
+        // data with missing cells: simulate, then hide 15 % of the cells
+        let t = tree(NWK8);
+        let err = ErrorRates {
+            sensitivity: vec![0.95; 8],
+            false_rate: vec![0.005; 8],
+        };
+        let truth = truth8(0.5);
+        let mut rng = Rng(31);
+        let cols: Vec<Vec<u8>> = simulate(&t, &truth, &err, 20_000, 31)
+            .into_iter()
+            .map(|c| {
+                c.into_iter()
+                    .map(|x| if rng.f() < 0.15 { MISSING } else { x })
+                    .collect::<Vec<u8>>()
+            })
+            .filter(|c| c.contains(&PRESENT))
+            .collect();
+        let d = sim_data(NWK8, cols);
+        let opt = |it: usize| FitOptions {
+            max_iter: it,
+            tol: 0.0,
+            never_seen: NeverSeen::Global,
+            ..Default::default()
+        };
+        let mut last = f64::NEG_INFINITY;
+        for it in [1, 2, 4, 8, 16, 32] {
+            let r = fit(&d, &err, &opt(it)).unwrap();
+            assert!(
+                r.log_lik >= last - 1e-6,
+                "iteration {it}: {} < {last}",
+                r.log_lik
+            );
+            last = r.log_lik;
+        }
+        let r = fit(
+            &d,
+            &err,
+            &FitOptions {
+                never_seen: NeverSeen::Global,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(r.converged);
+        let base = log_likelihood_with(&d, &err, &r.params, NeverSeen::Global);
+        assert!((base - r.log_lik).abs() < 1e-6 * base.abs());
+        for v in 0..t.len() {
+            if r.nodes[v].fixed != Fixed::No || t.parent(v).is_none() {
+                continue;
+            }
+            for (which, h) in [(0, 1e-4), (0, -1e-4), (1, 1e-4), (1, -1e-4)] {
+                let mut q = r.params.clone();
+                if which == 0 {
+                    q.gain[v] += h
+                } else {
+                    q.loss[v] += h
+                }
+                assert!(
+                    log_likelihood_with(&d, &err, &q, NeverSeen::Global) <= base + 1e-4,
+                    "node {v} ({which}) by {h}"
+                );
+            }
+        }
+        // the two corrections differ on data with missing cells, so their fits do too
+        let per = fit(&d, &err, &FitOptions::default()).unwrap();
+        assert!((per.log_lik - r.log_lik).abs() > 1e-3);
     }
 
     #[test]

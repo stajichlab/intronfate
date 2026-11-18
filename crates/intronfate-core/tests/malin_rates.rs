@@ -10,8 +10,13 @@
 //! parameters, and (3) prints the two parameter sets side by side. If both tools maximise the same likelihood, (1) is at least (2) and the
 //! difference is small. Optional: `INTRONFATE_MALIN_MIN_OBSERVED=N` keeps positions observed in at least N taxa (MALIN's table filter),
 //! `INTRONFATE_MALIN_LL=x` is MALIN's own reported log-likelihood, printed for comparison, and
-//! `INTRONFATE_MALIN_COUNT_ONLY=1` only prints how many positions each minimum-observed filter keeps.
-use intronfate_core::likelihood::{fit, log_likelihood, ErrorRates, FitOptions, Params, Rates};
+//! `INTRONFATE_MALIN_COUNT_ONLY=1` only prints how many positions each minimum-observed filter keeps, and
+//! `INTRONFATE_MALIN_NEVER_SEEN=global` models the never-seen positions as MALIN does (one probability p0 that a position has no intron
+//! at any genome; SPEC §5.5) instead of conditioning each position on its own pattern of missing cells.
+use intronfate_core::likelihood::{
+    fit, log_likelihood_with, no_intron_probability, ErrorRates, FitOptions, NeverSeen, Params,
+    Rates,
+};
 use intronfate_core::malin::{from_malin, parse_rates};
 use intronfate_core::matrix::SiteMatrix;
 use intronfate_core::score::{prepare_with, PrepareOptions};
@@ -67,7 +72,13 @@ fn run(table: &str, rates: &str) {
         d.characters.len()
     );
     let err = ErrorRates::none(d.tips.len());
+    let never_seen = match std::env::var("INTRONFATE_MALIN_NEVER_SEEN").as_deref() {
+        Ok("global") => NeverSeen::Global,
+        _ => NeverSeen::PerPattern,
+    };
+    println!("never-seen positions: {never_seen:?}");
     let opt = FitOptions {
+        never_seen,
         tol: 1e-9,
         param_tol: 1e-8,
         max_iter: 500_000,
@@ -100,7 +111,16 @@ fn run(table: &str, rates: &str) {
         pm.loss[v] = n.p_loss;
     }
     pm.rates = Rates::free(gain_lv.clone(), loss_lv.clone());
-    let l_malin = log_likelihood(&d, &err, &pm);
+    let l_malin = log_likelihood_with(&d, &err, &pm, never_seen);
+    let (p0, n) = (
+        no_intron_probability(&d, &err, &pm),
+        d.characters.len() as f64,
+    );
+    println!(
+        "at MALIN's parameters: p0 {p0:.6}, predicted never-seen positions {:.2}, uncorrected lnL {:.4}",
+        n * p0 / (1.0 - p0),
+        l_malin + n * (1.0 - p0).ln()
+    );
     println!(
         "lnL at this tool's maximum {:.4} ({} E-steps, converged {})   lnL at MALIN's parameters {:.4}   difference {:+.4}",
         ours.log_lik, ours.iterations, ours.converged, l_malin, ours.log_lik - l_malin

@@ -1,0 +1,85 @@
+== Rogozin table, Rog-ecdysozoa1000.rates
+7221 sites in the table, 7221 scored (min observed taxa 0): PrepareReport { used: ["Dm", "Ag", "Ce", "Hs", "Sp", "At", "Pf"], taxa_not_in_tree: [], tree_tip_without_data: [], uninformative: 0, too_sparse: 0 }
+never-seen positions: Global
+at MALIN's parameters: p0 0.847412, predicted never-seen positions 40102.62, uncorrected lnL -31371.7254
+lnL at this tool's maximum -17796.7474 (3447 E-steps, converged true)   lnL at MALIN's parameters -17796.1286   difference -0.6188
+root presence: ours 0.0416  MALIN 0.0738
+MALIN loss levels (prob, mult): [(0.7982451154954381, 1.0), (0.20175488450456194, 0.4022140312226801)]   gain levels: []
+ours  loss levels: [(0.2589448910729827, 1.0), (0.7410551089270173, 2.520342417796203)]   gain levels: []
+branch              gain   gain(M)      loss   loss(M)   fixed
+Crown            0.00000   0.00278   0.00000   0.60220   Root
+Opisthokont      0.00481   0.00783   0.08698   0.15632   No
+Bilatera         0.03826   0.04328   0.05420   0.13146   No
+Ecdysozoa        0.00598   0.00609   0.13464   0.37534   No
+Diptera          0.00609   0.00436   0.48359   0.79680   No
+Dm               0.00214   0.00173   0.25501   0.50876   No
+Ag               0.00225   0.00178   0.29459   0.56939   No
+Ce               0.02473   0.01625   0.55081   0.85177   No
+Hs               0.01044   0.00529   0.07393   0.17142   No
+Sp               0.00686   0.00400   0.68948   0.94709   No
+At               0.04718   0.04072   0.26781   0.49834   No
+Pf               0.01159   0.00491   0.81865   0.98045   No
+root branch free, started at MALIN's parameters: lnL -17796.0627 (23606 E-steps, converged true); difference from lnL at MALIN's parameters +0.0659
+  loss levels [(0.8146951276311939, 1.0), (0.1853048723688061, 0.40056839987043713)]  gain levels []  root 0.0945
+test likelihood_fit_matches_malins_estimates ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 18.63s
+== Chromo23: positions kept by each minimum-observed filter (MALIN used 7,030)
+test likelihood_fit_matches_malins_estimates ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+== Chromo23 table, Chromo23.rates, min observed taxa 18 (MALIN: 7,030 positions, log-likelihood -28430.9249)
+9256 sites in the table, 7030 scored (min observed taxa 18): PrepareReport { used: ["Osat", "Ptri", "Atha", "Otau", "Crei", "Pyoe", "Pber", "Pcha", "Pfal", "Tpar", "Tann", "Tthe", "Ptet", "Pram", "Psoj", "Ftri", "Pchr", "Ccin", "Pbla", "Rory", "Hsap", "Amel", "Tcas"], taxa_not_in_tree: [], tree_tip_without_data: [], uninformative: 570, too_sparse: 1656 }
+never-seen positions: Global
+at MALIN's parameters: p0 0.823339, predicted never-seen positions 32763.79, uncorrected lnL -40617.5994
+lnL at this tool's maximum -28430.9159 (40407 E-steps, converged true)   lnL at MALIN's parameters -28430.9249   difference +0.0090
+MALIN's own reported log-likelihood: -28430.9249
+root presence: ours 0.0296  MALIN 0.0295
+MALIN loss levels (prob, mult): [(0.8451470290647637, 1.0), (0.1548529709352364, 0.3874513864144589)]   gain levels: []
+ours  loss levels: [(0.8445973043970028, 1.0), (0.1554026956029972, 0.38758986318958505)]   gain levels: []
+branch              gain   gain(M)      loss   loss(M)   fixed
+Viridiplantae    0.01588   0.01582   0.46508   0.46520   No
+Plantae          0.01447   0.01446   0.15324   0.15323   No
+Osat             0.00106   0.00106   0.02701   0.02700   No
+rosids           0.00010   0.00010   0.00000   0.00000   No
+Ptri             0.00138   0.00138   0.03836   0.03834   No
+Atha             0.00033   0.00033   0.04113   0.04111   No
+Chlorophyta      0.04750   0.05314   0.34488   0.27057   No
+Otau             0.00101   0.00100   0.99871   0.99875   No
+Crei             0.01250   0.01211   0.70743   0.73545   No
+Chromalveolata   0.00075   0.00075   0.01097   0.01037   No
+Alveolata        0.01962   0.01967   0.01588   0.01517   No
+Apicomplexa      0.01094   0.01093   0.84891   0.84895   No
+Plasmodium       0.00075   0.00075   0.92778   0.92774   No
+mrca-PyPbPc      0.00007   0.00007   0.00000   0.00000   No
+mrca-PyPb        0.00000   0.00000   0.00000   0.00000   No
+Pyoe             0.00028   0.00028   0.15498   0.15487   No
+Pber             0.00019   0.00019   0.03846   0.03843   No
+Pcha             0.00016   0.00016   0.03347   0.03345   No
+Pfal             0.00008   0.00008   0.02309   0.02309   No
+Theileria        0.00388   0.00387   0.43897   0.43896   No
+Tpar             0.00021   0.00021   0.00000   0.00000   No
+Tann             0.00061   0.00061   0.03859   0.03859   No
+Ciliophora       0.00578   0.00576   0.83086   0.83098   No
+Tthe             0.00291   0.00290   0.32350   0.32363   No
+Ptet             0.00530   0.00529   0.69650   0.69637   No
+stramenopiles    0.00000   0.00000   0.54489   0.50674   No
+Phytophthora     0.00318   0.00317   0.84829   0.85982   No
+Pram             0.00032   0.00032   0.03843   0.03842   No
+Psoj             0.00025   0.00025   0.03065   0.03067   No
+Ftri             0.00223   0.00223   0.99655   0.99664   No
+Opisthokonts     0.00750   0.00747   0.02341   0.02371   No
+Fungi            0.00275   0.00275   0.20949   0.20963   No
+Homobasidiomycetes   0.00934   0.00933   0.41461   0.41445   No
+Pchr             0.00242   0.00242   0.17630   0.17622   No
+Ccin             0.00091   0.00090   0.12401   0.12395   No
+Mucorales        0.00126   0.00126   0.26290   0.26286   No
+Pbla             0.00131   0.00131   0.08906   0.08902   No
+Rory             0.00076   0.00076   0.44469   0.44452   No
+Metazoa          0.01776   0.01772   0.26982   0.26978   No
+Hsap             0.01010   0.01008   0.19908   0.19901   No
+Insecta          0.00313   0.00312   0.55894   0.55878   No
+Amel             0.00490   0.00489   0.38056   0.38030   No
+Tcas             0.00303   0.00302   0.64916   0.64884   No
+root branch free, started at MALIN's parameters: lnL -28430.9159 (37359 E-steps, converged true); difference from lnL at MALIN's parameters +0.0090
+  loss levels [(0.8445971264727983, 1.0), (0.15540287352720172, 0.38759187677434753)]  gain levels []  root 0.0296
+test likelihood_fit_matches_malins_estimates ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 484.76s

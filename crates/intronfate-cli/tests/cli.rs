@@ -1567,6 +1567,20 @@ fn likelihood_writes_its_tables_and_reads_error_rates() {
         !o.status.success() && String::from_utf8_lossy(&o.stderr).contains("cannot be combined")
     );
 
+    // MALIN's never-seen correction
+    let out = w.join("global");
+    let mut a = base(&out);
+    a.extend(["--ml-never-seen".into(), "global".into()]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert!(summary_has(
+        &out.join("family.aln"),
+        "ml_never_seen\tglobal"
+    ));
+    let mut a = base(&w.join("never_bad"));
+    a.extend(["--ml-never-seen".into(), "sometimes".into()]);
+    assert!(!run_s(&a).status.success());
+
     // refusals: --min-taxa > 1, a bad file
     let mut a = base(&w.join("mt"));
     a.extend(["--min-taxa".into(), "2".into()]);

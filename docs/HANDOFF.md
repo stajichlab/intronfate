@@ -32,7 +32,7 @@ Analyses for a separate research project (formerly `bench/V8`–`V15`) moved to 
 In rough priority order. Items marked SPEC are described there.
 
 1. ~~Separate gain and loss rate factors~~ and ~~free class levels like MALIN's~~ — done (SPEC §5.5c, §5.5d; `--ml-gain-categories` etc., `--ml-gain-levels`, `--ml-loss-levels`, `--ml-free-root-branch`).
-2. ~~Validate the likelihood fit against MALIN's `*.rates`~~ — done ([L1](../bench/L1_malin_likelihood/README.md)): constant rates (log-likelihood at MALIN's parameters within 0.002 of this tool's maximum) and rate variation (Rogozin within 0.07; `Chromo23` same levels and branch probabilities, but a 26-unit likelihood gap whose likely cause, different treatment of missing data in the never-seen correction, is untested). Open: test that cause (a MALIN-style single global correction as an option).
+2. ~~Validate the likelihood fit against MALIN's `*.rates`~~ — done ([L1](../bench/L1_malin_likelihood/README.md)): constant rates (within 0.002), Rogozin rate variation (within 0.07), and `Chromo23` rate variation, which reproduces MALIN's printed log-likelihood (-28430.9249) to four decimals at MALIN's parameters once the same never-seen correction is used (`--ml-never-seen global`); this tool's maximum is 0.009 higher.
 3. ~~EM `--ml-max-iter` overshoot~~ — fixed: the limit is exact (plain EM steps near the limit; test `max_iter_is_an_exact_limit_on_e_steps`).
 4. **`--flank` default (1)** is an engineering default, not a tuned one (SPEC §2, §12 item 6). Tune against MALIN's test data.
 5. **SQL/Chado/Ensembl annotation sources** (`AnnotationSource` seam exists; needs a schema decision; SPEC §12 item 4).

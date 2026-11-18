@@ -342,6 +342,8 @@ separately identifiable; a branch with no observed tip below it is fixed the sam
 reported as having no data; a node left with one informative child has its own branch fixed (only the product of the two branches
 is identified), and the root rule is applied through such nodes, descending while the effective root has a single informative
 child. At least 4 tips must have data (the ascertainment conditioning costs one degree of freedom; with 3 tips, 7 parameters face 6).
+The conditioning is per position by default; `--ml-never-seen global` uses MALIN's single global correction instead (§6b): one probability `p0` that a position has no intron at any
+genome with all genomes observable, `N p0/(1−p0)` expected never-seen positions, log-likelihood minus `N ln(1−p0)`. The two are the same function when no cell is missing.
 E-steps are summed in fixed chunks in order, so fits are reproducible bit for bit. Fitted by EM, with the never-seen positions as missing data (expected count `Z/(1−Z)` per observed
 position), accelerated with SQUAREM (Varadhan & Roland 2008) under a never-decrease safeguard; it stops when a cycle changes the
 log-likelihood by less than 1e-6 and no parameter by more than 1e-7, because the gain direction is flat and a log-likelihood
@@ -550,10 +552,15 @@ intron was scored as missing data — discarding exactly the negative evidence i
    on the Rogozin table (two loss levels) a fit with the larger root branch left free and started at MALIN's parameters ends 0.07 log-likelihood units above
    the value at them (levels 0.815 at 1 and 0.185 at 0.401 against MALIN's 0.798 and 0.202 at 0.402; the default fit, with that branch fixed, is 0.7 lower);
    on `Chromo23` (23 taxa; filtering to positions observed in at least 18 taxa keeps exactly MALIN's 7,030) the levels are 0.849 at 1 and 0.151 at 0.386
-   against MALIN's 0.845 and 0.155 at 0.387 with most branch probabilities within a few percent, but this tool's maximum is 26 log-likelihood units
-   above its value at MALIN's parameters, and MALIN's own reported value (-28430.9) is a different quantity from this tool's (-27959.6), probably because
-   MALIN corrects for never-seen positions with one global estimate while this tool conditions each position on its own pattern of missing cells (§5.5;
-   not tested separately).
+   against MALIN's 0.845 and 0.155 at 0.387 with most branch probabilities within a few percent, but with this tool's default conditioning its
+   maximum is 26 log-likelihood units above its value at MALIN's parameters, and MALIN's printed value differs from it. The cause is the
+   treatment of never-seen positions with missing cells. MALIN's output reports one global probability `p0` of a position with no intron at any genome
+   (0.82334) and a corrected log-likelihood equal to the uncorrected one minus `N ln(1 − p0)` (checked against its printed numbers: `N p0/(1−p0)` =
+   32,763.79 = "predicted missing", and -40617.5994 + 12186.6745 = -28430.9249); this tool by default conditions each position on its own pattern of
+   missing cells. With `--ml-never-seen global` (§5.5, `NeverSeen::Global`) this tool reproduces MALIN's printed values at MALIN's parameters: p0 0.823339,
+   32,763.79 never-seen positions, uncorrected -40617.5994 and corrected -28430.9249, and its own maximum is -28430.9159, 0.009 higher, with levels 0.8446
+   at 1 and 0.1554 at 0.3876 (MALIN 0.8451 and 0.1549 at 0.3875) and root presence 0.0296 (0.0295). So on a table with missing cells both tools maximise the same
+   function once the same correction is used; the Rogozin table has no missing cells and agrees either way.
 4. Cross-check the projection: run this tool's GFF path over a species whose MALIN `.faa` headers
    carry known positions, and diff derived `cds_offset` against theirs.
 

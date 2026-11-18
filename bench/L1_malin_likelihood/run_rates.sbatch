@@ -11,6 +11,8 @@ module load rust >/dev/null 2>&1 || true
 D=/rhome/jstajich/projects/intron_projector/bench/L1_malin_likelihood
 V1=/rhome/jstajich/projects/intron_projector/bench/V1_malin_validation/data
 export CARGO_TARGET_DIR=$SCRATCH/target
+# NS=global models the never-seen positions as MALIN does (SPEC §5.5); default is this tool's per-pattern conditioning
+export INTRONFATE_MALIN_NEVER_SEEN=${NS:-per-pattern}
 find "$D/build_src/crates" -name '*.rs' -exec touch {} +
 cd "$D/build_src"
 T() { set +e; cargo test --release --locked -p intronfate-core --test malin_rates -- --ignored --nocapture 2>&1 | grep -v -E "Compiling|Finished|Running|^$|^warning|running 1 test"; set -e; return 0; }
