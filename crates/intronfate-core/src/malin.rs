@@ -13,7 +13,9 @@
 //! `k+1`, and `3k+1`, `3k+2` lie inside codon `k+1`. That is exactly this project's
 //! `(column, phase) = (alipos / 3, alipos % 3)`, so a MALIN site and a [`Site`] are the same thing and
 //! conversion is exact in both directions. The phase digit repeats `alipos % 3` (the MALIN guide calls a
-//! codon-boundary intron "phase 3"), and a table whose digit contradicts its position is rejected.
+//! codon-boundary intron "phase 3"). The guide also allows plain `0/1` tables (the Rogozin format) with `#MAP` lines, where `1`, `2` and
+//! `3` all just mean "present": a table that uses only `0`, `1` and `?` takes the phase from `alipos`. A table that uses `2` or `3`
+//! has phase-coded digits, and one whose digit contradicts its position is rejected.
 //!
 //! Tables without `#MAP` lines (for example MALIN's `rogozin_introns_table`) hold `0/1` only: they carry
 //! no phase and no alignment, so they import as one matrix with [`PhaseMode::Ignore`] and the site
@@ -230,6 +232,9 @@ pub fn from_malin(text: &str, fallback_name: &str) -> Result<Vec<SiteMatrix>> {
             map.len()
         )));
     }
+    // `1` is a phase code only when the table also uses `2` or `3`; otherwise it is the plain "present" of the 0/1 format (MALIN treats
+    // 1, 2 and 3 as identical), and the phase comes from alipos.
+    let phase_coded = rows.iter().flatten().any(|c| *c == '2' || *c == '3');
     let mut per_aln: BTreeMap<String, Vec<Site>> = BTreeMap::new();
     for s in 0..n_sites {
         let (aln, alipos) = &map[&s];
@@ -237,7 +242,7 @@ pub fn from_malin(text: &str, fallback_name: &str) -> Result<Vec<SiteMatrix>> {
         if let Some(c) = rows
             .iter()
             .map(|r| r[s])
-            .find(|c| phase_of_code(*c).is_some_and(|p| p != phase))
+            .find(|c| phase_coded && phase_of_code(*c).is_some_and(|p| p != phase))
         {
             return Err(Error::parse(format!(
                 "site {s}: code {c} means phase {} but alipos {alipos} implies phase {phase}",
@@ -267,6 +272,116 @@ pub fn from_malin(text: &str, fallback_name: &str) -> Result<Vec<SiteMatrix>> {
             SiteMatrix::from_parts(&aln, taxa.clone(), sites, PhaseMode::Strict)
         })
         .collect())
+}
+
+/// One branch of a MALIN `.rates` file: the probabilities MALIN estimated for the branch above the node, in file order.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MalinNodeRates {
+    /// Node name from the `NodeWithRates[$<id>_<name> ...]` comment (the tip name, or the internal label).
+    pub name: String,
+    /// P(absent -> present) along the branch.
+    pub p_gain: f64,
+    /// P(present -> absent) along the branch.
+    pub p_loss: f64,
+}
+
+/// One rate class of a MALIN `.rates` file (`|class` line): its probability, the root presence probability and the loss and gain
+/// rate multipliers relative to the branch probabilities above (1.0 = as given there).
+#[derive(Clone, Debug, PartialEq)]
+pub struct MalinRateClass {
+    pub id: usize,
+    pub loss_level: usize,
+    pub gain_level: usize,
+    pub prob: f64,
+    pub root: f64,
+    pub loss_mult: f64,
+    pub gain_mult: f64,
+}
+
+/// A MALIN `.rates` file (the output of `calculateConstantRates` / `calculateRASRates`): the tree, per-branch probabilities and
+/// the rate classes. Used to compare MALIN's estimates with this tool's likelihood fit.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MalinRates {
+    /// The `#tree` line (Newick, with MALIN's fitted branch lengths and internal names).
+    pub tree: String,
+    pub nodes: Vec<MalinNodeRates>,
+    pub classes: Vec<MalinRateClass>,
+}
+
+/// Parse a MALIN `.rates` file. Only the `#tree` line, the per-node `p(gain) p(loss) // ...NodeWithRates[$i_name ...]` lines and the
+/// `|class` lines are read; the other `#`-comment lines (including the per-leaf listings of rate-variation runs) are skipped.
+pub fn parse_rates(text: &str) -> Result<MalinRates> {
+    let (mut tree, mut nodes, mut classes) = (None, Vec::new(), Vec::new());
+    let num = |s: &str, what: &str, n: usize| -> Result<f64> {
+        s.trim()
+            .parse::<f64>()
+            .map_err(|_| Error::parse(format!("line {n}: {what} {s:?} is not a number")))
+    };
+    for (i, line) in text.lines().enumerate() {
+        let n = i + 1;
+        if let Some(t) = line.strip_prefix("#tree ") {
+            tree = Some(t.trim().to_string());
+        } else if let Some(rest) = line.strip_prefix("|class\t") {
+            let f: Vec<&str> = rest.split('\t').collect();
+            if f.len() < 7 {
+                return Err(Error::parse(format!(
+                    "line {n}: a |class line needs 7 fields, found {}",
+                    f.len()
+                )));
+            }
+            let idx = |s: &str, what: &str| {
+                s.trim()
+                    .parse::<usize>()
+                    .map_err(|_| Error::parse(format!("line {n}: {what} {s:?} is not an integer")))
+            };
+            classes.push(MalinRateClass {
+                id: idx(f[0], "class id")?,
+                loss_level: idx(f[1], "loss level")?,
+                gain_level: idx(f[2], "gain level")?,
+                prob: num(f[3], "class probability", n)?,
+                root: num(f[4], "root probability", n)?,
+                loss_mult: num(f[5], "loss multiplier", n)?,
+                gain_mult: num(f[6], "gain multiplier", n)?,
+            });
+        } else if !line.starts_with('#')
+            && !line.starts_with('|')
+            && line.contains("NodeWithRates[$")
+        {
+            let f: Vec<&str> = line.split('\t').collect();
+            if f.len() < 3 {
+                return Err(Error::parse(format!(
+                    "line {n}: a node line needs p(gain), p(loss) and a comment"
+                )));
+            }
+            let after = &line[line.find("NodeWithRates[$").unwrap() + "NodeWithRates[$".len()..];
+            let name = after
+                .split_whitespace()
+                .next()
+                .and_then(|w| w.split_once('_'))
+                .map(|(_, name)| name.to_string())
+                .ok_or_else(|| {
+                    Error::parse(format!(
+                        "line {n}: cannot read the node name from {after:?}"
+                    ))
+                })?;
+            nodes.push(MalinNodeRates {
+                name,
+                p_gain: num(f[0], "p(gain)", n)?,
+                p_loss: num(f[1], "p(loss)", n)?,
+            });
+        }
+    }
+    let tree = tree.ok_or_else(|| Error::parse("no #tree line"))?;
+    if nodes.is_empty() {
+        return Err(Error::parse(
+            "no node lines (p(gain) p(loss) // NodeWithRates[...])",
+        ));
+    }
+    Ok(MalinRates {
+        tree,
+        nodes,
+        classes,
+    })
 }
 
 #[cfg(test)]
@@ -320,9 +435,38 @@ mod tests {
 
     #[test]
     fn a_phase_code_that_contradicts_alipos_is_rejected() {
-        let bad = "A\t1\nB\t0\n#MAP\t0\tK\t3\n";
+        // phase-coded table (it uses a 2): the 2 at a codon-boundary position (phase 0) contradicts alipos
+        let bad = "A\t21\nB\t00\n#MAP\t0\tK\t3\n#MAP\t1\tK\t7\n";
         let err = from_malin(bad, "x").unwrap_err().to_string();
         assert!(err.contains("implies phase"), "{err}");
+    }
+
+    #[test]
+    fn a_plain_zero_one_table_with_map_lines_takes_the_phase_from_alipos() {
+        // the MALIN guide: 1, 2 and 3 all mean present; a 0/1 table with #MAP lines is valid and `1` is not a phase code
+        let ms = from_malin(
+            "A\t110\nB\t001\n#MAP\t0\tK\t3\n#MAP\t1\tK\t7\n#MAP\t2\tK\t8\n",
+            "x",
+        )
+        .unwrap();
+        assert_eq!(ms.len(), 1);
+        let got: Vec<(u32, u8, bool, bool)> = ms[0]
+            .sites
+            .iter()
+            .map(|s| (s.col, s.phase, s.presence.test(0), s.presence.test(1)))
+            .collect();
+        assert_eq!(
+            got,
+            vec![
+                (1, 0, true, false),
+                (2, 1, true, false),
+                (2, 2, false, true)
+            ]
+        );
+        assert_eq!(ms[0].phase_mode, PhaseMode::Strict);
+        // exported back, the phase codes are written (3 / 1 / 2)
+        let out = to_malin(&[&ms[0]]).unwrap();
+        assert!(out.contains("A\t310") && out.contains("B\t002"), "{out}");
     }
 
     #[test]
@@ -351,5 +495,48 @@ mod tests {
             from_malin("A\t00\nB\t00\n#MAP\t0\tK\t3\n", "x").is_err(),
             "site 1 unmapped"
         );
+    }
+
+    #[test]
+    fn parse_rates_reads_tree_nodes_and_classes() {
+        // synthetic file in the layout of MALIN's output (not MALIN data)
+        let text = "#| Arguments: table tree\n#tree ((A:0.1, B:0.2) AB:0.3, C:0.4) Root:1.0;\n# p(gain)\tp(loss)\t// node info\n\
+0.01\t0.30\t// x.NodeWithRates[$0_A len 0.1 prnt $3_AB chld []; gain 0.1]\n\
+0.02\t0.40\t// x.NodeWithRates[$1_B len 0.2 prnt $3_AB chld []; gain 0.1]\n\
+0.03\t0.50\t// x.NodeWithRates[$3_AB len 0.3 prnt $5_Root chld [$0_A, $1_B]; gain 0.1]\n\
+#class\tid\tlosslevel\tgainlevel\tprob\troot\tloss\tgain\n\
+|class\t0\t0\t0\t0.25\t0.07\t0.4\t1.0\n|class\t1\t1\t0\t0.75\t0.07\t1.0\t1.0\n";
+        let r = parse_rates(text).unwrap();
+        assert!(r.tree.starts_with("((A:0.1"));
+        assert_eq!(r.nodes.len(), 3);
+        assert_eq!(
+            (
+                r.nodes[2].name.as_str(),
+                r.nodes[2].p_gain,
+                r.nodes[2].p_loss
+            ),
+            ("AB", 0.03, 0.5)
+        );
+        assert_eq!(r.classes.len(), 2);
+        assert_eq!(
+            (
+                r.classes[0].loss_level,
+                r.classes[0].gain_level,
+                r.classes[0].prob
+            ),
+            (0, 0, 0.25)
+        );
+        assert_eq!(
+            (
+                r.classes[1].root,
+                r.classes[1].loss_mult,
+                r.classes[1].gain_mult
+            ),
+            (0.07, 1.0, 1.0)
+        );
+        assert!(parse_rates("#tree (A,B);\n").is_err()); // no nodes
+        assert!(parse_rates("0.1\t0.2\t// NodeWithRates[$0_A len 1]\n").is_err()); // no tree
+        assert!(parse_rates("#tree (A,B);\nxx\t0.2\t// NodeWithRates[$0_A len 1]\n").is_err());
+        // not a number
     }
 }

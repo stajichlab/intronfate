@@ -1,0 +1,21 @@
+
+running 1 test
+sites 7221   lnL at this tool's MLE -17817.3633 (400 E-steps, converged true)   lnL at MALIN's parameters -17817.3652   difference +0.0019
+root presence: ours 0.0253  MALIN 0.0972
+branch            gain   gain(M)      loss   loss(M)   fixed
+Crown          0.00000   0.00001   0.00000   0.74083   Root
+Opisthokont    0.00521   0.00530   0.02523   0.02140   No
+Bilatera       0.03019   0.03012   0.05896   0.06095   No
+Ecdysozoa      0.00368   0.00369   0.31913   0.31901   No
+Diptera        0.00408   0.00407   0.58176   0.58182   No
+Dm             0.00291   0.00291   0.32189   0.32191   No
+Ag             0.00278   0.00278   0.36975   0.36976   No
+Ce             0.02182   0.02179   0.65304   0.65308   No
+Hs             0.03030   0.03027   0.08167   0.08151   No
+Sp             0.00559   0.00558   0.81536   0.81570   No
+At             0.05403   0.05401   0.26832   0.26723   No
+Pf             0.00853   0.00099   0.89715   0.89695   No
+test likelihood_fit_matches_malins_constant_rates ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+

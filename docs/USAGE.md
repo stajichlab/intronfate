@@ -200,7 +200,8 @@ intronfate convert --to-malin out/*/matrix.tsv -o ours.table    # taxa must be i
 
 A MALIN site is `(column, phase) = (alipos / 3, alipos % 3)`; phase digits are `3`=phase 0, `1`, `2`.
 Export refuses matrices built with `--ignore-phase` (no phase to write), and import of a 0/1 table
-without `#MAP` lines produces a phase-less matrix (`phase_mode=ignore`). See
+without `#MAP` lines produces a phase-less matrix (`phase_mode=ignore`). A 0/1 table *with* `#MAP` lines is read too (MALIN treats `1`, `2`
+and `3` alike): the phase then comes from `alipos`. A table that uses `2` or `3` is phase-coded, and a digit that contradicts its `alipos` is an error. See
 [`../examples/03_malin`](../examples/03_malin/README.md) for a lossless round trip.
 
 ## 8. Troubleshooting

@@ -146,7 +146,7 @@ impl Params {
 
 #[derive(Clone, Debug)]
 pub struct FitOptions {
-    /// Limit on E-steps. It is checked once per acceleration cycle, which can use up to 15 E-steps, so it may be exceeded by that.
+    /// Exact limit on E-steps (at least 1). Near the limit the fit switches from accelerated to plain EM steps so the count never exceeds it.
     pub max_iter: usize,
     /// Stop when an acceleration cycle improves the log-likelihood by less than this ...
     pub tol: f64,
@@ -1802,10 +1802,26 @@ mod tests {
         }
         // with the default stopping rule the count never exceeds the limit
         for it in [5usize, 30, 100] {
-            let r = fit(&d, &err, &FitOptions { max_iter: it, ..Default::default() }).unwrap();
+            let r = fit(
+                &d,
+                &err,
+                &FitOptions {
+                    max_iter: it,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
             assert!(r.iterations <= it, "{} > {it}", r.iterations);
         }
-        assert!(fit(&d, &err, &FitOptions { max_iter: 0, ..Default::default() }).is_err());
+        assert!(fit(
+            &d,
+            &err,
+            &FitOptions {
+                max_iter: 0,
+                ..Default::default()
+            }
+        )
+        .is_err());
     }
 
     #[test]

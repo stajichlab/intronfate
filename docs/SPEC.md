@@ -499,7 +499,11 @@ intron was scored as missing data — discarding exactly the negative evidence i
    every `(alignment, alipos)` row identical. Its alphabet counts (`0` 160,418, `?` 33,102, `3` 10,493,
    `2` 4,568, `1` 4,307) were also re-counted and match.
 3. Compare against `*.rates` (MALIN's maximum-likelihood gain/loss rate estimates, produced from
-   `table + newick`) with §5.5 — the direct quantitative cross-check on the model side. Not done yet (§12).
+   `table + newick`) with §5.5 — the direct quantitative cross-check on the model side. **Done for the constant-rates model**
+   ([L1](../bench/L1_malin_likelihood/README.md)): on the Rogozin table (7,221 sites) this tool's log-likelihood at MALIN's printed parameters is
+   -17817.3652 against -17817.3633 at its own maximum (difference 0.002), and per-branch probabilities agree to three or four digits except on
+   the two non-identifiable root branches. The rate-variation files (`Rog-ecdysozoa1000.rates`, `Chromo23.rates`) need separate gain and loss
+   classes (§5.6) and are not compared yet.
 4. Cross-check the projection: run this tool's GFF path over a species whose MALIN `.faa` headers
    carry known positions, and diff derived `cds_offset` against theirs.
 
@@ -654,8 +658,8 @@ comparison the tool exists to make mechanically repeatable.
    done ([V3](../bench/V3_gff_scale/README.md), §6).
 4. **`AnnotationSource` for SQL/Chado/Ensembl** — the seam exists; needs a schema decision.
 5. **Likelihood-based scoring**: v1 done (§5.5: branch-specific probabilities, annotation error, ascertainment, EM, bootstrap).
-   Rate variation across positions done (§5.5b). Remaining: separate gain/loss rate factors (§5.6), validation against MALIN's
-   `*.rates` output (§6b).
+   Rate variation across positions done (§5.5b). Validated against MALIN's constant-rates `*.rates` (§6b, L1). Remaining: separate gain/loss rate factors (§5.6) and the comparison with MALIN's
+   rate-variation output.
 6. ~~Column observability~~ — done (§2: per-cell observability with a flank rule), as are `--min-observed` and
    the `n_both_observable` column in `pairwise.tsv`. Remaining: tuning the `--flank` default.
 7. **Stdin/stdout support** (`--gff -`, `-o -`) for pipeline composition.
