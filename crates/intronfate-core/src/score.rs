@@ -1,4 +1,4 @@
-//! Scoring shared intron positions: Dollo parsimony, maximum parsimony, and counts.
+//! Scoring shared intron positions: Dollo parsimony (classic and weighted), maximum parsimony (Fitch), and counts. The likelihood model is in `likelihood.rs`.
 //!
 //! Each intron position becomes a discrete binary character ("is there an intron at alignment
 //! column *c*, phase *p*?") whose states are observed in the aligned taxa. What differs between
@@ -40,6 +40,10 @@ pub enum Method {
     Dollo,
     MaxParsimony,
     Counts,
+    /// Weighted irreversible model ([`dollo_weighted`]) over a sweep of gain:loss weights; never a default.
+    DolloWeighted,
+    /// Maximum likelihood with annotation error ([`crate::likelihood`]); never a default.
+    Likelihood,
 }
 
 impl std::fmt::Display for Method {
@@ -48,6 +52,8 @@ impl std::fmt::Display for Method {
             Method::Dollo => "dollo",
             Method::MaxParsimony => "mp",
             Method::Counts => "counts",
+            Method::DolloWeighted => "dollo_weighted",
+            Method::Likelihood => "likelihood",
         })
     }
 }
@@ -58,6 +64,10 @@ impl Method {
             "dollo" | "d" => Some(Method::Dollo),
             "mp" | "parsimony" | "maxparsimony" | "fitch" => Some(Method::MaxParsimony),
             "count" | "counts" | "frequency" => Some(Method::Counts),
+            "dollo_weighted" | "dollo-weighted" | "weighted_dollo" | "wdollo" => {
+                Some(Method::DolloWeighted)
+            }
+            "likelihood" | "ml" => Some(Method::Likelihood),
             _ => None,
         }
     }
@@ -275,7 +285,8 @@ pub struct DolloSite {
 #[derive(Clone, Debug)]
 pub struct BranchTally {
     pub node: NodeId,
-    /// Tip name, non-numeric node label, or `node<id>` for an unlabelled internal branch.
+    /// Unique branch name from `Tree::node_names`: `root`, a tip name, a non-numeric node label, or the node's tip list,
+    /// with `#<node id>` appended where two would print alike.
     pub name: String,
     /// Every tip below the branch.
     pub tips: Vec<String>,
@@ -534,6 +545,13 @@ pub fn dollo_weighted(
             (ch.label.clone(), g, l)
         })
         .collect()
+}
+
+/// Parse a gain:loss weighting such as `3:1` (gain weight first). The gain weight must be at least 1.
+pub fn parse_gain_loss_weight(s: &str) -> Option<(u32, u32)> {
+    let (g, l) = s.trim().split_once(':')?;
+    let (g, l) = (g.trim().parse::<u32>().ok()?, l.trim().parse::<u32>().ok()?);
+    (g >= 1).then_some((g, l))
 }
 
 /// Three-state weighted DP: `U` not yet gained, `P` present, `L` lost (terminal).
@@ -1366,6 +1384,19 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn gain_loss_weights_parse() {
+        assert_eq!(parse_gain_loss_weight("3:1"), Some((3, 1)));
+        assert_eq!(parse_gain_loss_weight(" 10 : 0 "), Some((10, 0)));
+        assert_eq!(parse_gain_loss_weight("0:1"), None);
+        assert_eq!(parse_gain_loss_weight("3"), None);
+        assert_eq!(parse_gain_loss_weight("a:1"), None);
+        assert_eq!(Method::parse("dollo_weighted"), Some(Method::DolloWeighted));
+        assert_eq!(Method::DolloWeighted.to_string(), "dollo_weighted");
+        assert_eq!(Method::parse("ml"), Some(Method::Likelihood));
+        assert_eq!(Method::Likelihood.to_string(), "likelihood");
     }
 
     #[test]

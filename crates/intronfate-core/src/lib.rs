@@ -2,7 +2,8 @@
 //!
 //! Project intron positions from genome annotation into **protein space**, then into
 //! **multiple-sequence-alignment (MSA) columns**, and score how those positions are shared
-//! across homologs with parsimony frameworks (Dollo, unrestricted maximum parsimony, counts).
+//! across homologs: Dollo parsimony (classic and weighted), Fitch maximum parsimony, counts, and a
+//! likelihood model with per-genome annotation error (`likelihood`).
 //!
 //! ## The coordinate model
 //!
@@ -66,6 +67,7 @@ pub mod annotation;
 pub mod error;
 pub mod gff;
 pub mod inputs;
+pub mod likelihood;
 pub mod malin;
 pub mod matrix;
 pub mod model;

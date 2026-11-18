@@ -1,0 +1,10 @@
+branch	node	n_tips	gains	losses	tips
+root	0	5	356	0	Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidulans
+Cneoformans	1	1	2367	0	Cneoformans
+Spombe,Scerevisiae,Ncrassa,Anidulans	2	4	102	0	Spombe,Scerevisiae,Ncrassa,Anidulans
+Spombe	3	1	282	150	Spombe
+Scerevisiae,Ncrassa,Anidulans	4	3	6	26	Scerevisiae,Ncrassa,Anidulans
+Scerevisiae	5	1	5	146	Scerevisiae
+Ncrassa,Anidulans	6	2	365	50	Ncrassa,Anidulans
+Ncrassa	7	1	344	111	Ncrassa
+Anidulans	8	1	548	36	Anidulans

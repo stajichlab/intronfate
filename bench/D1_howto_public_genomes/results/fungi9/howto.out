@@ -1,0 +1,203 @@
+[doc block 1/11] 1794620307 17:38:27
+[doc block 2/11] 1794620307 17:38:27
+OrthoFinder runs
+[doc block 3/11] 1794620312 17:38:32
+Spunctatus  Spizellomyces punctatus DAOM BR117
+Mmucedo  Mucor mucedo NRRL 3635
+Smaydis  Mycosarcoma (Ustilago) maydis 521
+Ccinerea  Coprinopsis cinerea okayama7#130
+Cneoformans  Cryptococcus neoformans var. grubii H99
+Spombe  Schizosaccharomyces pombe 972h-
+Scerevisiae  Saccharomyces cerevisiae S288C
+Ncrassa  Neurospora crassa OR74A
+Anidulans  Aspergillus nidulans FGSC A4
+total 42696
+-rw-rw---- 1 jstajich stajichlab 2248573 Nov 13 17:38 Anidulans.gff.gz
+-rw-rw---- 1 jstajich stajichlab 3274304 Nov 13 17:38 Anidulans.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 2693340 Nov 13 17:38 Ccinerea.gff.gz
+-rw-rw---- 1 jstajich stajichlab 3872318 Nov 13 17:38 Ccinerea.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 1996629 Nov 13 17:38 Cneoformans.gff.gz
+-rw-rw---- 1 jstajich stajichlab 2504045 Nov 13 17:38 Cneoformans.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 3010320 Nov 13 17:38 Mmucedo.gff.gz
+-rw-rw---- 1 jstajich stajichlab 3548647 Nov 13 17:38 Mmucedo.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 1778135 Nov 13 17:38 Ncrassa.gff.gz
+-rw-rw---- 1 jstajich stajichlab 3209613 Nov 13 17:38 Ncrassa.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 2203839 Nov 13 17:38 Scerevisiae.gff.gz
+-rw-rw---- 1 jstajich stajichlab 1848181 Nov 13 17:38 Scerevisiae.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 1004381 Nov 13 17:38 Smaydis.gff.gz
+-rw-rw---- 1 jstajich stajichlab 2502044 Nov 13 17:38 Smaydis.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 1495495 Nov 13 17:38 Spombe.gff.gz
+-rw-rw---- 1 jstajich stajichlab 1562816 Nov 13 17:38 Spombe.protein.faa.gz
+-rw-rw---- 1 jstajich stajichlab 1971917 Nov 13 17:38 Spunctatus.gff.gz
+-rw-rw---- 1 jstajich stajichlab 2953792 Nov 13 17:38 Spunctatus.protein.faa.gz
+[doc block 4/11] 1794620325 17:38:45
+Anidulans: 10453 genes kept from 10453 proteins (0 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
+Ccinerea: 13355 genes kept from 13356 proteins (1 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
+Cneoformans: 6975 genes kept from 7826 proteins (851 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
+Mmucedo: 14042 genes kept from 14042 proteins (0 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
+Ncrassa: 9757 genes kept from 10812 proteins (1055 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
+Scerevisiae: 6021 genes kept from 6021 proteins (0 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
+Smaydis: 6762 genes kept from 6780 proteins (18 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
+Spombe: 5124 genes kept from 5134 proteins (10 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
+Spunctatus: 8950 genes kept from 9422 proteins (472 other isoforms, 0 internal stop, 0 named in the GFF but not in the FASTA, 0 in the FASTA but not in the GFF)
+[doc block 5/11] 1794620336 17:38:56
+
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:39:00[0m[39;49m : Starting [0m[33;49mOrthoFinder[0m[39;49m v[0m[36;49m3.[0m[1;36;49m2[0m
+8 thread(s) for highly parallel tasks (BLAST searches etc.)
+4 thread(s) for OrthoFinder algorithm
+
+[1;33;49mOrthoFinder[0m[39;49m version [0m[1;36;49m3.2[0m[39;49m Copyright [0m[1;39;49m([0m[39;49mC[0m[1;39;49m)[0m[39;49m [0m[1;36;49m2014[0m[39;49m [0m[1;33;49mDavid Emms[0m
+
+[1;39;49mResults directory:[0m
+[39;49m    [0m[36;49m/scratch/jstajich/32075195/howto_fungi9/orthofinder/Results_fungi9/[0m
+
+Checking required programs are installed
+========================================
+[39;49mRunning with the recommended MSA tree inference by default. To revert to legacy [0m
+[39;49mmethod use [0m[32;49m"-M dendroblast"[0m[39;49m.[0m
+
+[39;49mTest can run [0m[32;49m"[0m[33;49mmcl[0m[32;49m"[0m[39;49m - [0m[1;32;49mok[0m
+[39;49mTest can run [0m[32;49m"[0m[33;49mfamsa[0m[32;49m"[0m[39;49m - [0m[1;32;49mok[0m
+[39;49mTest can run [0m[32;49m"[0m[33;49mfasttree[0m[32;49m"[0m[39;49m - [0m[1;32;49mok[0m
+
+Dividing up work for BLAST for parallel processing
+--------------------------------------------------
+Creating diamond databases ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   9/9 0:00:02
+
+Running diamond all-versus-all
+==============================
+Using 8 thread(s)
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:39:04[0m[39;49m : This may take some time[0m[33;49m...[0m
+Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   81/81 0:11:22
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:50:27[0m[39;49m : Done all-versus-all sequence search[0m
+
+Running OrthoFinder algorithm
+-----------------------------
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:50:27[0m[39;49m : Initial processing of each species[0m
+Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   9/9 0:00:00
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:50:28[0m[39;49m : Connected putative homologues[0m
+Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   9/9 0:00:00
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:50:42[0m[39;49m : Ran MCL[0m
+
+Writing orthogroups to file
+---------------------------
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:50:45[0m[39;49m : Done orthogroups[0m
+
+Analysing Orthogroups
+=====================
+
+Using user-supplied species tree
+--------------------------------
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m17:50:45[0m[39;49m : Starting MSA/Trees[0m
+
+Inferring multiple sequence alignments and gene trees
+-----------------------------------------------------
+Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   7785/7785 0:17:26
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:08:12[0m[39;49m : Done MSA/Trees[0m
+
+Reconciling gene trees and species tree
+---------------------------------------
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:08:12[0m[39;49m : Starting reconciliation and orthologs[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:08:12[0m[39;49m : Inferring orthologs from gene trees[0m
+Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   5076/5076 0:00:04
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:08:17[0m[39;49m : Done of orthologs[0m
+
+Writing results files
+=====================
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:08:17[0m[39;49m : Start writing hierarchical orthogroups files[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:08:17[0m[39;49m : Converting MSA/Trees[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:08:21[0m[39;49m : Updating MSA/Trees[0m
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:08:25[0m[39;49m : Done updating MSA/Trees[0m
+Processing... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   5929/5929 0:00:05
+[1;36;49m2026[0m[39;49m-[0m[1;36;49m11[0m[39;49m-[0m[1;36;49m13[0m[39;49m [0m[1;92;49m18:08:32[0m[39;49m : Done writing files[0m
+
+Summary: 
+ OrthoFinder assigned 66375 genes (81.5% of total) to 8976 orthogroups.         
+ 50% of genes were in orthogroups with 9 or more genes (G50 was 9) and were     
+ contained in the largest 3019 orthogroups (O50 was 3019).                      
+ There were 2168 orthogroups with all species present and 1103 of these         
+ consisted entirely of single-copy genes.                                       
+
+[1;39;49mResults directory:[0m
+[39;49m    [0m[36;49m/scratch/jstajich/32075195/howto_fungi9/orthofinder/Results_fungi9/[0m
+
+[1;39;49mCITATION:[0m
+[39;49m When publishing work that uses [0m[33;49mOrthoFinder[0m[39;49m please cite:[0m
+[39;49m Emms D.M., Liu Y., Belcher L., Holmes J. & Kelly S. [0m[1;39;49m([0m[1;36;49m2026[0m[1;39;49m)[0m[39;49m, Nature Methods [0m
+[1;92;49m23:1327[0m[39;49m–[0m[1;36;49m1333[0m[39;49m, [0m]8;id=8112335;https://doi.org/10.1038/s41592-026-03126-6\[4;36;49mhttps://doi.org/10.1038/s41592-026-03126-6[0m]8;;\
+
+[39;49m If you use the species tree in your work then please also cite:[0m
+[39;49m Emms D.M. & Kelly S. [0m[1;39;49m([0m[1;36;49m2017[0m[1;39;49m)[0m[39;49m, MBE [0m[1;35;49m34[0m[1;39;49m([0m[1;36;49m12[0m[1;39;49m)[0m[39;49m: [0m[1;36;49m3267[0m[39;49m-[0m[1;36;49m3278[0m
+[39;49m Emms D.M. & Kelly S. [0m[1;39;49m([0m[1;36;49m2018[0m[1;39;49m)[0m[39;49m, bioRxiv [0m]8;id=8112339;https://doi.org/10.1101/267914\[4;36;49mhttps://doi.org/10.1101/267914[0m]8;;\
+
+[33;49mOrthoFinder[0m[39;49m finished in [0m[1;32;49m1771.[0m[32;49m937310[0m[39;49ms[0m
+
+orthofinder/Results_fungi9/Orthogroups/Orthogroups.tsv
+[doc block 6/11] 1794622113 18:08:33
+tier	families	sequences	species_per_family
+A_strict	1103	9927	9:1103
+B_partial	720	5480	7:280;8:440
+C_hog	415	2965	7:355;8:60
+D_synteny	0	0	
+S=9 MIN=7; proteins dropped for an internal stop: 0
+[doc block 7/11] 1794622114 18:08:34
+aligned 1103 of 1103 families into alignments/A_strict
+[doc block 8/11] 1794622390 18:13:10
+annotation quality: 12 kinds flagged (0 errors, 12055 warnings) — details in diagnostics.tsv
+  no_cds x11084
+  proteins_not_in_alignment x1103
+  present_not_observable x696
+  protein_not_in_fasta x101
+  site_beyond_protein_end x75
+  (rerun with -v for individual records)
+note: 4992 position(s) cannot be explained by a single origin without 13853 independent loss event(s) — candidates for convergent insertion, or for the topology
+combined: dollo 15283g/13853l, mp 20299 steps
+combined: 15283 sites from 1103 alignments x 9 taxa -> results/A_strict/combined
+[doc block 9/11] 1794622397 18:13:17
+branch                                   node   n_tips  gains  losses  tips                                                                           
+root                                     0      9       3990   0       Spunctatus,Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anid
+Spunctatus                               1      1       2507   0       Spunctatus                                                                     
+Mmucedo,Smaydis,Ccinerea,Cneoformans…(8  tips)  2       8      699     0                                                                              
+Mmucedo                                  3      1       979    1479    Mmucedo                                                                        
+Smaydis,Ccinerea,Cneoformans,Spombe…(7   tips)  4       7      229     438                                                                            
+Smaydis,Ccinerea,Cneoformans             5      3       50     319     Smaydis,Ccinerea,Cneoformans                                                   
+Smaydis                                  6      1       150    3864    Smaydis                                                                        
+Ccinerea,Cneoformans                     7      2       866    10      Ccinerea,Cneoformans                                                           
+Ccinerea                                 8      1       1855   547     Ccinerea                                                                       
+Cneoformans                              9      1       1968   1010    Cneoformans                                                                    
+Spombe,Scerevisiae,Ncrassa,Anidulans     10     4       71     2455    Spombe,Scerevisiae,Ncrassa,Anidulans                                           
+Spombe                                   11     1       330    967     Spombe                                                                         
+Scerevisiae,Ncrassa,Anidulans            12     3       10     517     Scerevisiae,Ncrassa,Anidulans                                                  
+Scerevisiae                              13     1       8      1452    Scerevisiae                                                                    
+Ncrassa,Anidulans                        14     2       425    31      Ncrassa,Anidulans                                                              
+Ncrassa                                  15     1       466    596     Ncrassa                                                                        
+Anidulans                                16     1       680    168     Anidulans                                                                      
+kind	count
+no_cds	11084
+proteins_not_in_alignment	1103
+present_not_observable	696
+protein_not_in_fasta	101
+site_beyond_protein_end	75
+cds_gap_not_exon_gap	47
+overlapping_exons	21
+overlapping_cds	20
+tail_sites_dropped	7
+frame_mismatch	4
+protein_id_fallback_transcript	3
+source_summary	1
+[doc block 10/11] 1794622397 18:13:17
+note: 4992 position(s) cannot be explained by a single origin without 13853 independent loss event(s) — candidates for convergent insertion, or for the topology
+dollo 15283g/13853l, mp 20299 steps
+scored 15283 sites x 9 taxa from results/A_strict/combined/matrix.tsv
+[doc block 11/11] 1794622397 18:13:17
+aligned 720 of 720 families into alignments/B_partial
+annotation quality: 12 kinds flagged (0 errors, 11789 warnings) — details in diagnostics.tsv
+  no_cds x11084
+  proteins_not_in_alignment x720
+  present_not_observable x435
+  protein_not_in_fasta x101
+  site_beyond_protein_end x75
+  (rerun with -v for individual records)
+note: 2250 position(s) cannot be explained by a single origin without 5183 independent loss event(s) — candidates for convergent insertion, or for the topology
+combined: dollo 9709g/5183l, mp 11397 steps
+combined: 9709 sites from 720 alignments x 9 taxa -> results/B_partial/combined

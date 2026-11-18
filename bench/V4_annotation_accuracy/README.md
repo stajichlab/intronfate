@@ -1,4 +1,4 @@
-# V4 — how far can annotation error move the intron gain/loss results?
+# V4: how far can annotation error move the intron gain/loss results?
 
 **Scope.** This folder is about one question for *this tool*: the shared/lost-intron results rest on each genome's annotated introns, so how
 much of a reported loss or gain could be annotation error? It uses another project's accuracy scores as input. The broader
@@ -24,7 +24,7 @@ CDS mode (CDS segments scored as exons), rc.6 predictions, intron level (gffcomp
 
 The other V2 genomes were scored afterwards (same colleague, 2026-11-11); see the tables below. All scores are the colleague's gffcompare results, not measurements by this project.
 
-Cross-check: gffcompare's predicted-intron counts for H99 (35 967) and OR74A (14 078) equal the intron counts this tool read from
+Cross-check: gffcompare's predicted-intron counts for H99 (35,967) and OR74A (14,078) equal the intron counts this tool read from
 the same GFF3s in V2, so both see the same intron set.
 
 The earlier (pre-rc.6, funannotate 1.9.0) models were far worse (OR74A intron Sn 2.8 %), so which model set an analysis used
@@ -44,14 +44,14 @@ single-copy (BUSCO) genes are modelled far better than the genome average:
 
 | genome | intron Sn: genome-wide → V2 genes (n ref introns) | intron Pr: genome-wide → V2 genes (n pred introns) |
 |---|---|---|
-| *S. punctatus* | 88.7 → **94.0** (4 846) | 92.1 → 95.1 (4 934) |
-| *M. mucedo* | 79.9 → **95.3** (2 699) | 72.5 → 89.3 (2 975) |
-| *M. maydis* | 72.0 → **88.8** (223) | 76.0 → 82.2 (253) |
-| *C. cinerea* | 84.9 → **92.8** (4 794) | 85.5 → 90.2 (4 922) |
-| *C. neoformans* | 94.6 → **99.0** (4 476) | 97.0 → 98.9 (4 506) |
+| *S. punctatus* | 88.7 → **94.0** (4,846) | 92.1 → 95.1 (4,934) |
+| *M. mucedo* | 79.9 → **95.3** (2,699) | 72.5 → 89.3 (2,975) |
+| *Mycosarcoma maydis* | 72.0 → **88.8** (223) | 76.0 → 82.2 (253) |
+| *C. cinerea* | 84.9 → **92.8** (4,794) | 85.5 → 90.2 (4,922) |
+| *C. neoformans* | 94.6 → **99.0** (4,476) | 97.0 → 98.9 (4,506) |
 | *S. pombe* | 94.2 → **97.3** (903) | 96.5 → 99.0 (890) |
-| *N. crassa* | 81.1 → **98.7** (1 323) | 91.7 → 99.0 (1 320) |
-| *A. nidulans* | 70.2 → **89.3** (1 837) | 77.7 → 88.0 (1 858) |
+| *N. crassa* | 81.1 → **98.7** (1,323) | 91.7 → 99.0 (1,320) |
+| *A. nidulans* | 70.2 → **89.3** (1,837) | 77.7 → 88.0 (1,858) |
 | *S. cerevisiae* | not scored: the V2 assembly (AMP_1a) has no RefSeq annotation; the S288C proxy has only 312 reference introns | |
 
 Errors are close to uniform across intron phase and position in the gene (`busco_accuracy_by_class.tsv`; for example *N. crassa* Sn
@@ -66,14 +66,17 @@ assuming every missed intron sits at a site other species share, so a true upper
 | *N. crassa* | 470 | 16 | **3.5 %** | (61 %) |
 | *C. neoformans* | 803 | 42 | **5.3 %** | (30 %) |
 | *S. pombe* | 720 | 23 | **3.2 %** | (7 %) |
-| *M. maydis* | 2 883 | 29 | **1.0 %** | (3 %) |
+| *My. maydis* | 2,883 | 29 | **1.0 %** | (3 %) |
 | *M. mucedo* | 963 | 137 | **14 %** | (72 %) |
 | *C. cinerea* | 351 | 358 | ≥ 100 % | (234 %) |
 | *A. nidulans* | 98 | 210 | ≥ 100 % | (759 %) |
 | *S. punctatus* | 0 (outgroup) | – | – | – |
 
+These are analytic ceilings for the V2 analysis. For the V6 families the accuracy was rescored over the V6 genes (below) and the effect
+simulated in [V7](../V7_annotation_error_sensitivity/README.md), which supersedes this table for the V6 counts.
+
 So, for the V2 analysis:
-- Terminal-branch loss counts for *N. crassa*, *C. neoformans*, *S. pombe*, *M. maydis* (and, less firmly, *M. mucedo*) are **not**
+- Terminal-branch loss counts for *N. crassa*, *C. neoformans*, *S. pombe*, *My. maydis* (and, less firmly, *M. mucedo*) are **not**
   explained by annotation misses: the ceiling is a few percent. The "up to ~60 % for *N. crassa*" figure given earlier (from genome-wide
   Sn) was wrong for this analysis and is superseded.
 - For *C. cinerea* and *A. nidulans* the ceiling is as large as the observed losses, so their terminal losses **cannot be told apart from
@@ -84,15 +87,17 @@ So, for the V2 analysis:
 Limits of this measurement: it is a comparison with RefSeq, which is not truth (a "novel" intron may be real, a "missed" one may be an
 annotation error in RefSeq); the funannotate runs used protein evidence that may include these species' own proteins, which can
 inflate scores; exact-coordinate matching; the V2 genes are conserved BUSCO genes, which is exactly the population the analysis uses but
-not representative of the genome as a whole; *S. maydis* has few reference introns at these genes (223), so its rates are noisy.
+not representative of the genome as a whole; *My. maydis* has few reference introns at these genes (223), so its rates are noisy.
 
-## Still to do
+## Still to do (when written; status added later)
 
-1. **Sensitivity run:** perturb the V2 `matrix.tsv` files at each genome's measured `1 − Sn` / `1 − Pr` and report the spread of per-branch
+1. *Done in [V7](../V7_annotation_error_sensitivity/README.md)* (on the V6 tiers rather than the V2 matrices). **Sensitivity run:** perturb the V2 `matrix.tsv` files at each genome's measured `1 − Sn` / `1 − Pr` and report the spread of per-branch
    losses and gains (the ceiling above is the worst case for one mechanism; this gives the typical effect).
-2. **Direct comparison on genomes with both annotations:** run the pipeline on the RefSeq GFF3s (paths in the scoring folder's
+2. *Partly done in [D1](../D1_howto_public_genomes/README.md)*: the how-to runs the pipeline on RefSeq annotation for the same nine
+   species and compares per-branch losses with the funannotate run; a site-by-site comparison is not done. **Direct comparison on
+   genomes with both annotations:** run the pipeline on the RefSeq GFF3s (paths in the scoring folder's
    `reference_pairs.tsv`) and compare projected `(column, phase)` sites with the funannotate ones.
-3. *S. cerevisiae*: the V2 genome (BFD folder `Saccharomyces_cerevisiae`, assembly GCA_029989085.1, strain AMP_1a) has no RefSeq annotation, so
+3. *Resolved for the V6 set* (S288C is used and scored; see "Rescoring over the V6 tiers" below). *S. cerevisiae*: the V2 genome (BFD folder `Saccharomyces_cerevisiae`, assembly GCA_029989085.1, strain AMP_1a) has no RefSeq annotation, so
    nothing can score it. The colleague has already scored the reference strain, BFD folder `Saccharomyces_cerevisiae_S288C`
    (GCF_000146045.2_R64): rc.6, CDS mode, intron Sn/Pr 73.3 / 66.0, intron-chain 73.4 / 66.3, locus 89.1 / 96.5, but on only 312 reference
    (329 predicted) introns, so any per-gene, per-phase or BUSCO-restricted breakdown would have very few events (not counted yet). The
@@ -106,4 +111,4 @@ not representative of the genome as a whole; *S. maydis* has few reference intro
 ## Rescoring over the V6 tiers
 `run_v6.sbatch` runs `busco_gene_accuracy.py` (now with `--genomes/--taxon-map/--projection/--out`) over each V6 tier's genes into `results_v6/<tier>/`. *S. cerevisiae* S288C is scored there (tier A genes: Sn 97.4 %, Pr 82.6 %, but over only 39 reference and 46 predicted introns, so noisy; 343 reference introns genome-wide), so the earlier "unscored" note no longer applies to the V6 set. Tier C has no *S. punctatus* genes (the N1 clade excludes it), so that row has no reference introns and the script now skips such rows instead of crashing.
 
-**S288C genome-wide Sn discrepancy: resolved.** The earlier 63.3 % (over 343 distinct reference introns) disagreed with the colleague's 73.3 %. Cause (`intron_length_recall.py`, `short_introns_inspect.py`): 47 of the 343 reference "introns" are 1-bp entries (start == end) in single-intron RefSeq transcripts, i.e. one-base CDS gaps (frameshift-type), which no annotation can match. Recall by length is otherwise flat (about 75 % for 50-800 bp, so long introns are not dropped; only 1 of 11 introns over 800 bp is recovered, similar to other genomes; `results/intron_length_recall.tsv`). `busco_gene_accuracy.py` now ignores reference introns shorter than `--min-ref-intron` (default 10 bp): S288C genome-wide Sn is 73.3 % over 296 reference introns (217 matched), matching the colleague's Sn; *S. pombe* moves 94.2 -> 95.0 % (46 such entries) and *A. nidulans* by 0.006 points; the gene-restricted figures used by V6/V7 are unchanged (S288C Sn 97.4 %, Pr 82.6 % over 39 / 46 introns at the tier-A genes; the loss-ceiling tables were regenerated). Also: 36 of S288C's 329 predicted introns are novel and under 50 bp (12-49 bp, in single-intron genes), almost certainly false positives that lower Pr.
+**S288C genome-wide Sn discrepancy: resolved.** The earlier 63.3 % (over 343 distinct reference introns) disagreed with the colleague's 73.3 %. Cause (`intron_length_recall.py`, `short_introns_inspect.py`): 47 of the 343 reference "introns" are 1-bp entries (start == end) in single-intron RefSeq transcripts, i.e. one-base CDS gaps (frameshift-type), which no annotation can match. Recall by length is otherwise flat (about 75 % for 50–800 bp, so long introns are not dropped; only 1 of 11 introns over 800 bp is recovered, similar to other genomes; `results/intron_length_recall.tsv`). `busco_gene_accuracy.py` now ignores reference introns shorter than `--min-ref-intron` (default 10 bp): S288C genome-wide Sn is 73.3 % over 296 reference introns (217 matched), matching the colleague's Sn; *S. pombe* moves 94.2 -> 95.0 % (46 such entries) and *A. nidulans* by 0.006 points; the gene-restricted figures used by V6/V7 are unchanged (S288C Sn 97.4 %, Pr 82.6 % over 39 / 46 introns at the tier-A genes; the loss-ceiling tables were regenerated). Also: 36 of S288C's 329 predicted introns are novel and under 50 bp (12–49 bp, in single-intron genes), almost certainly false positives that lower Pr.

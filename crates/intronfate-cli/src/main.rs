@@ -35,7 +35,8 @@ use intronfate_core::tree::Tree;
     about = "Project intron positions from annotation into protein alignments, then score how they are shared.",
     long_about = "Project intron positions from GFF3/GTF annotation into protein space, map them onto \
                   MSA columns for a set of orthologs, and score which positions are shared using Dollo \
-                  parsimony, maximum parsimony, or plain counts.\n\n\
+                  parsimony (classic or weighted), Fitch parsimony, counts, or a likelihood model with \
+                  per-genome annotation error.\n\n\
                   A position is reported as cds_offset (coding bases 5' of the intron), codon, and \
                   phase (0/1/2), plus the alignment column it lands in. Two introns count as the same \
                   site when they share a column, and — unless --ignore-phase is given — a phase too."
@@ -55,7 +56,7 @@ enum Command {
     Project(ProjectArgs),
     /// Project intron positions onto alignments and write site x taxon matrices.
     Matrix(MatrixArgs),
-    /// Score an existing matrix with Dollo parsimony, maximum parsimony and/or counts.
+    /// Score an existing matrix: Dollo, Fitch parsimony, weighted Dollo, counts and/or likelihood.
     Score(ScoreArgs),
     /// Run project + matrix + score in one pass.
     Analyze(Box<AnalyzeArgs>),
@@ -226,9 +227,52 @@ struct AnalyzeArgs {
     #[arg(long, short = 't', value_name = "FILE")]
     tree: Option<PathBuf>,
 
-    /// Scoring method(s): dollo, mp, counts. Defaults to all three.
+    /// Scoring method(s): dollo, mp, counts, dollo_weighted, likelihood. Defaults to dollo, mp and counts.
     #[arg(long, short = 'm', value_delimiter = ',')]
     methods: Vec<String>,
+
+    /// Gain:loss weights swept by `-m dollo_weighted` (gain weight first; each gain costs the first number, each loss the second).
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_name = "G:L",
+        default_value = "1:1,2:1,5:1,10:1"
+    )]
+    gain_loss_weights: Vec<String>,
+
+    /// Annotation error per taxon for `-m likelihood`: TSV with columns `taxon`, `sensitivity` and either `false_rate` or
+    /// `precision`. Taxa not listed are taken as error-free; without the file the model assumes no error.
+    #[arg(long, value_name = "FILE")]
+    error_rates: Option<PathBuf>,
+
+    /// Bootstrap replicates for `-m likelihood` (whole families are resampled when the matrix is combined). 0 = none.
+    #[arg(long, default_value = "0")]
+    ml_bootstrap: usize,
+
+    /// Maximum EM iterations (E-steps) for `-m likelihood`.
+    #[arg(long, default_value = "50000")]
+    ml_max_iter: usize,
+
+    /// Random seed for `--ml-bootstrap`.
+    #[arg(long, default_value = "1")]
+    ml_seed: u64,
+
+    /// `-m likelihood` stops when an EM cycle gains less than this in log-likelihood and moves no parameter by more than
+    /// `--ml-param-tol`.
+    #[arg(long, default_value = "1e-6")]
+    ml_tol: f64,
+
+    /// See `--ml-tol`. Looser values (e.g. 1e-5) shorten fits with rate classes at a small cost in log-likelihood.
+    #[arg(long, default_value = "1e-7")]
+    ml_param_tol: f64,
+
+    /// Rate classes across positions for `-m likelihood` (discrete gamma, mean rate 1; 1 = no rate variation, 4 is usual).
+    #[arg(long, default_value = "1")]
+    ml_rate_categories: usize,
+
+    /// Fix the gamma shape of `--ml-rate-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_gamma_shape: Option<f64>,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -280,9 +324,52 @@ struct ScoreArgs {
     #[arg(long, short = 't', value_name = "FILE")]
     tree: Option<PathBuf>,
 
-    /// Scoring method(s): dollo, mp, counts. Defaults to all three.
+    /// Scoring method(s): dollo, mp, counts, dollo_weighted, likelihood. Defaults to dollo, mp and counts.
     #[arg(long, short = 'm', value_delimiter = ',')]
     methods: Vec<String>,
+
+    /// Gain:loss weights swept by `-m dollo_weighted` (gain weight first; each gain costs the first number, each loss the second).
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_name = "G:L",
+        default_value = "1:1,2:1,5:1,10:1"
+    )]
+    gain_loss_weights: Vec<String>,
+
+    /// Annotation error per taxon for `-m likelihood`: TSV with columns `taxon`, `sensitivity` and either `false_rate` or
+    /// `precision`. Taxa not listed are taken as error-free; without the file the model assumes no error.
+    #[arg(long, value_name = "FILE")]
+    error_rates: Option<PathBuf>,
+
+    /// Bootstrap replicates for `-m likelihood` (whole families are resampled when the matrix is combined). 0 = none.
+    #[arg(long, default_value = "0")]
+    ml_bootstrap: usize,
+
+    /// Maximum EM iterations (E-steps) for `-m likelihood`.
+    #[arg(long, default_value = "50000")]
+    ml_max_iter: usize,
+
+    /// Random seed for `--ml-bootstrap`.
+    #[arg(long, default_value = "1")]
+    ml_seed: u64,
+
+    /// `-m likelihood` stops when an EM cycle gains less than this in log-likelihood and moves no parameter by more than
+    /// `--ml-param-tol`.
+    #[arg(long, default_value = "1e-6")]
+    ml_tol: f64,
+
+    /// See `--ml-tol`. Looser values (e.g. 1e-5) shorten fits with rate classes at a small cost in log-likelihood.
+    #[arg(long, default_value = "1e-7")]
+    ml_param_tol: f64,
+
+    /// Rate classes across positions for `-m likelihood` (discrete gamma, mean rate 1; 1 = no rate variation, 4 is usual).
+    #[arg(long, default_value = "1")]
+    ml_rate_categories: usize,
+
+    /// Fix the gamma shape of `--ml-rate-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_gamma_shape: Option<f64>,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -1056,6 +1143,17 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                 min_taxa: a.min_taxa,
                 min_observed: a.min_observed,
                 reconstructions: a.reconstructions,
+                weights: resolve_weights(&a.gain_loss_weights)?,
+                ml: MlOpts {
+                    error_rates: a.error_rates.clone(),
+                    bootstrap: a.ml_bootstrap,
+                    max_iter: a.ml_max_iter,
+                    seed: a.ml_seed,
+                    categories: a.ml_rate_categories,
+                    shape: a.ml_gamma_shape,
+                    tol: a.ml_tol,
+                    param_tol: a.ml_param_tol,
+                },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
             verbose,
@@ -1079,6 +1177,17 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                 min_taxa: a.min_taxa,
                 min_observed: a.min_observed,
                 reconstructions: a.reconstructions,
+                weights: resolve_weights(&a.gain_loss_weights)?,
+                ml: MlOpts {
+                    error_rates: a.error_rates.clone(),
+                    bootstrap: a.ml_bootstrap,
+                    max_iter: a.ml_max_iter,
+                    seed: a.ml_seed,
+                    categories: a.ml_rate_categories,
+                    shape: a.ml_gamma_shape,
+                    tol: a.ml_tol,
+                    param_tol: a.ml_param_tol,
+                },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
             verbose,
@@ -1122,6 +1231,17 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                 min_taxa: a.min_taxa,
                 min_observed: a.min_observed,
                 reconstructions: a.reconstructions,
+                weights: resolve_weights(&a.gain_loss_weights)?,
+                ml: MlOpts {
+                    error_rates: a.error_rates.clone(),
+                    bootstrap: a.ml_bootstrap,
+                    max_iter: a.ml_max_iter,
+                    seed: a.ml_seed,
+                    categories: a.ml_rate_categories,
+                    shape: a.ml_gamma_shape,
+                    tol: a.ml_tol,
+                    param_tol: a.ml_param_tol,
+                },
                 matrix_label: format!("{} matrices combined", parts.len()),
             },
             verbose,
@@ -1176,6 +1296,17 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
             min_taxa: a.min_taxa,
             min_observed: a.min_observed,
             reconstructions: a.reconstructions,
+            weights: resolve_weights(&a.gain_loss_weights)?,
+            ml: MlOpts {
+                error_rates: a.error_rates.clone(),
+                bootstrap: a.ml_bootstrap,
+                max_iter: a.ml_max_iter,
+                seed: a.ml_seed,
+                categories: a.ml_rate_categories,
+                shape: a.ml_gamma_shape,
+                tol: a.ml_tol,
+                param_tol: a.ml_param_tol,
+            },
             matrix_label: matrix.display().to_string(),
         },
         verbose,
@@ -1199,7 +1330,23 @@ struct ScoreOpts {
     min_taxa: usize,
     min_observed: usize,
     reconstructions: bool,
+    /// Gain:loss weightings for `dollo_weighted`.
+    weights: Vec<(u32, u32)>,
+    ml: MlOpts,
     matrix_label: String,
+}
+
+/// Options of `-m likelihood`.
+#[derive(Clone, Debug, Default)]
+struct MlOpts {
+    error_rates: Option<PathBuf>,
+    bootstrap: usize,
+    max_iter: usize,
+    seed: u64,
+    categories: usize,
+    shape: Option<f64>,
+    tol: f64,
+    param_tol: f64,
 }
 
 /// Score one matrix; returns a one-line summary of what was computed.
@@ -1231,16 +1378,18 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         }
     }
 
-    let needs_tree = o
-        .methods
-        .iter()
-        .any(|x| matches!(x, Method::Dollo | Method::MaxParsimony));
+    let needs_tree = o.methods.iter().any(|x| {
+        matches!(
+            x,
+            Method::Dollo | Method::MaxParsimony | Method::DolloWeighted | Method::Likelihood
+        )
+    });
     if !needs_tree {
         tables::summary_table(&summary).write(dir.join("summary_score.tsv"))?;
         return Ok(Some(format!("counts over {} sites", m.n_sites())));
     }
     let Some(tree_path) = &o.tree else {
-        bail!("--tree is required to score with dollo or mp (or select only --methods counts)");
+        bail!("--tree is required to score with dollo, mp, dollo_weighted or likelihood (or select only --methods counts)");
     };
     let tree = Tree::read(tree_path)
         .with_context(|| format!("could not read tree {}", tree_path.display()))?;
@@ -1350,6 +1499,179 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         notes.push(format!("mp {} steps", mp.total_steps));
     }
 
+    if o.methods.contains(&Method::DolloWeighted) {
+        let runs: Vec<tables::WeightedDolloRun> = o
+            .weights
+            .iter()
+            .map(|&(gw, lw)| (gw, lw, score::dollo_weighted(&data, gw, lw)))
+            .collect();
+        tables::dollo_weighted_table(&runs).write(dir.join("dollo_weighted_sites.tsv"))?;
+        let t = tables::dollo_weighted_summary_table(&runs);
+        t.write(dir.join("dollo_weighted.tsv"))?;
+        summary.push((
+            "dollo_weighted",
+            runs.iter()
+                .map(|(gw, lw, sites)| {
+                    let g: u64 = sites.iter().map(|s| u64::from(s.1)).sum();
+                    let l: u64 = sites.iter().map(|s| u64::from(s.2)).sum();
+                    format!("{gw}:{lw}={g}g/{l}l")
+                })
+                .collect::<Vec<_>>()
+                .join(","),
+        ));
+        if verbose > 0 {
+            eprintln!(
+                "dollo_weighted: {} weighting(s) over {} sites",
+                runs.len(),
+                data.characters.len()
+            );
+        }
+        notes.push(format!("dollo_weighted {} weighting(s)", runs.len()));
+    }
+
+    if o.methods.contains(&Method::Likelihood) {
+        if o.min_taxa > 1 {
+            bail!(
+                "-m likelihood conditions each position on being seen at least once, so it needs --min-taxa 1 (got {})",
+                o.min_taxa
+            );
+        }
+        let (sens, spec) = read_error_rates(o.ml.error_rates.as_deref(), &data)?;
+        let opt = intronfate_core::likelihood::FitOptions {
+            max_iter: o.ml.max_iter,
+            categories: o.ml.categories.max(1),
+            shape: o.ml.shape,
+            tol: o.ml.tol,
+            param_tol: o.ml.param_tol,
+            trace: verbose > 1,
+            ..Default::default()
+        };
+        let (fit, err, settled) =
+            intronfate_core::likelihood::fit_with_precision(&data, &sens, &spec, &opt)
+                .map_err(|e| anyhow::anyhow!("likelihood: {e}"))?;
+        if !settled {
+            eprintln!("warn: likelihood: the false-intron rates converted from precision did not settle in 20 rounds");
+        }
+        if !fit.converged {
+            eprintln!(
+                "warn: likelihood: EM stopped after {} iterations without converging (raise --ml-max-iter)",
+                fit.iterations
+            );
+        }
+        let boot = if o.ml.bootstrap > 0 {
+            Some(
+                intronfate_core::likelihood::bootstrap(
+                    &data,
+                    &err,
+                    &opt,
+                    &fit.params,
+                    o.ml.bootstrap,
+                    o.ml.seed,
+                )
+                .map_err(|e| anyhow::anyhow!("likelihood bootstrap: {e}"))?,
+            )
+        } else {
+            None
+        };
+        tables::likelihood_branch_table(&data, &fit, boot.as_ref())
+            .write(dir.join("likelihood_branches.tsv"))?;
+        tables::likelihood_tip_table(&data, &err, &fit).write(dir.join("likelihood_tips.tsv"))?;
+        tables::likelihood_site_table(&data, &fit).write(dir.join("likelihood_sites.tsv"))?;
+        let root = data.tree.root();
+        let gains: f64 = (0..data.tree.len())
+            .filter(|&v| v != root && fit.nodes[v].has_data)
+            .map(|v| fit.nodes[v].expected_gains)
+            .sum();
+        let losses: f64 = fit
+            .nodes
+            .iter()
+            .filter(|n| n.has_data)
+            .map(|n| n.expected_losses)
+            .sum();
+        let no_data = fit.nodes.iter().filter(|n| !n.has_data).count();
+        if no_data > 0 {
+            eprintln!(
+                "note: likelihood: {no_data} branch(es) have no observed tip below them; fixed at no change (fixed = no_data) and left out of the totals"
+            );
+        }
+        summary.push(("ml_log_likelihood", format!("{:.6}", fit.log_lik)));
+        summary.push(("ml_iterations", fit.iterations.to_string()));
+        summary.push((
+            "ml_converged",
+            if fit.converged { "yes" } else { "no" }.to_string(),
+        ));
+        summary.push((
+            "ml_root_expected_present",
+            format!("{:.2}", fit.nodes[root].expected_present),
+        ));
+        summary.push((
+            "ml_rate_categories",
+            fit.params.rates.categories.to_string(),
+        ));
+        if fit.params.rates.categories > 1 {
+            summary.push((
+                "ml_gamma_shape",
+                format!(
+                    "{:.4}{}",
+                    fit.params.rates.shape,
+                    if o.ml.shape.is_some() { " (fixed)" } else { "" }
+                ),
+            ));
+        }
+        summary.push(("ml_expected_gains", format!("{gains:.2}")));
+        summary.push(("ml_expected_losses", format!("{losses:.2}")));
+        summary.push((
+            "ml_unobserved_positions",
+            format!("{:.2}", fit.unobserved_positions),
+        ));
+        summary.push((
+            "ml_error_rates",
+            o.ml.error_rates
+                .as_ref()
+                .map_or("none (no annotation error)".to_string(), |p| {
+                    p.display().to_string()
+                }),
+        ));
+        let names = data.tree.node_names();
+        for kind in [
+            intronfate_core::likelihood::Fixed::Root,
+            intronfate_core::likelihood::Fixed::Unary,
+            intronfate_core::likelihood::Fixed::NoData,
+        ] {
+            let list: Vec<&str> = (0..data.tree.len())
+                .filter(|&v| fit.nodes[v].fixed == kind)
+                .map(|v| names[v].as_str())
+                .collect();
+            if kind == intronfate_core::likelihood::Fixed::Root || !list.is_empty() {
+                summary.push((
+                    match kind {
+                        intronfate_core::likelihood::Fixed::Root => "ml_fixed_root_branch",
+                        intronfate_core::likelihood::Fixed::Unary => "ml_fixed_unary_branches",
+                        _ => "ml_fixed_no_data_branches",
+                    },
+                    if list.is_empty() {
+                        "-".to_string()
+                    } else {
+                        list.join(";")
+                    },
+                ));
+            }
+        }
+        if let Some(b) = &boot {
+            summary.push((
+                "ml_bootstrap",
+                format!("{} replicates, resampling by {}", b.replicates, b.unit),
+            ));
+        }
+        if verbose > 0 {
+            eprintln!(
+                "likelihood: lnL {:.3} after {} iterations; {gains:.0} gains, {losses:.0} losses expected",
+                fit.log_lik, fit.iterations
+            );
+        }
+        notes.push(format!("likelihood lnL {:.2}", fit.log_lik));
+    }
+
     if o.reconstructions && !recon_rows.is_empty() {
         let t = tables::reconstruction_table(&data, &recon_rows);
         summary.push(("reconstructed_nodes", t.len().to_string()));
@@ -1398,11 +1720,127 @@ fn resolve_methods(requested: &[String]) -> Result<Vec<Method>> {
     let mut out = Vec::new();
     for name in requested {
         let m = Method::parse(name).ok_or_else(|| {
-            anyhow::anyhow!("unknown method {name:?}: choose dollo, mp or counts")
+            anyhow::anyhow!(
+                "unknown method {name:?}: choose dollo, mp, counts, dollo_weighted or likelihood"
+            )
         })?;
         if !out.contains(&m) {
             out.push(m);
         }
+    }
+    Ok(out)
+}
+
+/// Per-tip annotation error for `-m likelihood` from a TSV (`taxon`, `sensitivity`, and `false_rate` or `precision`).
+/// Unlisted taxa are error-free. Precision is converted to a false-intron rate inside the fit (`fit_with_precision`).
+fn read_error_rates(
+    path: Option<&Path>,
+    data: &ScoringData,
+) -> Result<(Vec<f64>, Vec<intronfate_core::likelihood::FalseSpec>)> {
+    use intronfate_core::likelihood::FalseSpec;
+    let n = data.tips.len();
+    let mut sens = vec![1.0; n];
+    let mut spec = vec![FalseSpec::Rate(0.0); n];
+    let Some(path) = path else {
+        return Ok((sens, spec));
+    };
+    let text = std::fs::read_to_string(path)
+        .with_context(|| format!("could not read {}", path.display()))?;
+    let mut lines = text
+        .lines()
+        .filter(|l| !l.trim().is_empty() && !l.starts_with('#'));
+    let head: Vec<&str> = lines
+        .next()
+        .unwrap_or("")
+        .split('\t')
+        .map(str::trim)
+        .collect();
+    let col = |name: &str| head.iter().position(|h| *h == name);
+    let (Some(ti), Some(si)) = (col("taxon"), col("sensitivity")) else {
+        bail!(
+            "{}: the header needs `taxon` and `sensitivity` columns",
+            path.display()
+        );
+    };
+    let (fi, pi) = (col("false_rate"), col("precision"));
+    if fi.is_none() && pi.is_none() {
+        bail!(
+            "{}: give a `false_rate` or a `precision` column",
+            path.display()
+        );
+    }
+    let mut seen = std::collections::HashSet::new();
+    for (k, line) in lines.enumerate() {
+        let f: Vec<&str> = line.split('\t').map(str::trim).collect();
+        let get = |i: usize| f.get(i).copied().unwrap_or("");
+        let num = |i: usize, what: &str| -> Result<f64> {
+            get(i).parse::<f64>().with_context(|| {
+                format!(
+                    "{} line {}: {what} {:?} is not a number",
+                    path.display(),
+                    k + 2,
+                    get(i)
+                )
+            })
+        };
+        let taxon = get(ti);
+        let Some(i) = data.tip_names.iter().position(|t| t == taxon) else {
+            eprintln!(
+                "warn: {}: taxon {taxon:?} is not a scored tip; ignored",
+                path.display()
+            );
+            continue;
+        };
+        sens[i] = num(si, "sensitivity")?;
+        spec[i] = match (fi, pi) {
+            (Some(fi), _) if !get(fi).is_empty() => FalseSpec::Rate(num(fi, "false_rate")?),
+            (_, Some(pi)) if !get(pi).is_empty() => FalseSpec::Precision(num(pi, "precision")?),
+            _ => bail!(
+                "{} line {}: no false_rate or precision",
+                path.display(),
+                k + 2
+            ),
+        };
+        if let FalseSpec::Precision(p) = spec[i] {
+            if !(p > 0.0 && p <= 1.0) {
+                bail!(
+                    "{} line {}: precision {p} must be in (0, 1]",
+                    path.display(),
+                    k + 2
+                );
+            }
+        }
+        seen.insert(i);
+    }
+    let missing: Vec<&str> = (0..n)
+        .filter(|i| !seen.contains(i))
+        .map(|i| data.tip_names[i].as_str())
+        .collect();
+    if !missing.is_empty() {
+        eprintln!(
+            "warn: {}: no error rates for {} taxon(s), taken as error-free: {}",
+            path.display(),
+            missing.len(),
+            intronfate_core::util::ellipsis(&missing.join(", "), 200)
+        );
+    }
+    Ok((sens, spec))
+}
+
+fn resolve_weights(requested: &[String]) -> Result<Vec<(u32, u32)>> {
+    let mut out = Vec::new();
+    for w in requested {
+        let p = score::parse_gain_loss_weight(w).ok_or_else(|| {
+            anyhow::anyhow!(
+                "--gain-loss-weights: {w:?} is not G:L with whole numbers and G >= 1 (e.g. 3:1)"
+            )
+        })?;
+        if !out.contains(&p) {
+            out.push(p);
+        }
+    }
+    if out.is_empty() {
+        bail!("--gain-loss-weights needs at least one G:L weighting");
     }
     Ok(out)
 }
@@ -1775,6 +2213,15 @@ mod tests {
             combine: false,
             tree: Some(dir.join("demo.nwk")),
             methods: vec!["dollo".into()],
+            gain_loss_weights: vec!["1:1".into()],
+            error_rates: None,
+            ml_bootstrap: 0,
+            ml_max_iter: 50000,
+            ml_seed: 1,
+            ml_rate_categories: 1,
+            ml_gamma_shape: None,
+            ml_tol: 1e-6,
+            ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,
@@ -1807,6 +2254,15 @@ mod tests {
             combine: false,
             tree: None,
             methods: vec!["counts".into()],
+            gain_loss_weights: vec!["1:1".into()],
+            error_rates: None,
+            ml_bootstrap: 0,
+            ml_max_iter: 50000,
+            ml_seed: 1,
+            ml_rate_categories: 1,
+            ml_gamma_shape: None,
+            ml_tol: 1e-6,
+            ml_param_tol: 1e-7,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -1837,6 +2293,15 @@ mod tests {
             combine: false,
             tree: None,
             methods: vec!["dollo".into()],
+            gain_loss_weights: vec!["1:1".into()],
+            error_rates: None,
+            ml_bootstrap: 0,
+            ml_max_iter: 50000,
+            ml_seed: 1,
+            ml_rate_categories: 1,
+            ml_gamma_shape: None,
+            ml_tol: 1e-6,
+            ml_param_tol: 1e-7,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -1897,6 +2362,15 @@ mod tests {
             },
             tree: Some(nwk),
             methods: vec![],
+            gain_loss_weights: vec!["1:1".into()],
+            error_rates: None,
+            ml_bootstrap: 0,
+            ml_max_iter: 50000,
+            ml_seed: 1,
+            ml_rate_categories: 1,
+            ml_gamma_shape: None,
+            ml_tol: 1e-6,
+            ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,

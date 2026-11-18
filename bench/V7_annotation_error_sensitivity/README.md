@@ -24,7 +24,7 @@ Terminal-branch Dollo losses, observed vs. after undoing the missed introns:
 
 | Genome | Observed | Misses undone (ceiling) | Misses undone (typical) |
 |---|---|---|---|
-| *S. maydis* | 4,055 | 4,015 | 4,030 |
+| *Mycosarcoma maydis* | 4,055 | 4,015 | 4,030 |
 | *S. cerevisiae* | 1,447 | 1,446 | 1,446 |
 | *C. neoformans* | 1,091 | 1,024 | 1,046 |
 | *S. pombe* | 1,011 | 965 | 977 |
@@ -33,7 +33,7 @@ Terminal-branch Dollo losses, observed vs. after undoing the missed introns:
 | *C. cinerea* | 514 | 0 | 140 |
 | *A. nidulans* | 151 | 0 | 0 |
 
-- Losses in *S. maydis*, *S. cerevisiae*, *C. neoformans*, *S. pombe* and *N. crassa* move by at most 6 % even at the ceiling: they are not artefacts of missed introns.
+- Losses in *My. maydis*, *S. cerevisiae*, *C. neoformans*, *S. pombe* and *N. crassa* move by 0.1–6.4 % even at the ceiling (largest: *N. crassa* 6.4 %, *C. neoformans* 6.1 %): they are not artefacts of missed introns.
 - *M. mucedo* moves by 15 %. For *C. cinerea* and *A. nidulans* the ceiling removes **all** their terminal losses, so those counts cannot be told from annotation misses,
   as V4 found (the simulation now agrees with V4's analytic ceilings). Tiers B and C give the same ordering.
 - The replicates differ little (each fill removes exactly one loss, so the spread comes only from which cells are drawn), so the percentile intervals are narrow.
@@ -42,4 +42,4 @@ Terminal-branch Dollo losses, observed vs. after undoing the missed introns:
   Do not read the `ceiling` column (both corrections) for losses; its false-intron half raises losses by deleting carriers.
 
 Limits: Sn and Pr are RefSeq-relative and measured at V2/V6 genes; missed introns are assumed to hide terminal losses or to be distributed like annotated ones; independent draws per
-taxon; *S. cerevisiae* Sn/Pr rest on 39-46 introns in tier A (noisy; its losses barely move either way); in tier C *S. punctatus* has no genes, so it is uncorrected there.
+taxon; *S. cerevisiae* Sn/Pr rest on 39–46 introns in tier A (noisy; its losses barely move either way); in tier C *S. punctatus* has no genes, so it is uncorrected there.

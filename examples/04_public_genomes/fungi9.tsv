@@ -1,0 +1,10 @@
+# label	NCBI assembly (accession_name, as in the NCBI FTP path)	organism
+Spunctatus	GCF_000182565.1_S_punctatus_V1	Spizellomyces punctatus DAOM BR117
+Mmucedo	GCF_025094135.1_Mucmuc1	Mucor mucedo NRRL 3635
+Smaydis	GCF_000328475.2_Umaydis521_2.0	Mycosarcoma (Ustilago) maydis 521
+Ccinerea	GCF_000182895.1_CC3	Coprinopsis cinerea okayama7#130
+Cneoformans	GCF_000149245.1_CNA3	Cryptococcus neoformans var. grubii H99
+Spombe	GCF_000002945.2_ASM294v3	Schizosaccharomyces pombe 972h-
+Scerevisiae	GCF_000146045.2_R64	Saccharomyces cerevisiae S288C
+Ncrassa	GCF_000182925.2_NC12	Neurospora crassa OR74A
+Anidulans	GCF_000011425.1_ASM1142v1	Aspergillus nidulans FGSC A4

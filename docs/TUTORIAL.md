@@ -1,157 +1,137 @@
 # Tutorial: from genomes to intron gains and losses
 
-This walks through the whole pipeline on your own species: prepare the data, find orthologs, align them, run `intronfate`, and read the
-results. It follows exactly what was done for the nine-fungus set in [`bench/V6_orthology_nine_species`](../bench/V6_orthology_nine_species/README.md)
-(scripts there are the reference implementation), so every number quoted below is real. Run the heavy steps (OrthoFinder, MAFFT) on a cluster or
-a large machine; `intronfate` itself is light (the nine-genome, 1,106-family run takes seconds).
+This page explains the pipeline for your own genomes: what each step is for, what to choose, and what to check before you believe a
+number. The commands themselves are in [`HOWTO.md`](HOWTO.md), which runs the same steps on public genomes and is tested as written;
+follow it with your own files in place of the downloads. The worked numbers below come from the nine-fungus run in
+[`bench/V6_orthology_nine_species`](../bench/V6_orthology_nine_species/README.md) (funannotate annotation).
 
-What you will have at the end: for every lineage of your species tree, how many intron positions were gained and lost, with the full table of
-positions behind it.
+What you will have at the end: for every lineage of your species tree, how many intron positions were gained and lost, with the table
+of positions behind it. The heavy steps (OrthoFinder, MAFFT) belong on a cluster; `intronfate` itself takes seconds for a thousand
+families.
 
-## 0. Try the tool first (2 minutes)
+## 0. Try the tool first
 
-```sh
-cargo build --release                       # binary: target/release/intronfate
-target/release/intronfate demo -o intron_demo
-```
-
-`demo` builds a five-protein toy family, projects its introns onto an alignment and prints the Dollo and parsimony tables, so you can see every
-output before touching real data. The hand-checked examples in [`examples/`](../examples/) are runnable the same way.
+Install it ([README](../README.md#install)), then run `intronfate demo -o intron_demo`. The demo builds a five-protein toy family,
+projects its introns onto an alignment and prints the Dollo and parsimony tables, so you can see every output before touching real
+data. The hand-checked [`examples/`](../examples/README.md) work the same way.
 
 ## 1. What you need
 
-For each species (a short **label**, no spaces, e.g. `Ncrassa`):
+For each species, a short **label** (no spaces, e.g. `Ncrassa`) and:
 
 | File | Requirement |
 |---|---|
 | Annotation | GFF3 (or GTF) with `CDS` features grouped by transcript; gzip is fine |
-| Proteins | FASTA of the proteins those transcripts encode, **one per gene**, ids that match the annotation (`protein_id=`, or the transcript id) |
+| Proteins | FASTA of the proteins those transcripts encode, with ids that match the annotation (`protein_id=`, or the transcript id) |
 
-and one **species tree** in Newick whose tips are exactly those labels, e.g. the taxonomy:
+and one **species tree** in Newick whose tips are exactly those labels, for example the taxonomy of the nine fungi:
 
-```
+```text
 (Spunctatus,(Mmucedo,((Smaydis,(Ccinerea,Cneoformans)),(Spombe,(Scerevisiae,(Ncrassa,Anidulans))))));
 ```
 
-Lay the data out as `data/<label>/<label>.gff3.gz` and `data/<label>/<label>.proteins.fa.gz` (the V6 helper scripts expect this).
-Use annotation you trust: the result is only as good as the introns in it (see §6).
+`Smaydis` is *Mycosarcoma maydis* (*My. maydis* below); the label is historical and is kept so that results match earlier runs.
+The tree is not inferred from the data, and Dollo places gains according to it, so use one you trust and root it (`--outgroup`).
 
-## 2. Prepare the proteomes
+Use annotation you trust: the result is only as good as the introns in it (§7). Keep protein ids unique across species
+(funannotate's locus-tag prefix does this); `intronfate` reports collisions rather than guessing.
 
-OrthoFinder wants one FASTA per species, named `<label>.faa`, with no terminal `*`. [`prepare_proteomes.sh`](../bench/V6_orthology_nine_species/prepare_proteomes.sh)
-does this (and turns a rare internal `*`, a premature stop, into `X`):
+## 2. One protein per gene
 
-```sh
-mkdir -p proteomes
-for l in Ncrassa Anidulans ...; do
-  zcat data/$l/$l.proteins.fa.gz | sed 's/\*$//' > proteomes/$l.faa
-done
-```
+OrthoFinder compares proteins, and two isoforms of one gene look to it like paralogs, which makes fewer families single-copy. So the
+proteome given to OrthoFinder must have one protein per gene, named `<label>.faa`:
 
-Keep a protein id unique across species (funannotate's locus-tag prefix does this); `intronfate` reports collisions rather than guessing.
+- NCBI (RefSeq or GenBank) and Ensembl protein files list every isoform. [`scripts/one_protein_per_gene.py`](../scripts/one_protein_per_gene.py)
+  keeps the longest per gene, using the `protein_id` on the GFF3's CDS rows ([HOWTO](HOWTO.md) step 3).
+- Gene predictors such as funannotate or BRAKER usually write one protein per gene already; copy that FASTA to `<label>.faa`, without
+  terminal `*`. An internal `*` (a premature stop) makes the aligned row differ from the protein, so such proteins are left out of the
+  families.
 
-## 3. Orthology (OrthoFinder)
+`intronfate` itself is later given the **original** annotation and protein files, not this reduced set: every transcript then joins its
+protein, and the alignment picks out the one isoform per gene that was used.
 
-```sh
-orthofinder -f proteomes -s species.nwk -t 16 -a 4 -o of_out -n run1
-```
+## 3. Orthology
 
-`-s` gives the species tree (OrthoFinder then does not have to infer it), and the default MSA-based gene trees are used. The nine-species run took
-about 7 minutes. Keep `Orthogroups/Orthogroups.tsv` and `Phylogenetic_Hierarchical_Orthogroups/N*.tsv`.
+OrthoFinder groups the proteomes into orthogroups ([HOWTO](HOWTO.md) step 4). Give it the species tree (`-s`) so it does not have to
+infer one. Keep `Orthogroups/Orthogroups.tsv` and `Phylogenetic_Hierarchical_Orthogroups/N*.tsv`.
 
-Look at what you got with [`orthogroup_summary.py`](../bench/V6_orthology_nine_species/orthogroup_summary.py): of 8,766 orthogroups, 1,106 were
-single-copy in all nine species, 1,795 in at least seven, and 4,785 were multi-copy (67 % of grouped genes).
+**Why single-copy matters.** A shared intron is evidence about the history of a *gene* only if the proteins compared are orthologs,
+not paralogs. So families are built with at most one protein per species, and multi-copy orthogroups are not guessed at: they are
+either split with the hierarchical orthogroups or left out. For the nine fungi, 1,106 of 8,766 orthogroups were single-copy in all
+species. Synteny-based refinement ([orthoSynAssign](https://github.com/stajichlab/orthoSynAssign)) is optional; across these distant
+fungi it resolved almost nothing.
 
-**Why single-copy matters.** A shared intron is only evidence for homology of the *gene* if you compare orthologs, not paralogs. So families are
-built with at most one protein per species. Multi-copy orthogroups are not guessed at: either split them using the hierarchical orthogroups, or leave them out.
-(Synteny-based refinement, [orthoSynAssign](https://github.com/stajichlab/orthoSynAssign), is optional; across these distant fungi it resolved almost nothing.)
+## 4. Families in tiers
 
-## 4. Build the families
+[`scripts/make_families.py`](../scripts/make_families.py) turns the OrthoFinder tables into tiers of families ([HOWTO](HOWTO.md) step 5):
 
-[`make_families.py`](../bench/V6_orthology_nine_species/make_families.py) turns the OrthoFinder tables into tiers of families:
-
-```sh
-python3 make_families.py --of of_out/Results_run1 --data data --min 7 --out families
-```
-
-| Tier | Families | Meaning |
+| Tier | Meaning | Nine fungi |
 |---|---|---|
-| `A_strict` | 1,106 | single-copy in all 9 species |
-| `B_partial` | 689 | single-copy in 7 or 8 species |
-| `C_hog` | 401 | from multi-copy orthogroups, the hierarchical groups that split into single-copy in at least 7 species |
+| `A_strict` | single-copy in every species | 1,106 |
+| `B_partial` | single-copy in at least `--min` species, but not all | 689 (`--min 7`) |
+| `C_hog` | from multi-copy orthogroups, split by the hierarchical orthogroups into single-copy groups | 401 |
 
-Each tier is `families/<tier>/families/<id>.faa` plus `families/<tier>/taxon_map.tsv` (`protein_id<TAB>label`). A species missing from a family
-is simply absent: `intronfate` treats that as missing data, never as a loss. Pick a tier (start with `A_strict`).
+Each tier has `families/<tier>/families/<id>.faa` and `taxon_map.tsv` (protein id to label). A species missing from a family is
+simply absent: `intronfate` treats that as missing data, never as a loss. Start with `A_strict`; the other tiers add families at the
+cost of more missing cells.
 
-## 5. Align the families (untrimmed)
+## 5. Align, and do not trim
 
-```sh
-mkdir -p alignments/A_strict
-for f in families/A_strict/families/*.faa; do
-  b=$(basename $f .faa); mafft --auto --thread 1 --quiet $f > alignments/A_strict/$b.aln.fasta
-done        # or xargs -P 16 / a job array
-```
-
-**Do not trim** (trimAl, Gblocks): the alignment row must equal the protein, otherwise the row is rejected as `row_sequence_mismatch`, because projecting
-through a trimmed row would put introns in the wrong column. Gappy, poorly aligned regions are handled by the tool: an absence there counts as
-*missing*, not as a loss.
+Each family is aligned with MAFFT (`scripts/align_families.sh`, [HOWTO](HOWTO.md) step 6). **Do not trim** (trimAl, Gblocks): the
+aligned row must equal the protein, otherwise it is rejected as `row_sequence_mismatch`, because projecting through a trimmed row would
+put introns in the wrong column. Gappy, poorly aligned regions are handled by the tool: an absence there counts as *missing*, not as a
+loss ([USAGE](USAGE.md) §6).
 
 ## 6. Run `intronfate`
 
-```sh
-ls data/*/*.gff3.gz > gffs.txt            # one path per line; relative paths resolve against the list's folder
-intronfate analyze \
-    --gff-list gffs.txt --proteins-dir proteomes --proteins-ext faa \
-    --msa-dir alignments/A_strict --msa-ext aln.fasta \
-    --taxon-map families/A_strict/taxon_map.tsv \
-    -t species.nwk -m dollo,mp,counts \
-    --combine --combined-only -o results/A_strict
-```
+One `intronfate analyze` call projects every intron, builds the matrices and scores them ([HOWTO](HOWTO.md) step 7). The options that
+matter for your own data:
 
-- `--taxon-map` maps each protein id (alignment row) to its species so the tree tips are species, not proteins.
-- `--*-list` and `--*-dir/--*-ext` avoid one flag per file. A folder is searched non-recursively, so with the `data/<label>/` layout use a list
-  for the GFFs (as above), or put all GFFs in one folder and use `--gff-dir`.
-- `--combine` stacks every family into one matrix and scores it once; `--combined-only` skips the per-family folders (drop it if you want them).
-- The nine-genome, 1,106-family run takes about 2 seconds and 165 MB with `--combined-only`.
+- `--taxon-map families/<tier>/taxon_map.tsv` maps each alignment row (a protein id) to its species, so the tree tips are species.
+- The annotation and protein inputs take files, list files or folders (`--gff-list`, `--gff-dir`/`--gff-ext`, likewise for `-p` and
+  `--msa`); a folder is not searched recursively, so with one folder per species use a list file ([USAGE](USAGE.md) §3).
+- `--combine` stacks every family into one matrix and scores it once, so the totals per lineage need no summing; `--combined-only`
+  skips the per-family folders.
+- `--outgroup` roots the tree; Dollo placements depend on it.
+
+For the nine fungi, tier A (1,106 families) runs in about 2 seconds with `--combined-only`.
 
 ## 7. Read the results
 
-Everything is in `results/A_strict/` (details of every column: [`OUTPUTS.md`](OUTPUTS.md)):
+Start with `diagnostics.tsv` and `unmatched.tsv` (what failed to join, and why), then `combined/dollo_branches.tsv`, the gains and
+losses per branch summed over all families. Every column of every file is described in [`OUTPUTS.md`](OUTPUTS.md).
 
-| File | What it tells you |
-|---|---|
-| `combined/dollo_branches.tsv` | **The answer**: Dollo gains and losses summed over all families, per branch of the tree |
-| `combined/dollo_sites.tsv` | One row per intron position (`<family>:<column>:<phase>`): carriers, gains, losses |
-| `combined/matrix.tsv` | The site × species table (`1` present, `0` absent, `?` unknown) behind everything |
-| `combined/pairwise.tsv` | How many positions each pair of species shares |
-| `introns.tsv` | Every annotated coding intron, with its position in the protein |
-| `unmatched.tsv`, `diagnostics.tsv` | What failed to join or was skipped, and why: read these first |
-
-Excerpt of `combined/dollo_branches.tsv` for the nine fungi (families `A_strict`; `tips` shortened):
+Excerpt of `combined/dollo_branches.tsv` for the nine fungi (tier A; branches named by the tips below them):
 
 | branch (tips below) | gains | losses |
 |---|---|---|
 | all but *S. punctatus* | 831 | 0 |
 | *S. pombe*, *S. cerevisiae*, *N. crassa*, *A. nidulans* | 72 | 2,569 |
-| *M. maydis* | 147 | 4,055 |
+| *My. maydis* | 147 | 4,055 |
 | *S. cerevisiae* | 17 | 1,447 |
 | *C. cinerea* | 1,799 | 514 |
 
-How to read it: a **gain** is where an intron position first appears (one origin per position, Dollo); a **loss** is a descendant that lacks it. Large losses on
-*M. maydis* and *S. cerevisiae* are the expected direction, since both are known for few introns.
+How to read it: a **gain** is where an intron position first appears (one origin per position, under Dollo); a **loss** is a
+descendant that lacks it. Large losses on *My. maydis* and *S. cerevisiae* are the expected direction, since both are known for few
+introns.
 
 **Before you believe a number**, check three things:
 
-1. **`diagnostics.tsv`**: `row_sequence_mismatch`, `length_mismatch`, many `unmatched` rows mean the annotation and proteins do not correspond.
-2. **Annotation error.** A missed intron looks exactly like a loss. For the nine fungi the missed-intron ceiling is 0.1-6.5 % of terminal losses for five species, ~17 % for
-   *M. mucedo*, and as large as the losses themselves for *C. cinerea* and *A. nidulans*, which makes those two unreliable
-   ([V4](../bench/V4_annotation_accuracy/README.md), [V7](../bench/V7_annotation_error_sensitivity/README.md)). Compare your annotation with a reference if one exists.
-3. **Terminal gains** are less certain than losses (false introns inflate them).
-
-To score other rootings, trees or methods without redoing the projection: `intronfate score --matrix results/A_strict/combined/matrix.tsv -t other.nwk --outgroup X -o rescored`.
-To compare tiers, repeat §6 with `B_partial` and `C_hog`; the loss pattern was the same for all three in the nine-species run.
+1. **Diagnostics.** `row_sequence_mismatch`, `length_mismatch` or many `unmatched.tsv` rows mean the annotation and proteins do not
+   correspond ([USAGE](USAGE.md) §8).
+2. **Annotation error.** A missed intron looks exactly like a loss. Measure each annotation against a reference where one exists, over
+   the genes you analysed. For the nine fungi, [V7](../bench/V7_annotation_error_sensitivity/README.md) shows which terminal-loss counts
+   survive the measured error and which cannot be told from missed introns ([V4](../bench/V4_annotation_accuracy/README.md) has the
+   accuracy figures).
+3. **Terminal gains** are less certain than losses: false introns move them, in no consistent direction.
 
 ## 8. Where to go next
 
-- All options and input forms: [`USAGE.md`](USAGE.md). The coordinate model and assumptions: [`SPEC.md`](SPEC.md). MALIN users: `convert` imports and exports MALIN tables.
-- A worked, scripted run of everything above on a cluster, with logs and checks: [`bench/V6_orthology_nine_species`](../bench/V6_orthology_nine_species/README.md).
+- **Re-score** without redoing the projection: `intronfate score --matrix results/A_strict/combined/matrix.tsv -t other.nwk --outgroup X
+  -o rescored` tries another tree, rooting or method. `-m dollo_weighted` shows how the counts change when a second origin of a position
+  is allowed at a price.
+- **Model annotation error** with `-m likelihood --error-rates errors.tsv`: expected gains and losses per branch, with each genome's
+  sensitivity and precision taken into account, and bootstrap intervals ([USAGE](USAGE.md) §11).
+- **Compare tiers**: repeat with `B_partial` and `C_hog`; the loss pattern was the same for all three in the nine-species run.
+- All options and input forms: [`USAGE.md`](USAGE.md). The coordinate model and assumptions: [`SPEC.md`](SPEC.md). MALIN users:
+  `convert` imports and exports MALIN tables (USAGE §7).

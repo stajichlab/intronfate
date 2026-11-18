@@ -1247,3 +1247,255 @@ fn convert_exports_matrices_from_lists_and_folders_and_skips_combined() {
     ]);
     assert_eq!(o.status.code(), Some(2));
 }
+
+/// `-m dollo_weighted` on the quickstart, by hand. Each site is carried by three of ((A,B),(C,D)) and missing in the fourth, so it
+/// is either one gain with one loss (cost G+L) or two gains (cost 2G). At 3:1 one gain + one loss (4) beats two gains (6); at 1:2
+/// two gains (2) beat one gain + one loss (3). Not a default method, and a malformed weighting is an error.
+#[test]
+fn dollo_weighted_sweeps_gain_loss_weights() {
+    let w = scratch("dollo_weighted");
+    let q = example("01_quickstart");
+    let args = |m: &str, weights: Option<&str>, out: &Path| -> Vec<String> {
+        let mut v: Vec<String> = [
+            "analyze",
+            "--gff",
+            q.join("family.gff3").to_str().unwrap(),
+            "-p",
+            q.join("proteins.faa").to_str().unwrap(),
+            "--msa",
+            q.join("family.aln.fasta").to_str().unwrap(),
+            "-t",
+            q.join("family.nwk").to_str().unwrap(),
+            "-m",
+            m,
+            "-o",
+            out.to_str().unwrap(),
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        if let Some(x) = weights {
+            v.extend(["--gain-loss-weights".to_string(), x.to_string()]);
+        }
+        v
+    };
+    let out = w.join("o");
+    let a = args("dollo_weighted", Some("3:1,1:2"), &out);
+    ok(&a.iter().map(String::as_str).collect::<Vec<_>>());
+    let d = out.join("family.aln");
+    assert_eq!(
+        fs::read_to_string(d.join("dollo_weighted.tsv")).unwrap(),
+        "gain_weight\tloss_weight\tsites\tgains\tlosses\tsites_one_gain\tsites_several_gains\tsites_with_losses\n\
+         3\t1\t2\t2\t2\t2\t0\t2\n\
+         1\t2\t2\t4\t0\t0\t2\t0\n"
+    );
+    assert_eq!(
+        fs::read_to_string(d.join("dollo_weighted_sites.tsv")).unwrap(),
+        "site\tgain_weight\tloss_weight\tgains\tlosses\tcost\n\
+         4:0\t3\t1\t1\t1\t4\n7:0\t3\t1\t1\t1\t4\n\
+         4:0\t1\t2\t2\t0\t2\n7:0\t1\t2\t2\t0\t2\n"
+    );
+    let summary = fs::read_to_string(d.join("summary_score.tsv")).unwrap();
+    assert!(
+        summary.contains("dollo_weighted\t3:1=2g/2l,1:2=4g/0l"),
+        "{summary}"
+    );
+
+    // not run unless asked for
+    let out2 = w.join("default");
+    let a = args("dollo,mp,counts", None, &out2);
+    ok(&a.iter().map(String::as_str).collect::<Vec<_>>());
+    assert!(!out2.join("family.aln/dollo_weighted.tsv").exists());
+
+    // the default sweep has four weightings
+    let out3 = w.join("sweep");
+    let a = args("dollo_weighted", None, &out3);
+    ok(&a.iter().map(String::as_str).collect::<Vec<_>>());
+    assert_eq!(
+        fs::read_to_string(out3.join("family.aln/dollo_weighted.tsv"))
+            .unwrap()
+            .lines()
+            .count(),
+        5
+    );
+
+    for bad in ["0:1", "3", "x:1"] {
+        let a = args("dollo_weighted", Some(bad), &w.join("bad"));
+        let o = run(&a.iter().map(String::as_str).collect::<Vec<_>>());
+        assert!(!o.status.success(), "{bad} was accepted");
+        assert!(
+            String::from_utf8_lossy(&o.stderr).contains("--gain-loss-weights"),
+            "{bad}"
+        );
+    }
+}
+
+fn summary_has(dir: &Path, k: &str) -> bool {
+    fs::read_to_string(dir.join("summary_score.tsv"))
+        .unwrap()
+        .contains(k)
+}
+
+/// `-m likelihood` end to end: output tables, the error-rates file (false_rate or precision form), the refusals.
+#[test]
+fn likelihood_writes_its_tables_and_reads_error_rates() {
+    let w = scratch("likelihood");
+    let q = example("01_quickstart");
+    let base = |out: &Path| -> Vec<String> {
+        [
+            "analyze",
+            "--gff",
+            q.join("family.gff3").to_str().unwrap(),
+            "-p",
+            q.join("proteins.faa").to_str().unwrap(),
+            "--msa",
+            q.join("family.aln.fasta").to_str().unwrap(),
+            "-t",
+            q.join("family.nwk").to_str().unwrap(),
+            "-m",
+            "likelihood",
+            "-o",
+            out.to_str().unwrap(),
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
+    };
+    let run_s = |v: &[String]| run(&v.iter().map(String::as_str).collect::<Vec<_>>());
+
+    // no error file: the error-free model
+    let out = w.join("plain");
+    let o = run_s(&base(&out));
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let d = out.join("family.aln");
+    let br = fs::read_to_string(d.join("likelihood_branches.tsv")).unwrap();
+    assert!(br.starts_with("branch\tnode\tn_tips\tgain_prob\tloss_prob\texpected_gains\texpected_losses\texpected_present\thas_data\tfixed\ttips\n"), "{br}");
+    assert_eq!(br.lines().count(), 1 + 7); // 7 nodes in ((A,B),(C,D))
+    let sites = fs::read_to_string(d.join("likelihood_sites.tsv")).unwrap();
+    assert_eq!(sites.lines().count(), 3); // two positions
+    assert!(summary_has(&d, "ml_rate_categories\t1\n") && !summary_has(&d, "ml_gamma_shape"));
+    let summary = fs::read_to_string(d.join("summary_score.tsv")).unwrap();
+    for k in [
+        "ml_log_likelihood\t",
+        "ml_converged\t",
+        "ml_error_rates\tnone (no annotation error)",
+        "ml_fixed_root_branch\t",
+    ] {
+        assert!(summary.contains(k), "{k} missing:\n{summary}");
+    }
+    let lnl: f64 = summary
+        .lines()
+        .find(|l| l.starts_with("ml_log_likelihood"))
+        .unwrap()
+        .split('\t')
+        .nth(1)
+        .unwrap()
+        .parse()
+        .unwrap();
+    let site_sum: f64 = sites
+        .lines()
+        .skip(1)
+        .map(|l| l.split('\t').nth(1).unwrap().parse::<f64>().unwrap())
+        .sum();
+    assert!(
+        lnl < 0.0 && (lnl - site_sum).abs() < 1e-4,
+        "{lnl} vs {site_sum}"
+    );
+
+    // an error file: D misses 20 % of its introns (false_rate form), C given by precision; B not listed -> warning
+    let ef = w.join("errors.tsv");
+    fs::write(&ef, "taxon\tsensitivity\tfalse_rate\tprecision\nD\t0.8\t0.0\t\nC\t0.9\t\t0.95\nX\t0.9\t0\t\nA\t1\t0\t\n").unwrap();
+    let out = w.join("err");
+    let mut a = base(&out);
+    a.extend([
+        "--error-rates".into(),
+        ef.to_str().unwrap().into(),
+        "--ml-bootstrap".into(),
+        "3".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let err = String::from_utf8_lossy(&o.stderr);
+    assert!(
+        err.contains("\"X\" is not a scored tip") && err.contains("taken as error-free: B"),
+        "{err}"
+    );
+    let tips = fs::read_to_string(out.join("family.aln/likelihood_tips.tsv")).unwrap();
+    let row = |t: &str| {
+        tips.lines()
+            .find(|l| l.starts_with(&format!("{t}\t")))
+            .unwrap()
+            .split('\t')
+            .map(str::to_string)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        (row("D")[1].as_str(), row("D")[2].as_str()),
+        ("0.8000", "0.000000")
+    );
+    assert_eq!(row("B")[1], "1.0000");
+    assert!(
+        row("D")[5].parse::<f64>().unwrap() > 0.0,
+        "D's observed absence may be a miss: {tips}"
+    );
+    let br = fs::read_to_string(out.join("family.aln/likelihood_branches.tsv")).unwrap();
+    assert!(
+        br.lines()
+            .next()
+            .unwrap()
+            .contains("gains_lo\tgains_hi\tlosses_lo\tlosses_hi\tpresent_lo\tpresent_hi"),
+        "{br}"
+    );
+    assert!(fs::read_to_string(out.join("family.aln/summary_score.tsv"))
+        .unwrap()
+        .contains("ml_bootstrap\t3 replicates, resampling by position"));
+
+    // rate classes: estimated and fixed shape, and the site rates
+    let out = w.join("gamma");
+    let mut a = base(&out);
+    a.extend(["--ml-rate-categories".into(), "4".into()]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let summary = fs::read_to_string(out.join("family.aln/summary_score.tsv")).unwrap();
+    assert!(
+        summary.contains("ml_rate_categories\t4\n") && summary.contains("ml_gamma_shape\t"),
+        "{summary}"
+    );
+    let sites = fs::read_to_string(out.join("family.aln/likelihood_sites.tsv")).unwrap();
+    assert!(sites.starts_with("site\tlog_lik\trate\n"), "{sites}");
+    let out = w.join("gamma_fixed");
+    let mut a = base(&out);
+    a.extend([
+        "--ml-rate-categories".into(),
+        "4".into(),
+        "--ml-gamma-shape".into(),
+        "0.5".into(),
+        "--ml-param-tol".into(),
+        "1e-5".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert!(fs::read_to_string(out.join("family.aln/summary_score.tsv"))
+        .unwrap()
+        .contains("ml_gamma_shape\t0.5000 (fixed)"));
+    let mut a = base(&w.join("gamma_bad"));
+    a.extend([
+        "--ml-rate-categories".into(),
+        "4".into(),
+        "--ml-gamma-shape".into(),
+        "0.001".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(!o.status.success() && String::from_utf8_lossy(&o.stderr).contains("gamma shape"));
+
+    // refusals: --min-taxa > 1, a bad file
+    let mut a = base(&w.join("mt"));
+    a.extend(["--min-taxa".into(), "2".into()]);
+    let o = run_s(&a);
+    assert!(!o.status.success() && String::from_utf8_lossy(&o.stderr).contains("--min-taxa 1"));
+    fs::write(&ef, "taxon\tsensitivity\nD\t0.8\n").unwrap();
+    let mut a = base(&w.join("bad"));
+    a.extend(["--error-rates".into(), ef.to_str().unwrap().into()]);
+    let o = run_s(&a);
+    assert!(!o.status.success() && String::from_utf8_lossy(&o.stderr).contains("false_rate"));
+}

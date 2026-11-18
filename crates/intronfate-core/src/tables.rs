@@ -497,6 +497,180 @@ pub fn spectrum_table(m: &SiteMatrix) -> Table {
     t
 }
 
+// Node ids index the tree, the names and the results together.
+#[allow(clippy::needless_range_loop)]
+/// Per node: fitted transition probabilities and posterior expectations (with bootstrap intervals when given).
+pub fn likelihood_branch_table(
+    data: &ScoringData,
+    r: &crate::likelihood::FitResult,
+    boot: Option<&crate::likelihood::Bootstrap>,
+) -> Table {
+    let mut head = vec![
+        "branch",
+        "node",
+        "n_tips",
+        "gain_prob",
+        "loss_prob",
+        "expected_gains",
+        "expected_losses",
+        "expected_present",
+        "has_data",
+        "fixed",
+    ];
+    if boot.is_some() {
+        head.extend([
+            "gains_lo",
+            "gains_hi",
+            "losses_lo",
+            "losses_hi",
+            "present_lo",
+            "present_hi",
+        ]);
+    }
+    head.push("tips");
+    let mut t = Table::new(&head);
+    let names = data.tree.node_names();
+    let f = |x: f64| format!("{x:.2}");
+    let pr = |x: f64| format!("{x:.6}");
+    for v in 0..data.tree.len() {
+        let n = &r.nodes[v];
+        let tips: Vec<String> = data
+            .tree
+            .leaves_under(v)
+            .iter()
+            .map(|&l| data.tree.label(l).unwrap_or("?").to_string())
+            .collect();
+        t.push_row(|c| {
+            c.push(names[v].clone());
+            c.push(cell(v));
+            c.push(cell(tips.len()));
+            c.push(pr(n.gain_prob));
+            c.push(pr(n.loss_prob));
+            c.push(f(n.expected_gains));
+            c.push(f(n.expected_losses));
+            c.push(f(n.expected_present));
+            c.push(cell(if n.has_data { "yes" } else { "no" }));
+            c.push(cell(n.fixed.as_str()));
+            if let Some(b) = boot {
+                for (lo, hi) in [b.gains[v], b.losses[v], b.present[v]] {
+                    c.push(f(lo));
+                    c.push(f(hi));
+                }
+            }
+            c.push(tips.join(","));
+        });
+    }
+    t
+}
+
+/// Per tip: the error rates used and the expected misses and false introns.
+pub fn likelihood_tip_table(
+    data: &ScoringData,
+    err: &crate::likelihood::ErrorRates,
+    r: &crate::likelihood::FitResult,
+) -> Table {
+    let mut t = Table::new(&[
+        "taxon",
+        "sensitivity",
+        "false_rate",
+        "observed_present",
+        "observed_absent",
+        "expected_missed",
+        "expected_false",
+    ]);
+    for (i, name) in data.tip_names.iter().enumerate() {
+        let count = |s: u8| data.characters.iter().filter(|c| c.states[i] == s).count();
+        t.push_row(|c| {
+            c.push(name.clone());
+            c.push(format!("{:.4}", err.sensitivity[i]));
+            c.push(format!("{:.6}", err.false_rate[i]));
+            c.push(cell(count(crate::score::PRESENT)));
+            c.push(cell(count(crate::score::ABSENT)));
+            c.push(format!("{:.2}", r.tips[i].expected_missed));
+            c.push(format!("{:.2}", r.tips[i].expected_false));
+        });
+    }
+    t
+}
+
+/// Conditional log-likelihood per position (for site-wise tree comparisons, e.g. CONSEL/AU) and its posterior mean rate multiplier
+/// (1 without rate classes).
+pub fn likelihood_site_table(data: &ScoringData, r: &crate::likelihood::FitResult) -> Table {
+    let mut t = Table::with_capacity(&["site", "log_lik", "rate"], data.characters.len());
+    for ((ch, l), x) in data
+        .characters
+        .iter()
+        .zip(&r.site_log_lik)
+        .zip(&r.site_rate)
+    {
+        t.push(vec![ch.label.clone(), format!("{l:.6}"), format!("{x:.4}")]);
+    }
+    t
+}
+
+/// One weighting of a weighted-Dollo sweep: `(gain_weight, loss_weight, [(site, gains, losses)])`.
+pub type WeightedDolloRun = (u32, u32, Vec<(String, u32, u32)>);
+
+/// Per-site weighted-Dollo results, long form: one row per site and weighting.
+pub fn dollo_weighted_table(runs: &[WeightedDolloRun]) -> Table {
+    let n = runs.iter().map(|r| r.2.len()).sum();
+    let mut t = Table::with_capacity(
+        &[
+            "site",
+            "gain_weight",
+            "loss_weight",
+            "gains",
+            "losses",
+            "cost",
+        ],
+        n,
+    );
+    for (gw, lw, sites) in runs {
+        for (label, g, l) in sites {
+            t.push_row(|c| {
+                c.push(label.clone());
+                c.push(cell(gw));
+                c.push(cell(lw));
+                c.push(cell(g));
+                c.push(cell(l));
+                c.push(cell(
+                    u64::from(*gw) * u64::from(*g) + u64::from(*lw) * u64::from(*l),
+                ));
+            });
+        }
+    }
+    t
+}
+
+/// Totals per weighting of a weighted-Dollo sweep.
+pub fn dollo_weighted_summary_table(runs: &[WeightedDolloRun]) -> Table {
+    let mut t = Table::new(&[
+        "gain_weight",
+        "loss_weight",
+        "sites",
+        "gains",
+        "losses",
+        "sites_one_gain",
+        "sites_several_gains",
+        "sites_with_losses",
+    ]);
+    for (gw, lw, sites) in runs {
+        let gains: u64 = sites.iter().map(|s| u64::from(s.1)).sum();
+        let losses: u64 = sites.iter().map(|s| u64::from(s.2)).sum();
+        t.push_row(|c| {
+            c.push(cell(gw));
+            c.push(cell(lw));
+            c.push(cell(sites.len()));
+            c.push(cell(gains));
+            c.push(cell(losses));
+            c.push(cell(sites.iter().filter(|s| s.1 == 1).count()));
+            c.push(cell(sites.iter().filter(|s| s.1 > 1).count()));
+            c.push(cell(sites.iter().filter(|s| s.2 > 0).count()));
+        });
+    }
+    t
+}
+
 pub fn dollo_table(r: &DolloResult) -> Table {
     let mut t = Table::new(&[
         "site",

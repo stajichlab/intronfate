@@ -1,9 +1,9 @@
-# Example 3 — MALIN tables
+# Example 3: MALIN tables
 
 `tiny.table` is a MALIN intron table: four taxa, five intron sites over two alignments (`K1`, `K2`), with `#MAP`
 lines placing each site and `?` for cells that could not be observed. `tiny.nwk` is `((A,B),(C,D));`.
 
-```
+```text
 A  3103?          codes: 0 no intron · ? not observed · 3 / 1 / 2 intron of phase 0 / 1 / 2
 B  31201          #MAP site alignment alipos     alipos = 3·column + phase
 C  302?0          0 K1 3   -> column 1, phase 0

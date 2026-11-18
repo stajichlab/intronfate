@@ -1,5 +1,8 @@
 # Output reference
 
+This page is the reference for every file, column and summary key the tool writes; other pages link here instead of repeating it.
+How to *read* the results is in [`USAGE.md`](USAGE.md) §5 and the walk-throughs ([`HOWTO.md`](HOWTO.md) §8, [`TUTORIAL.md`](TUTORIAL.md) §7).
+
 Every file is tab-separated text with one header row, stable row order (diffable between runs) and
 absolute 1-based inclusive genomic coordinates. A leading `# key=value ...` line carries metadata where
 a file has nowhere else to put it. Files are written atomically (temp file, then rename).
@@ -16,7 +19,8 @@ complete codon.
 | `introns.tsv` | Every coding intron: `protein_id gene_id transcript_id seqid strand intron_rank coding_rank genomic_start genomic_end intron_len cds_offset phase codon residue_before residue_after site_key protein_len in_range`. `intron_rank` counts all introns of the transcript (UTR included), `coding_rank` only coding ones. `codon`, `residue_before/after` are 1-based; `site_key` is `cds_offset`. These numbers are **per protein** — compare species through `matrix.tsv`, not here. |
 | `unmatched.tsv` | `transcript_id gene_id attempted_protein_id reason source` for every transcript that failed to join a sequence. |
 | `diagnostics.tsv` | `kind count` per kind of problem, covering the annotation reader (`frame_mismatch`, `no_cds`, `strand_unknown`, `protein_id_fallback_transcript`, `intron_before_first_codon`, `transcript_id_collision`, `invalid_utf8`, …), the join (`protein_not_in_fasta`, `length_mismatch`, `site_beyond_protein_end`, …) and the alignment step. Written only when at least one warning or error was raised (informational records alone, such as the transcripts-retained summary, do not create it); a stale file from an earlier run is removed. |
-| `diagnostics_detail.tsv` | Retained examples: level, kind, subject, message. |
+| `diagnostics_detail.tsv` | Retained examples: level, kind, subject, message. Every kind is explained in [`USAGE.md`](USAGE.md) §8. |
+| `summary_project.tsv` | (`project` only) `key value`: `stage transcripts_read proteins_in_fasta proteins_with_introns intron_records introns_total introns_in_utr unmatched_records out_dir`. |
 
 ## Per alignment: `<out>/<alignment>/`
 
@@ -39,9 +43,14 @@ complete codon.
 | `dollo_sites.tsv` | `n_present n_missing gains losses monophyletic dollo_compatible gained_at lost_in`. Classic Dollo: one gain at the common ancestor of the carriers (`gained_at`), `losses` = minimum independent losses, `lost_in` the branches where they fall, separated by `;` (an internal branch is named by its tips, which are comma-separated). `monophyletic` = the observed carriers form exactly one clade (unobserved tips ignored); `dollo_compatible` = `losses == 0`. |
 | `dollo_branches.tsv` | `branch node n_tips gains losses tips`: Dollo origins placed at, and losses on the branch leading to, every node, summed over sites — the table to compare with another tool's per-lineage losses (e.g. MALIN's). `branch` is `root`, a tip name, a non-numeric node label, or the node's tip list (`A,B`; long lists are truncated); where two nodes would print alike — or an internal node is itself labelled `root` — `#<node id>` is appended, so a name identifies exactly one node. `tips` is always the full comma-separated tip list. |
 | `mp_sites.tsv` | `n_present n_missing steps informative ambiguous`: Fitch/Hartigan step count with gains and losses equal cost; `informative` = at least two taxa on each side; `ambiguous` = several equally short reconstructions. |
+| `dollo_weighted.tsv` | (`-m dollo_weighted`) One row per weighting: `gain_weight loss_weight sites gains losses sites_one_gain sites_several_gains sites_with_losses`. As the gain weight rises, positions move from several independent origins to one origin with losses; where the totals stop changing, the loss counts no longer depend on the weighting. |
+| `dollo_weighted_sites.tsv` | (`-m dollo_weighted`) Long form: `site gain_weight loss_weight gains losses cost` per site and weighting. Counts only: where on the tree the gains and losses fall is given by classic Dollo (`dollo_sites.tsv`). |
+| `likelihood_branches.tsv` | (`-m likelihood`) Per node: `branch node n_tips gain_prob loss_prob expected_gains expected_losses expected_present has_data fixed tips`, plus `gains_lo gains_hi losses_lo losses_hi present_lo present_hi` (2.5/97.5 % bootstrap percentiles) with `--ml-bootstrap`. Probabilities are for the branch above the node; for `root`, `gain_prob` is the root presence probability and `expected_gains` the positions present at the root. Expectations are posterior means over the observed positions, with annotation error taken into account. `fixed` says whether the branch was estimated (`no`) or fixed at no change, and why: `root` (a root branch, so that the root probability is identifiable), `no_data` (no observed tip below; left out of the `ml_expected_*` totals) or `unary` (the node has one informative child; the change is on that child's branch). |
+| `likelihood_tips.tsv` | (`-m likelihood`) Per genome: `taxon sensitivity false_rate observed_present observed_absent expected_missed expected_false`. |
+| `likelihood_sites.tsv` | (`-m likelihood`) `site log_lik rate`: conditional log-likelihood per position (they sum to `ml_log_likelihood`), for site-wise tree tests (e.g. CONSEL), and the posterior mean rate multiplier (1 without `--ml-rate-categories`). |
 | `reconstructions.tsv` | (`--reconstructions`) `method site node is_tip state` per node. Internal nodes are named by their tip set; numeric internal labels in the input tree are treated as support values, not names. |
 | `tree_gains.nwk` | The tree with `[gains=N]` on the branches where Dollo origins were placed. |
-| `summary_score.tsv` | `key value`: method totals (`dollo_gains`, `dollo_losses`, `mp_steps`, `mp_consistency_index`, …), how many tree tips and matrix taxa matched, `characters_scored`, `characters_skipped` (by `--min-taxa` or no carrier), `characters_too_sparse` (by `--min-observed`), and whether the tree looked rooted. |
+| `summary_score.tsv` | `key value`: method totals (`dollo_gains`, `dollo_losses`, `mp_steps`, `mp_consistency_index`, …), how many tree tips and matrix taxa matched, `characters_scored`, `characters_skipped` (by `--min-taxa` or no carrier), `characters_too_sparse` (by `--min-observed`), and whether the tree looked rooted. With `-m likelihood`: `ml_log_likelihood ml_iterations ml_converged ml_root_expected_present` (a count of positions, not a probability) `ml_expected_gains ml_expected_losses ml_unobserved_positions ml_error_rates ml_rate_categories ml_fixed_root_branch`, `ml_gamma_shape` (with rate classes; `(fixed)` when given), and when present `ml_fixed_unary_branches ml_fixed_no_data_branches ml_bootstrap`. |
 
 ## Combined matrix: `<out>/combined/` (`--combine`)
 
@@ -54,6 +63,11 @@ Written by `matrix`/`analyze --combine`, or by `score --combine -o DIR`. It hold
 - In every other file the `site`/`label` is that same `<family>:<column>:<phase>` and `column` is the family-local column.
 - `pairwise.tsv`, `sharing_matrix.tsv`: `n_a`, `n_b`, `shared`, `n_both_observable` are sums over families (sites of different families never pair).
 - No `taxa.tsv`, `sites.tsv` or `characters.nex`: those are per-alignment projection records.
+
+## Demo
+
+`demo -o DIR` writes its generated inputs (`demo.gff3`, `demo.faa`, `demo.aln.fasta`, `demo.nwk`), a subset of the tables above, and
+`summary.tsv` (`key value` totals of the run).
 
 ## MALIN export
 
