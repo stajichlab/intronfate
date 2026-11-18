@@ -139,7 +139,7 @@ Every column of these files is in [`OUTPUTS.md`](OUTPUTS.md); the models and the
 | `--reconstructions` | off | Also write per-node ancestral states. |
 | `--error-rates FILE` | – | `-m likelihood`: per-taxon annotation error (§11). |
 | `--ml-bootstrap N` | 0 | `-m likelihood`: bootstrap replicates for intervals on gains, losses and presence. |
-| `--ml-max-iter N` | 50,000 | `-m likelihood`: limit on EM steps (E-steps). |
+| `--ml-max-iter N` | 50,000 | `-m likelihood`: exact limit on E-steps (at least 1). Near the limit the fit switches from accelerated to plain EM steps so the count never exceeds N. |
 | `--ml-seed N` | 1 | `-m likelihood`: random seed of `--ml-bootstrap`. |
 | `--ml-rate-categories K` | 1 | `-m likelihood`: rate classes across positions (discrete gamma; 4 is usual, 1 = none). |
 | `--ml-gamma-shape A` | estimated | `-m likelihood`: fix the gamma shape instead of estimating it. |

@@ -33,8 +33,7 @@ In rough priority order. Items marked SPEC are described there.
 
 1. **Separate gain and loss rate factors** in the likelihood model (SPEC §5.6, §12 item 5).
 2. **Validate the likelihood fit against MALIN's `*.rates`** output on MALIN's test data (SPEC §6b item 3).
-3. **EM `--ml-max-iter` can overshoot by one acceleration cycle**: the limit is checked per SQUAREM cycle, so a fit may report a few
-   E-steps more than the limit. Harmless; document or enforce exactly.
+3. ~~EM `--ml-max-iter` overshoot~~ — fixed: the limit is exact (plain EM steps near the limit; test `max_iter_is_an_exact_limit_on_e_steps`).
 4. **`--flank` default (1)** is an engineering default, not a tuned one (SPEC §2, §12 item 6). Tune against MALIN's test data.
 5. **SQL/Chado/Ensembl annotation sources** (`AnnotationSource` seam exists; needs a schema decision; SPEC §12 item 4).
 6. **HOWTO Docker route is untested** (the page says so; D1 used Apptainer/Singularity and conda is not run by the test either).

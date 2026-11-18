@@ -1083,8 +1083,14 @@ fn keep_below_one(p: &mut Params, free: &[NodeId]) {
 /// (default 1e-7);
 /// the gain/root direction is flat with annotation error, so a log-likelihood criterion alone stops too early. `iterations` counts
 /// E-steps.
+/// The most E-steps one SQUAREM cycle can use: one EM step, up to six extrapolation candidates of two E-steps each, one final E-step.
+const CYCLE_MAX_E_STEPS: usize = 1 + 6 * 2 + 1;
+
 pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<FitResult, String> {
     err.validate(data.tips.len())?;
+    if opt.max_iter == 0 {
+        return Err("max_iter must be at least 1 (the number of E-steps)".into());
+    }
     if !(1..=MAX_CATEGORIES).contains(&opt.categories) {
         return Err(format!(
             "{} rate categories; use 1 (no rate variation) to {MAX_CATEGORIES}",
@@ -1176,6 +1182,33 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
     let (mut p1, mut acc0) = em(&p);
     iterations += 1;
     while iterations < opt.max_iter {
+        if opt.max_iter - iterations < CYCLE_MAX_E_STEPS {
+            // Not enough budget left for a whole SQUAREM cycle: finish with plain EM steps, one E-step each, so that the limit is exact.
+            let acc1 = timed_e(&p1);
+            iterations += 1;
+            let dlnl = acc1.log_lik - acc0.log_lik;
+            let dx = pack(&p1, &free, fit_shape)
+                .iter()
+                .zip(pack(&p, &free, fit_shape).iter())
+                .map(|(a, b)| (a - b).abs())
+                .fold(0.0, f64::max);
+            p = p1.clone();
+            acc0 = acc1;
+            if opt.trace {
+                eprintln!(
+                    "likelihood: E-steps {iterations:>6}  lnL {:.6}  shape {:.4}  dlnL {dlnl:.3e}  dx {dx:.3e}  (plain EM, iteration limit near)",
+                    acc0.log_lik, p.rates.shape
+                );
+            }
+            if dlnl < opt.tol && dx < opt.param_tol {
+                converged = true;
+                break;
+            }
+            let mut q = p.clone();
+            timed_m(&acc0, &mut q);
+            p1 = q;
+            continue;
+        }
         let (p2, acc1) = em(&p1);
         iterations += 1;
         let (x0, x1, x2) = (
@@ -1740,6 +1773,39 @@ mod tests {
     fn sim_data(nwk: &str, cols: Vec<Vec<u8>>) -> ScoringData {
         let refs: Vec<&[u8]> = cols.iter().map(|c| c.as_slice()).collect();
         data(nwk, &refs)
+    }
+
+    #[test]
+    fn max_iter_is_an_exact_limit_on_e_steps() {
+        // The limit used to be checked once per SQUAREM cycle, so a fit could report up to 13 E-steps more than asked for.
+        let t = tree(NWK);
+        let truth = Params::uniform(&t, 0.05, 0.15, 0.7);
+        let err = some_errors();
+        let d = sim_data(NWK, simulate(&t, &truth, &err, 3_000, 11));
+        let mut last = f64::NEG_INFINITY;
+        for it in [1usize, 2, 3, 5, 13, 14, 15, 20, 27, 28, 29, 40, 41] {
+            let r = fit(
+                &d,
+                &err,
+                &FitOptions {
+                    max_iter: it,
+                    tol: 0.0, // never converges on the log-likelihood criterion, so the whole budget is used
+                    param_tol: 0.0,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            assert_eq!(r.iterations, it, "max_iter {it}");
+            assert!(!r.converged);
+            assert!(r.log_lik >= last - 1e-6, "{it}: {} < {last}", r.log_lik);
+            last = r.log_lik;
+        }
+        // with the default stopping rule the count never exceeds the limit
+        for it in [5usize, 30, 100] {
+            let r = fit(&d, &err, &FitOptions { max_iter: it, ..Default::default() }).unwrap();
+            assert!(r.iterations <= it, "{} > {it}", r.iterations);
+        }
+        assert!(fit(&d, &err, &FitOptions { max_iter: 0, ..Default::default() }).is_err());
     }
 
     #[test]
