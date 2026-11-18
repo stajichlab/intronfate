@@ -44,11 +44,12 @@ In rough priority order. Items marked SPEC are described there.
 9. **Stdin/stdout** (`--gff -`, `-o -`); Python bindings only if needed (SPEC §12 items 7–8).
 10. **Dollo reporting ideas**: `gain_ambiguous` when all-missing lineages sit beside the MRCA; per-branch "assessable sites"
     denominators.
-11. **Suspected, unconfirmed** (each needs a test before a fix): a phase-0 intron right before the stop codon dropped as out of range;
-    an intron inside a skipped 5' partial codon not listed when the file has no exon rows; Stockholm `#=GS SF/SE` may not be a real
-    convention (Pfam uses `name/start-end`); FlyBase `Derives_from` protein links. Resolved with tests: GTF `;` inside quoted values
-    (attributes are now split quote-aware) and a 0/1 MALIN table with `#MAP` lines (the guide treats `1`, `2`, `3` alike; the phase comes
-    from `alipos` unless the table uses `2`/`3`).
+11. **Suspected bugs, checked** (each with a test): resolved: GTF `;` inside quoted values (attributes are split quote-aware); a 0/1 MALIN
+    table with `#MAP` lines (MALIN treats `1`, `2`, `3` alike; the phase comes from `alipos` unless the table uses `2`/`3`); an intron inside
+    the skipped 5' partial codon, which without exon rows vanished from the intron list and shifted later `intron_rank`s (fixed). Not bugs:
+    an intron between the last residue and the stop codon is reported (`site_beyond_protein_end`, `tail_sites_dropped`) and set aside by
+    design; `--clamp-tail` places it one codon early (documented as approximate); Stockholm `SF/SE` is this tool's own convention, now
+    stated as such (SPEC §3, USAGE). Still unchecked: FlyBase `Derives_from` protein links (no FlyBase file at hand).
 
 ## Settled (see SPEC; do not relitigate without a reason)
 

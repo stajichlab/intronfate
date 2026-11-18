@@ -1000,6 +1000,42 @@ mod tests {
     }
 
     #[test]
+    fn an_intron_between_the_last_residue_and_the_stop_codon_is_reported_not_lost() {
+        // 8 residues + stop = 27 nt CDS; an intron at cds_offset 24 lies between residue 8 and the stop codon, so there is no residue after
+        // it to anchor to. It is flagged when joined (`site_beyond_protein_end`, `in_range` false), counted as a tail site when projected
+        // and left out of the matrix by default; `--clamp-tail` puts it on the last residue's column, which is approximate (SPEC §2).
+        let ps = proteins(">A\nMKVLGAWE\n");
+        let mut t = tx("A", &[24]);
+        t.cds_len = 27;
+        let p = join_annotations(&[t], &ps, &JoinOptions::default()).unwrap();
+        assert_eq!(p.diagnostics.count_of("site_beyond_protein_end"), 1);
+        assert_eq!(
+            (p.rows[0].site.codon_index0(), p.rows[0].site.phase),
+            (8, 0)
+        );
+        assert!(!p.rows[0].in_range);
+        let a = aln(">A\nMKVLGAWE\n");
+        let ap = project_into_alignment(&a, &p, &ps, &ProjectOptions::default());
+        assert!(ap.sites.is_empty());
+        assert_eq!(
+            ap.taxa[0].report.tail_sites, 1,
+            "counted, so `tail_sites_dropped` shows it"
+        );
+        let ac = project_into_alignment(
+            &a,
+            &p,
+            &ps,
+            &ProjectOptions {
+                tail: TailPolicy::Clamp,
+                ..Default::default()
+            },
+        );
+        assert_eq!(ac.taxa[0].report.clamped, 1);
+        assert_eq!(ac.sites.len(), 1);
+        assert_eq!(ac.sites[0].col, 7, "clamped onto the last residue's column");
+    }
+
+    #[test]
     fn tail_policy_drops_or_clamps_sites_without_a_column() {
         let ps = proteins(">A\nMKVLGAWE\n");
         // cds_offset 21 -> 0-based codon 7, the 8th residue, which the protein has but the row lacks.

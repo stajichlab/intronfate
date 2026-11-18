@@ -23,7 +23,7 @@ See [Install](../README.md#install) in the README (one `cargo build --release`; 
 |---|---|---|
 | Annotation | `--gff` (repeatable; also `--gff-list`, `--gff-dir`) | GFF3 or GTF, optionally gzip. Needs `CDS` features grouped by transcript. `exon` features are used to find UTR introns. |
 | Proteins | `-p` / `--proteins` (repeatable; also `--proteins-list`, `--proteins-dir`) | FASTA of the proteins those transcripts encode. |
-| Alignment | `--msa` (repeatable; also `--msa-list`, `--msa-dir`) | Aligned FASTA or Stockholm of the orthologs. Row ids must equal the protein ids. |
+| Alignment | `--msa` (repeatable; also `--msa-list`, `--msa-dir`) | Aligned FASTA or Stockholm of the orthologs. Row ids must equal the protein ids (a Pfam-style `name/start-end` id is not read as a source range; see SPEC §3). |
 | Tree (to score) | `-t` / `--tree` | Newick. Tip names must equal the matrix taxon names exactly: the alignment row ids, or the names `--taxon-map` gives them (§9). |
 
 ### Many input files: lists and folders

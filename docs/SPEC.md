@@ -190,7 +190,8 @@ idempotent because it is applied to both sides. Both sides of every failure are 
 Aligned FASTA and Stockholm. Each row precomputes `res2col` (column of its n-th residue), which
 reduces projection to one indexed lookup.
 
-Stockholm `#=GS <id> SF/SE` is honoured: those fields say the row carries **source residues SF..SE**,
+Stockholm `#=GS <id> SF/SE` is honoured (this is this tool's own convention, **not** part of the Stockholm format; the Pfam/HMMER convention of a
+`name/start-end` row id is not read, so give the row the plain protein id and add `SF`/`SE` if the row covers only part of it): those fields say the row carries **source residues SF..SE**,
 so protein residue `SF-1` maps to the first aligned residue and residues outside the range map to
 nothing. Treating that range as "trim these insert columns" instead of "renumber from here" shifts
 every projected position in the row; the semantics are pinned by a unit test.
