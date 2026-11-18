@@ -349,19 +349,72 @@ fn parse_pos(s: &str) -> Option<u64> {
 ///
 /// `base` is the byte offset of `s` within the line, so emitted spans index the whole line.
 fn parse_attributes(s: &str, base: usize, out: &mut Vec<AttrSpan>) {
-    let mut abs = base;
-    for chunk in s.split(';') {
+    for (lo, hi) in split_attribute_chunks(s) {
+        let chunk = &s[lo..hi];
         let lead = chunk.len() - chunk.trim_start().len();
         let trimmed = chunk.trim();
-        let start = abs + lead;
-        abs += chunk.len() + 1; // +1 for the consumed separator
         if trimmed.is_empty() {
             continue;
         }
-        if let Some(span) = parse_attr_chunk(trimmed, start) {
+        if let Some(span) = parse_attr_chunk(trimmed, base + lo + lead) {
             out.push(span);
         }
     }
+}
+
+/// Byte ranges of the `;`-separated attributes of `s`. A `;` inside a double-quoted value (GTF `key "a; b"`, or `key = "a; b"`) does
+/// not end the attribute. A quote protects only when it opens the value (right after the key, whitespace and an optional `=`), so a
+/// GFF3 value that merely contains a `"` is split as before, and a quote that is never closed ends at the next `;` as before.
+fn split_attribute_chunks(s: &str) -> Vec<(usize, usize)> {
+    let b = s.as_bytes();
+    let mut out = Vec::new();
+    let mut start = 0;
+    while start <= b.len() {
+        // find the end of this attribute
+        let mut i = start;
+        while i < b.len() && b[i].is_ascii_whitespace() {
+            i += 1;
+        }
+        let key_start = i;
+        while i < b.len()
+            && b[i] != b';'
+            && b[i] != b'='
+            && b[i] != b'"'
+            && !b[i].is_ascii_whitespace()
+        {
+            i += 1;
+        }
+        let mut j = i;
+        while j < b.len() && (b[j].is_ascii_whitespace() || b[j] == b'=') {
+            j += 1;
+        }
+        let mut end = None;
+        if i > key_start && j < b.len() && b[j] == b'"' {
+            // a quoted value: find the closing quote (a backslash escapes the next byte)
+            let mut k = j + 1;
+            while k < b.len() && b[k] != b'"' {
+                k += if b[k] == b'\\' { 2 } else { 1 };
+            }
+            if k < b.len() {
+                // after the closing quote, the attribute runs to the next `;`
+                end = Some(
+                    b[k + 1..]
+                        .iter()
+                        .position(|&c| c == b';')
+                        .map_or(b.len(), |p| k + 1 + p),
+                );
+            }
+        }
+        let end = end.unwrap_or_else(|| {
+            b[start..]
+                .iter()
+                .position(|&c| c == b';')
+                .map_or(b.len(), |p| start + p)
+        });
+        out.push((start, end));
+        start = end + 1;
+    }
+    out
 }
 
 /// Parse one whitespace-trimmed attribute chunk that begins at absolute byte offset `at`.
@@ -508,6 +561,46 @@ mod tests {
         );
         assert_eq!(rec.length(), 5);
         assert_eq!(rec.summary(), "CDS s1 5-9 -");
+    }
+
+    #[test]
+    fn semicolons_inside_quoted_gtf_values_do_not_split_the_attribute() {
+        let (recs, r) = all(
+            b"chr1\tx\texon\t9\t26\t.\t+\t.\tgene_id \"G1\"; note \"a; b;c\"; transcript_id \"T1\"; prod = \"x;y\"; last z\n",
+        );
+        assert_eq!(r.malformed, 0);
+        let m = &recs[0].attrs;
+        for (k, v) in [
+            ("gene_id", "G1"),
+            ("note", "a; b;c"),
+            ("transcript_id", "T1"),
+            ("prod", "x;y"),
+            ("last", "z"),
+        ] {
+            assert!(m.contains(&(k.to_string(), v.to_string())), "{k}: {m:?}");
+        }
+        assert_eq!(m.len(), 5, "{m:?}");
+        // GFF3 is unchanged: a quote that does not open the value does not protect `;`, and an unclosed quote ends at the next `;`
+        let (recs, _) = all(b"chr1\tx\tgene\t9\t26\t.\t+\t.\tID=g1;Note=5\" UTR;Name=n\n");
+        let m = &recs[0].attrs;
+        assert!(
+            m.contains(&("ID".to_string(), "g1".to_string()))
+                && m.contains(&("Name".to_string(), "n".to_string())),
+            "{m:?}"
+        );
+        let (recs, _) = all(b"chr1\tx\tgene\t9\t26\t.\t+\t.\tID=g1;Note=\"open;Name=n\n");
+        let m = &recs[0].attrs;
+        assert!(m.contains(&("Name".to_string(), "n".to_string())), "{m:?}");
+        // escaped quote inside a quoted value
+        let (recs, _) =
+            all(b"chr1\tx\texon\t9\t26\t.\t+\t.\tnote \"say \\\"hi;\\\" ok\"; gene_id \"G\"\n");
+        assert!(
+            recs[0]
+                .attrs
+                .contains(&("gene_id".to_string(), "G".to_string())),
+            "{:?}",
+            recs[0].attrs
+        );
     }
 
     #[test]
