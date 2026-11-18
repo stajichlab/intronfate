@@ -1,0 +1,21 @@
+none 0.22 s
+none	ml_log_likelihood	-17817.363266 ml_iterations	293 ml_converged	yes ml_rate_categories	1 
+shared2 0.79 s
+shared2	ml_log_likelihood	-17797.641160 ml_iterations	1394 ml_converged	yes ml_rate_categories	2 ml_gamma_shape	2.8497 
+shared4 2.21 s
+shared4	ml_log_likelihood	-17795.826276 ml_iterations	1287 ml_converged	yes ml_rate_categories	4 ml_gamma_shape	3.5536 
+loss2 0.68 s
+loss2	ml_log_likelihood	-17800.887533 ml_iterations	1174 ml_converged	yes ml_rate_categories	1 ml_gain_categories	1 ml_loss_categories	2 ml_loss_shape	3.4097 
+loss3 1.12 s
+loss3	ml_log_likelihood	-17798.966997 ml_iterations	1109 ml_converged	yes ml_rate_categories	1 ml_gain_categories	1 ml_loss_categories	3 ml_loss_shape	3.1758 
+loss4 2.86 s
+loss4	ml_log_likelihood	-17797.908123 ml_iterations	1962 ml_converged	yes ml_rate_categories	1 ml_gain_categories	1 ml_loss_categories	4 ml_loss_shape	3.0039 
+warn: likelihood: EM stopped after 50000 iterations without converging (raise --ml-max-iter)
+gain2 26.68 s
+gain2	ml_log_likelihood	-17817.203131 ml_iterations	50000 ml_converged	no ml_rate_categories	1 ml_gain_categories	2 ml_gain_shape	0.1578 ml_loss_categories	1 
+warn: likelihood: EM stopped after 50000 iterations without converging (raise --ml-max-iter)
+gain2_loss2 92.73 s
+gain2_loss2	ml_log_likelihood	-17800.755564 ml_iterations	50000 ml_converged	no ml_rate_categories	1 ml_gain_categories	2 ml_gain_shape	0.4102 ml_loss_categories	2 ml_loss_shape	3.4256 
+warn: likelihood: EM stopped after 50000 iterations without converging (raise --ml-max-iter)
+gain3_loss3 187.05 s
+gain3_loss3	ml_log_likelihood	-17798.918746 ml_iterations	50000 ml_converged	no ml_rate_categories	1 ml_gain_categories	3 ml_gain_shape	1.1182 ml_loss_categories	3 ml_loss_shape	3.2072 

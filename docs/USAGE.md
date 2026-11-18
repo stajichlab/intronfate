@@ -145,6 +145,8 @@ Every column of these files is in [`OUTPUTS.md`](OUTPUTS.md); the models and the
 | `--ml-gamma-shape A` | estimated | `-m likelihood`: fix the gamma shape instead of estimating it. |
 | `--ml-gain-categories K`, `--ml-loss-categories K` | 1 | `-m likelihood`: separate rate classes for the gain rate and the loss rate (each a discrete gamma with mean 1), combined as a grid of at most 16 classes. Not combined with `--ml-rate-categories`. |
 | `--ml-gain-shape A`, `--ml-loss-shape A` | estimated | `-m likelihood`: fix the gamma shape of the gain or the loss factor. |
+| `--ml-gain-levels K`, `--ml-loss-levels K` | 1 | `-m likelihood`: free levels, MALIN-style: each level has its own probability and rate multiplier (the first fitted level is the reference, multiplier 1), as a grid of at most 16 classes. MALIN's published runs use `--ml-loss-levels 2`. Not combined with the gamma options. Several starting points are tried. |
+| `--ml-free-root-branch` | off | With rate classes, do not fix the larger root branch (as MALIN does not). Slower; the root branches are then poorly determined. |
 | `--ml-tol X`, `--ml-param-tol Y` | 1e-6, 1e-7 | `-m likelihood`: stop when an EM cycle gains less than X in log-likelihood and moves no parameter by more than Y. With rate classes EM creeps for a long time near the optimum; `--ml-param-tol 1e-5` ends fits several times sooner, about 0.01 short in log-likelihood. |
 
 ## 5. Reading the results
@@ -363,6 +365,9 @@ Read with care:
   this is the form of MALIN's rate-variation runs (two loss classes, one gain class); a shared factor forces a position that is lost often
   to also be gained often. Compare `ml_log_likelihood` with the shared-class fit using the same number of classes. `likelihood_sites.tsv`
   then has `gain_rate` and `loss_rate` columns (`rate` is their mean).
+- **Free levels** (`--ml-loss-levels 2`): instead of gamma slices each level has its own probability and multiplier, reported as
+  `ml_loss_level_prob_at_mult` (`probability@multiplier`, the reference level first, multiplier 1). Branch probabilities are those of the
+  reference level. This is the model of MALIN's rate-variation output, and with it the fit can be compared with a `.rates` file (SPEC §6b).
 - `--ml-bootstrap` resamples whole families when the matrix is combined (`<family>:<column>:<phase>` labels), single positions
   otherwise. Each replicate is a full EM fit, so 100 replicates take about 100 times as long as one fit.
 

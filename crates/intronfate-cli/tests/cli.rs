@@ -1530,6 +1530,43 @@ fn likelihood_writes_its_tables_and_reads_error_rates() {
         !o.status.success() && String::from_utf8_lossy(&o.stderr).contains("cannot be combined")
     );
 
+    // free levels (MALIN-style classes): summary lines, the factor columns, and the refusal to mix with gamma classes
+    let out = w.join("levels");
+    let mut a = base(&out);
+    a.extend([
+        "--ml-loss-levels".into(),
+        "2".into(),
+        "--ml-max-iter".into(), // two positions: the fit is flat, so cap it
+        "300".into(),
+        "--ml-free-root-branch".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let summary = fs::read_to_string(out.join("family.aln/summary_score.tsv")).unwrap();
+    assert!(
+        summary.contains("ml_gain_levels\t1\n")
+            && summary.contains("ml_loss_levels\t2\n")
+            && summary.contains("ml_loss_level_prob_at_mult\t")
+            && !summary.contains("ml_gain_level_prob_at_mult"),
+        "{summary}"
+    );
+    let sites = fs::read_to_string(out.join("family.aln/likelihood_sites.tsv")).unwrap();
+    assert!(
+        sites.starts_with("site\tlog_lik\trate\tgain_rate\tloss_rate\n"),
+        "{sites}"
+    );
+    let mut a = base(&w.join("levels_mixed"));
+    a.extend([
+        "--ml-loss-levels".into(),
+        "2".into(),
+        "--ml-rate-categories".into(),
+        "2".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(
+        !o.status.success() && String::from_utf8_lossy(&o.stderr).contains("cannot be combined")
+    );
+
     // refusals: --min-taxa > 1, a bad file
     let mut a = base(&w.join("mt"));
     a.extend(["--min-taxa".into(), "2".into()]);

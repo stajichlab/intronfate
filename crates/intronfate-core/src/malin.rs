@@ -308,6 +308,60 @@ pub struct MalinRates {
     pub classes: Vec<MalinRateClass>,
 }
 
+impl MalinRates {
+    /// The rate levels as `(probability, multiplier)` lists for the gain and the loss dimension, the reference level (multiplier 1) first.
+    /// A dimension with one level is returned empty (no rate variation in it). The classes must be the product of the levels: the class
+    /// probability is the loss level's times the gain level's, and a level has one multiplier. The branch probabilities of the node
+    /// lines refer to the reference levels.
+    #[allow(clippy::type_complexity)]
+    pub fn levels(&self) -> Result<(Vec<(f64, f64)>, Vec<(f64, f64)>)> {
+        if self.classes.is_empty() {
+            return Err(Error::parse("the .rates file has no |class lines"));
+        }
+        let nl = self.classes.iter().map(|c| c.loss_level).max().unwrap() + 1;
+        let ng = self.classes.iter().map(|c| c.gain_level).max().unwrap() + 1;
+        let mut loss = vec![(0.0, f64::NAN); nl];
+        let mut gain = vec![(0.0, f64::NAN); ng];
+        for c in &self.classes {
+            loss[c.loss_level].0 += c.prob;
+            gain[c.gain_level].0 += c.prob;
+            for (lv, m, what) in [
+                (&mut loss[c.loss_level], c.loss_mult, "loss"),
+                (&mut gain[c.gain_level], c.gain_mult, "gain"),
+            ] {
+                if lv.1.is_nan() {
+                    lv.1 = m;
+                } else if (lv.1 - m).abs() > 1e-9 * m.abs().max(1.0) {
+                    return Err(Error::parse(format!(
+                        "a {what} level has two different multipliers ({} and {m})",
+                        lv.1
+                    )));
+                }
+            }
+        }
+        for c in &self.classes {
+            let want = loss[c.loss_level].0 * gain[c.gain_level].0;
+            if (c.prob - want).abs() > 1e-6 {
+                return Err(Error::parse(format!(
+                    "class {} has probability {} but its levels multiply to {want}: the classes are not a product of a loss and a gain level",
+                    c.id, c.prob
+                )));
+            }
+        }
+        let order = |mut v: Vec<(f64, f64)>| -> Result<Vec<(f64, f64)>> {
+            if v.len() == 1 {
+                return Ok(Vec::new());
+            }
+            let r = v.iter().position(|l| (l.1 - 1.0).abs() < 1e-9).ok_or_else(|| {
+                Error::parse("no level has multiplier 1 (the reference level the node probabilities refer to)")
+            })?;
+            v.swap(0, r);
+            Ok(v)
+        };
+        Ok((order(gain)?, order(loss)?))
+    }
+}
+
 /// Parse a MALIN `.rates` file. Only the `#tree` line, the per-node `p(gain) p(loss) // ...NodeWithRates[$i_name ...]` lines and the
 /// `|class` lines are read; the other `#`-comment lines (including the per-leaf listings of rate-variation runs) are skipped.
 pub fn parse_rates(text: &str) -> Result<MalinRates> {
@@ -538,5 +592,43 @@ mod tests {
         assert!(parse_rates("0.1\t0.2\t// NodeWithRates[$0_A len 1]\n").is_err()); // no tree
         assert!(parse_rates("#tree (A,B);\nxx\t0.2\t// NodeWithRates[$0_A len 1]\n").is_err());
         // not a number
+    }
+
+    #[test]
+    fn levels_come_from_the_classes_with_the_reference_first() {
+        let mk = |classes: &str| {
+            parse_rates(&format!(
+                "#tree (A,B);\n0.1\t0.2\t// x.NodeWithRates[$0_A len 1]\n{classes}"
+            ))
+            .unwrap()
+        };
+        // two loss levels, one gain level (MALIN's published structure): the reference (multiplier 1) first
+        let r = mk("|class\t0\t0\t0\t0.2\t0.07\t0.4\t1.0\n|class\t1\t1\t0\t0.8\t0.07\t1.0\t1.0\n");
+        let (g, l) = r.levels().unwrap();
+        assert!(g.is_empty());
+        assert_eq!(l, vec![(0.8, 1.0), (0.2, 0.4)]);
+        // a 2 x 2 grid whose probabilities multiply
+        let r = mk(
+            "|class\t0\t0\t0\t0.12\t0.1\t0.5\t2.0\n|class\t1\t0\t1\t0.18\t0.1\t0.5\t1.0\n\
+|class\t2\t1\t0\t0.28\t0.1\t1.0\t2.0\n|class\t3\t1\t1\t0.42\t0.1\t1.0\t1.0\n",
+        );
+        let (g, l) = r.levels().unwrap();
+        assert_eq!(g[0], (0.6, 1.0));
+        assert!((g[1].0 - 0.4).abs() < 1e-12 && g[1].1 == 2.0);
+        assert_eq!(l[0].1, 1.0);
+        assert!((l[0].0 - 0.7).abs() < 1e-12 && (l[1].0 - 0.3).abs() < 1e-12);
+        // refusals: not a product, two multipliers for one level, no reference level
+        assert!(mk("|class\t0\t0\t0\t0.5\t0.1\t0.5\t1.0\n|class\t1\t0\t1\t0.1\t0.1\t0.5\t1.0\n|class\t2\t1\t0\t0.2\t0.1\t1.0\t1.0\n|class\t3\t1\t1\t0.2\t0.1\t1.0\t1.0\n").levels().is_err());
+        assert!(
+            mk("|class\t0\t0\t0\t0.5\t0.1\t0.5\t1.0\n|class\t1\t0\t1\t0.5\t0.1\t0.6\t1.0\n")
+                .levels()
+                .is_err()
+        );
+        assert!(
+            mk("|class\t0\t0\t0\t0.5\t0.1\t0.5\t1.0\n|class\t1\t1\t0\t0.5\t0.1\t0.9\t1.0\n")
+                .levels()
+                .is_err()
+        );
+        assert!(mk("").levels().is_err());
     }
 }

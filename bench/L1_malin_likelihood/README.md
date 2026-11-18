@@ -25,7 +25,41 @@ presence probability (ours 0.0253, MALIN 0.0972): with two root children the roo
 identifiable (SPEC §5.5), this tool fixes the larger child's branch to "no change", and MALIN resolves the split differently; the likelihood
 is the same.
 
-**Not covered.** `Rog-ecdysozoa1000.rates` and `Chromo23.rates` come from `calculateRASRates` (rate variation): classes indexed by *loss level*
-and *gain level* with their own probabilities and rate multipliers (for example two loss classes with probabilities 0.20 / 0.80 and loss
-multipliers 0.40 / 1.00, one gain class). This tool now has separate gain and loss factors (SPEC §5.5c), but with equal-probability gamma classes,
-not MALIN's free class probabilities and multipliers, so those two files still cannot be compared; that needs the free-class model (SPEC §5.6).
+## Rate variation (free levels)
+
+`Rog-ecdysozoa1000.rates` (Rogozin table) and `Chromo23.rates` (Chromo23 table, 23 taxa) come from `calculateRASRates`: classes indexed by loss
+level and gain level, each level with its own probability and multiplier. Both have two loss levels and one gain level. This tool's free-level model
+(SPEC §5.5d, `--ml-loss-levels 2`) is compared with them by `run_rates.sbatch` (`results_rates_3.txt`), using the same test as above
+(`INTRONFATE_MALIN_MIN_OBSERVED` selects MALIN's table filter).
+
+| | Rogozin | Chromo23 |
+|---|---|---|
+| positions | 7,221 | 7,030 (the 9,256-site table filtered to positions observed in at least 18 taxa; MALIN reports 7,030) |
+| loss levels, MALIN (probability @ multiplier) | 0.798 @ 1, 0.202 @ 0.402 | 0.845 @ 1, 0.155 @ 0.387 |
+| loss levels, this tool | 0.815 @ 1, 0.185 @ 0.401 (root branch free, started at MALIN's parameters) | 0.849 @ 1, 0.151 @ 0.386 (root branch free, started at MALIN's parameters) |
+| lnL at MALIN's parameters | -17796.1286 | -27985.6768 |
+| lnL at this tool's maximum, root branch free | -17796.0627 (+0.066) | -27959.6099 (+26.07) |
+| lnL at this tool's maximum, larger root branch fixed (default) | -17796.7474 (-0.62) | not run |
+
+On the Rogozin table MALIN's parameters sit at this tool's optimum (within 0.07 log-likelihood units, with the same two-level structure), and the
+default fit (larger root branch fixed) is 0.7 lower, the cost of that restriction once the root branches are scaled differently by the classes
+(SPEC §5.5d). On `Chromo23` the level structure and most branch probabilities agree (for example Osat loss 0.02682 / 0.02700, Hsap 0.20106 / 0.19901) but
+this tool's optimum is 26 units higher than its value at MALIN's parameters, with a few branches clearly different (Chlorophyta gain 0.036 / 0.053,
+Alveolata loss 0.038 / 0.015), and MALIN's own reported log-likelihood (-28430.9) is a different quantity from this tool's (-27959.6). A likely cause is the treatment
+of missing data: MALIN's output reports one global estimate of the never-seen positions ("predicted missing", p0 0.823), while this tool conditions each position
+on its own pattern of missing cells (SPEC §5.5). That was not tested here (it would need a MALIN-style correction as an option). The Rogozin table has no missing
+cells, and there the two agree.
+
+## Rate classes on the Rogozin table (`run_classes.sbatch`, `results_classes.txt`)
+
+| model | log-likelihood |
+|---|---|
+| no rate classes | -17817.36 |
+| shared factor, 2 / 4 gamma classes | -17797.64 / -17795.83 |
+| loss factor only, 2 / 3 / 4 gamma classes | -17800.89 / -17798.97 / -17797.91 |
+| gain factor only, 2 classes | -17817.20 (not converged; the shape drifts to 0.16) |
+| gain 2 x loss 2 / gain 3 x loss 3 | -17800.76 / -17798.92 (not converged in 50,000 E-steps) |
+| free levels, 2 loss levels (MALIN's structure) | about -17796.7 (root branch fixed), -17796.1 (free) |
+
+Variation in the gain rate adds nothing here (a gain x loss grid improves on loss-only by under 0.2), which matches MALIN's choice of two loss levels and one gain
+level; with the same number of gamma classes a shared factor fits slightly better than a loss-only factor.

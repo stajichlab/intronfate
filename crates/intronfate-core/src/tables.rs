@@ -597,7 +597,7 @@ pub fn likelihood_tip_table(
 /// (1 without rate classes). With separate gain and loss factors the posterior means of the two are written as `gain_rate` and
 /// `loss_rate`, and `rate` is their mean.
 pub fn likelihood_site_table(data: &ScoringData, r: &crate::likelihood::FitResult) -> Table {
-    let separate = r.params.rates.is_separate();
+    let separate = r.params.rates.is_separate() || r.params.rates.is_free();
     let header: &[&str] = if separate {
         &["site", "log_lik", "rate", "gain_rate", "loss_rate"]
     } else {

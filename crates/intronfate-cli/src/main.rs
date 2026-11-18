@@ -291,6 +291,21 @@ struct AnalyzeArgs {
     #[arg(long, value_name = "ALPHA")]
     ml_loss_shape: Option<f64>,
 
+    /// Free gain levels for `-m likelihood` (MALIN-style: each level has its own probability and rate multiplier; the first level
+    /// fitted is the reference with multiplier 1; 1 = none). Combined with `--ml-loss-levels` as a grid of classes (at most 16); not
+    /// combined with the gamma options. Several starting points are tried and the best fit kept.
+    #[arg(long, default_value = "1")]
+    ml_gain_levels: usize,
+
+    /// Free loss levels (see `--ml-gain-levels`); MALIN's published runs use two loss levels and one gain level.
+    #[arg(long, default_value = "1")]
+    ml_loss_levels: usize,
+
+    /// With rate classes, do not fix the larger root branch to "no change" (as MALIN does not). The two root branches are then only
+    /// weakly identifiable, so the fit is slower and the root branches poorly determined; the likelihood can be slightly higher.
+    #[arg(long)]
+    ml_free_root_branch: bool,
+
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
     outgroups: Vec<String>,
@@ -404,6 +419,21 @@ struct ScoreArgs {
     /// Fix the gamma shape of `--ml-loss-categories` instead of estimating it.
     #[arg(long, value_name = "ALPHA")]
     ml_loss_shape: Option<f64>,
+
+    /// Free gain levels for `-m likelihood` (MALIN-style: each level has its own probability and rate multiplier; the first level
+    /// fitted is the reference with multiplier 1; 1 = none). Combined with `--ml-loss-levels` as a grid of classes (at most 16); not
+    /// combined with the gamma options. Several starting points are tried and the best fit kept.
+    #[arg(long, default_value = "1")]
+    ml_gain_levels: usize,
+
+    /// Free loss levels (see `--ml-gain-levels`); MALIN's published runs use two loss levels and one gain level.
+    #[arg(long, default_value = "1")]
+    ml_loss_levels: usize,
+
+    /// With rate classes, do not fix the larger root branch to "no change" (as MALIN does not). The two root branches are then only
+    /// weakly identifiable, so the fit is slower and the root branches poorly determined; the likelihood can be slightly higher.
+    #[arg(long)]
+    ml_free_root_branch: bool,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -1189,6 +1219,9 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     gain_shape: a.ml_gain_shape,
                     loss_categories: a.ml_loss_categories,
                     loss_shape: a.ml_loss_shape,
+                    gain_levels: a.ml_gain_levels,
+                    loss_levels: a.ml_loss_levels,
+                    free_root_branch: a.ml_free_root_branch,
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1227,6 +1260,9 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     gain_shape: a.ml_gain_shape,
                     loss_categories: a.ml_loss_categories,
                     loss_shape: a.ml_loss_shape,
+                    gain_levels: a.ml_gain_levels,
+                    loss_levels: a.ml_loss_levels,
+                    free_root_branch: a.ml_free_root_branch,
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1285,6 +1321,9 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     gain_shape: a.ml_gain_shape,
                     loss_categories: a.ml_loss_categories,
                     loss_shape: a.ml_loss_shape,
+                    gain_levels: a.ml_gain_levels,
+                    loss_levels: a.ml_loss_levels,
+                    free_root_branch: a.ml_free_root_branch,
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1354,6 +1393,9 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 gain_shape: a.ml_gain_shape,
                 loss_categories: a.ml_loss_categories,
                 loss_shape: a.ml_loss_shape,
+                gain_levels: a.ml_gain_levels,
+                loss_levels: a.ml_loss_levels,
+                free_root_branch: a.ml_free_root_branch,
                 tol: a.ml_tol,
                 param_tol: a.ml_param_tol,
             },
@@ -1399,6 +1441,9 @@ struct MlOpts {
     gain_shape: Option<f64>,
     loss_categories: usize,
     loss_shape: Option<f64>,
+    gain_levels: usize,
+    loss_levels: usize,
+    free_root_branch: bool,
     tol: f64,
     param_tol: f64,
 }
@@ -1599,6 +1644,9 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
             gain_shape: o.ml.gain_shape,
             loss_categories: o.ml.loss_categories.max(1),
             loss_shape: o.ml.loss_shape,
+            free_gain_levels: o.ml.gain_levels.max(1),
+            free_loss_levels: o.ml.loss_levels.max(1),
+            free_root_branch: o.ml.free_root_branch,
             tol: o.ml.tol,
             param_tol: o.ml.param_tol,
             trace: verbose > 1,
@@ -1675,6 +1723,23 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
                     if o.ml.shape.is_some() { " (fixed)" } else { "" }
                 ),
             ));
+        }
+        if fit.params.rates.is_free() {
+            let fmt = |lv: &[(f64, f64)]| {
+                lv.iter()
+                    .map(|(p, m)| format!("{p:.4}@{m:.4}"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            };
+            let (g, l) = (&fit.params.rates.free_gain, &fit.params.rates.free_loss);
+            summary.push(("ml_gain_levels", g.len().max(1).to_string()));
+            summary.push(("ml_loss_levels", l.len().max(1).to_string()));
+            if g.len() > 1 {
+                summary.push(("ml_gain_level_prob_at_mult", fmt(g)));
+            }
+            if l.len() > 1 {
+                summary.push(("ml_loss_level_prob_at_mult", fmt(l)));
+            }
         }
         if fit.params.rates.is_separate() {
             for (key, k, shape, fixed) in [
@@ -2311,6 +2376,9 @@ mod tests {
             ml_gain_shape: None,
             ml_loss_categories: 1,
             ml_loss_shape: None,
+            ml_gain_levels: 1,
+            ml_loss_levels: 1,
+            ml_free_root_branch: false,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],
@@ -2356,6 +2424,9 @@ mod tests {
             ml_gain_shape: None,
             ml_loss_categories: 1,
             ml_loss_shape: None,
+            ml_gain_levels: 1,
+            ml_loss_levels: 1,
+            ml_free_root_branch: false,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2399,6 +2470,9 @@ mod tests {
             ml_gain_shape: None,
             ml_loss_categories: 1,
             ml_loss_shape: None,
+            ml_gain_levels: 1,
+            ml_loss_levels: 1,
+            ml_free_root_branch: false,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2472,6 +2546,9 @@ mod tests {
             ml_gain_shape: None,
             ml_loss_categories: 1,
             ml_loss_shape: None,
+            ml_gain_levels: 1,
+            ml_loss_levels: 1,
+            ml_free_root_branch: false,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],

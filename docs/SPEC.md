@@ -407,11 +407,31 @@ patterns summing to 1; on a simulated 8-tip data set with three loss classes (`�
 three classes shared by gain and loss by more than 5, no variation in the posterior gain factor, stationary points in `α_l` and every branch; on
 a 2×2 data set both shapes estimated, a fixed shape kept, and the option checks.
 
+### 5.5d Free levels (implemented: `--ml-gain-levels`, `--ml-loss-levels`, `--ml-free-root-branch`)
+
+MALIN's rate variation has *levels*: each level of the loss (and of the gain) dimension has its own probability and multiplier, and a position
+class is a loss level with a gain level, its probability the product of the two (`|class id losslevel gainlevel prob root loss gain` lines of a
+`.rates` file; the published runs have two loss levels and one gain level). Here `--ml-loss-levels K` and `--ml-gain-levels K` give that
+model: the first level fitted is the reference (multiplier 1) and the branch probabilities refer to it; the K−1 other multipliers and the K level
+probabilities are estimated. EM: the E-step is as §5.5b with class probabilities in place of 1/K (posterior and unseen-position weights);
+the level probabilities are updated in closed form from the expected class counts (the marginals of the class counts, since the class
+probability is a product), each other multiplier by a one-dimensional search of the expected complete-data log-likelihood, and each branch as in
+§5.5b. The likelihood is multimodal in the levels (which level is slow, and how slow, trade off against the branches), so the fit starts from four
+spreads of the multipliers (0.5^i, 0.2^i, 2^i, 5^i), or from the levels carried by `FitOptions::init`, and keeps the best. Shared gamma classes,
+separate gamma classes and free levels are not combined; at most 16 classes. With rate classes the two root branches are weakly identifiable (each
+class scales them differently), so fixing the larger one (§5.5) is a small restriction: it cost 0.7 log-likelihood units on the Rogozin table.
+`--ml-free-root-branch` leaves it free, as MALIN does; the fit is then slower (about 20 times on the Rogozin table) and the two root branches and the
+root probability are poorly determined.
+
+Validated by: brute-force class mixtures with unequal class probabilities (loss levels only; a 2×3 grid with gain levels) for the likelihood,
+the no-show probability, posterior factors and posterior presence; the class grid and probabilities; on a simulated 8-tip data set with
+two loss levels (0.8 at 1, 0.2 at 0.4; 40,000 positions): EM never decreasing, the slow level's probability and multiplier recovered (0.05–0.4,
+0.15–0.8), the log-likelihood above the value at the truth and above the no-class fit by more than 50, stationary points in the multiplier, the
+probability and every branch; option checks; and against MALIN's own rate-variation estimates (§6b item 3, `bench/L1_malin_likelihood`).
+
 ### 5.6 Planned
 
-- **Free class probabilities and multipliers** (MALIN's rate-variation output lists classes with their own probabilities and multipliers, for
-  example probabilities 0.20/0.80 with loss multipliers 0.40/1.00) instead of equal-probability gamma classes; needed to compare the rate-variation
-  fits with `Rog-ecdysozoa1000.rates` and `Chromo23.rates` (§6b).
+- ~~**Free class probabilities and multipliers**~~ — done (§5.5d).
 - **A likelihood-ratio test** of "ancient intron" vs "convergent insertion" per position.
 - **Probabilistic projection**: propagate annotation uncertainty into the sharing matrix rather than
   treating every boundary as exact.
@@ -526,8 +546,14 @@ intron was scored as missing data — discarding exactly the negative evidence i
    `table + newick`) with §5.5 — the direct quantitative cross-check on the model side. **Done for the constant-rates model**
    ([L1](../bench/L1_malin_likelihood/README.md)): on the Rogozin table (7,221 sites) this tool's log-likelihood at MALIN's printed parameters is
    -17817.3652 against -17817.3633 at its own maximum (difference 0.002), and per-branch probabilities agree to three or four digits except on
-   the two non-identifiable root branches. The rate-variation files (`Rog-ecdysozoa1000.rates`, `Chromo23.rates`) use classes with free probabilities and
-   multipliers (§5.6), which this tool does not fit yet, so they are not compared.
+   the two non-identifiable root branches. The rate-variation files were compared with the free-level model (§5.5d, [L1](../bench/L1_malin_likelihood/README.md)):
+   on the Rogozin table (two loss levels) a fit with the larger root branch left free and started at MALIN's parameters ends 0.07 log-likelihood units above
+   the value at them (levels 0.815 at 1 and 0.185 at 0.401 against MALIN's 0.798 and 0.202 at 0.402; the default fit, with that branch fixed, is 0.7 lower);
+   on `Chromo23` (23 taxa; filtering to positions observed in at least 18 taxa keeps exactly MALIN's 7,030) the levels are 0.849 at 1 and 0.151 at 0.386
+   against MALIN's 0.845 and 0.155 at 0.387 with most branch probabilities within a few percent, but this tool's maximum is 26 log-likelihood units
+   above its value at MALIN's parameters, and MALIN's own reported value (-28430.9) is a different quantity from this tool's (-27959.6), probably because
+   MALIN corrects for never-seen positions with one global estimate while this tool conditions each position on its own pattern of missing cells (§5.5;
+   not tested separately).
 4. Cross-check the projection: run this tool's GFF path over a species whose MALIN `.faa` headers
    carry known positions, and diff derived `cds_offset` against theirs.
 
@@ -682,8 +708,7 @@ comparison the tool exists to make mechanically repeatable.
    done ([V3](../bench/V3_gff_scale/README.md), §6).
 4. **`AnnotationSource` for SQL/Chado/Ensembl** — the seam exists; needs a schema decision.
 5. **Likelihood-based scoring**: v1 done (§5.5: branch-specific probabilities, annotation error, ascertainment, EM, bootstrap).
-   Rate variation across positions done (§5.5b), including separate gain and loss factors (§5.5c). Validated against MALIN's constant-rates `*.rates` (§6b, L1). Remaining: free class
-   probabilities and multipliers (§5.6) and the comparison with MALIN's rate-variation output.
+   Rate variation across positions done (§5.5b), including separate gain and loss factors (§5.5c). Validated against MALIN's constant-rates `*.rates` (§6b, L1). Free levels (§5.5d) are compared with MALIN's rate-variation output in §6b. Remaining: the likelihood-ratio test of ancient versus convergent introns (§5.6).
 6. ~~Column observability~~ — done (§2: per-cell observability with a flank rule), as are `--min-observed` and
    the `n_both_observable` column in `pairwise.tsv`. Remaining: tuning the `--flank` default.
 7. **Stdin/stdout support** (`--gff -`, `-o -`) for pipeline composition.
