@@ -386,9 +386,32 @@ posterior presence and posterior rates against brute-force enumeration under eac
 lnL units over the one-class model, a stationary point in α and every branch, and higher posterior rates for changing positions than
 for all-present ones; on homogeneous data, a large α (> 5) and a log-likelihood within 5 units of the one-class fit; fixed α kept.
 
+### 5.5c Separate rate factors for gain and loss (implemented: `--ml-gain-categories`, `--ml-loss-categories`, `--ml-gain-shape`, `--ml-loss-shape`)
+
+MALIN's rate variation has separate loss and gain levels [R1] (the published `Rog-ecdysozoa1000.rates` and `Chromo23.rates` have two loss
+classes and one gain class). Here the gain rate and the loss rate of a position are scaled by separate mean-1 gamma factors, `K_g` gain classes
+with shape `α_g` and `K_l` loss classes with shape `α_l`, combined as a grid of `K_g·K_l` equally likely classes (at most 16). A branch's
+rate-1 probabilities `(g, l)` are read as a two-state continuous-time process, `π = g/(g+l)`, `d = 1 − g − l = e^{−(a+b)}`, gain rate `a = π·(−ln d)`,
+loss rate `b = (1 − π)(−ln d)`; with factors `(r_g, r_l)` the rates are `a·r_g` and `b·r_l`, which gives `w = π·r_g + (1−π)·r_l`,
+`π' = π·r_g/w` and `g' = π'(1 − d^w)`, `l' = (1 − π')(1 − d^w)`. Equal factors reduce to §5.5b. The E-step, the position
+mixture and `Z` are as in §5.5b over the grid of classes; the M-step searches each estimated shape in turn (a one-dimensional search of the
+expected complete-data log-likelihood) and then each branch as in §5.5b. Shared classes (`--ml-rate-categories`) and separate classes are
+not combined. Output: `ml_gain_shape`/`ml_loss_shape` (and the class counts) in `summary_score.tsv`, and `likelihood_sites.tsv` gets
+`gain_rate` and `loss_rate` (posterior means; `rate` is their mean).
+
+Validated by: the transition matrix of every class against the closed form of a two-state chain with rates `(a·r_g, b·r_l)` (equal to the matrix
+exponential; also at rate 1 and for equal factors); the class grid (loss outer, gain inner; each factor mean 1); the class mixture, `Z`, posterior
+mean factors and posterior presence against brute-force enumeration under each class for loss classes only, gain classes only and a 2×3 grid; seen
+patterns summing to 1; on a simulated 8-tip data set with three loss classes (`α_l` = 0.5, one gain class; 40,000 positions): EM never decreasing,
+`α_l` recovered (0.25–1.2), the log-likelihood above the value at the true parameters, above the one-class fit by more than 50 and above
+three classes shared by gain and loss by more than 5, no variation in the posterior gain factor, stationary points in `α_l` and every branch; on
+a 2×2 data set both shapes estimated, a fixed shape kept, and the option checks.
+
 ### 5.6 Planned
 
-- **Separate rate factors for gain and loss** (MALIN allows both); branch lengths shared between gain and loss.
+- **Free class probabilities and multipliers** (MALIN's rate-variation output lists classes with their own probabilities and multipliers, for
+  example probabilities 0.20/0.80 with loss multipliers 0.40/1.00) instead of equal-probability gamma classes; needed to compare the rate-variation
+  fits with `Rog-ecdysozoa1000.rates` and `Chromo23.rates` (§6b).
 - **A likelihood-ratio test** of "ancient intron" vs "convergent insertion" per position.
 - **Probabilistic projection**: propagate annotation uncertainty into the sharing matrix rather than
   treating every boundary as exact.
@@ -503,8 +526,8 @@ intron was scored as missing data — discarding exactly the negative evidence i
    `table + newick`) with §5.5 — the direct quantitative cross-check on the model side. **Done for the constant-rates model**
    ([L1](../bench/L1_malin_likelihood/README.md)): on the Rogozin table (7,221 sites) this tool's log-likelihood at MALIN's printed parameters is
    -17817.3652 against -17817.3633 at its own maximum (difference 0.002), and per-branch probabilities agree to three or four digits except on
-   the two non-identifiable root branches. The rate-variation files (`Rog-ecdysozoa1000.rates`, `Chromo23.rates`) need separate gain and loss
-   classes (§5.6) and are not compared yet.
+   the two non-identifiable root branches. The rate-variation files (`Rog-ecdysozoa1000.rates`, `Chromo23.rates`) use classes with free probabilities and
+   multipliers (§5.6), which this tool does not fit yet, so they are not compared.
 4. Cross-check the projection: run this tool's GFF path over a species whose MALIN `.faa` headers
    carry known positions, and diff derived `cds_offset` against theirs.
 
@@ -659,8 +682,8 @@ comparison the tool exists to make mechanically repeatable.
    done ([V3](../bench/V3_gff_scale/README.md), §6).
 4. **`AnnotationSource` for SQL/Chado/Ensembl** — the seam exists; needs a schema decision.
 5. **Likelihood-based scoring**: v1 done (§5.5: branch-specific probabilities, annotation error, ascertainment, EM, bootstrap).
-   Rate variation across positions done (§5.5b). Validated against MALIN's constant-rates `*.rates` (§6b, L1). Remaining: separate gain/loss rate factors (§5.6) and the comparison with MALIN's
-   rate-variation output.
+   Rate variation across positions done (§5.5b), including separate gain and loss factors (§5.5c). Validated against MALIN's constant-rates `*.rates` (§6b, L1). Remaining: free class
+   probabilities and multipliers (§5.6) and the comparison with MALIN's rate-variation output.
 6. ~~Column observability~~ — done (§2: per-cell observability with a flank rule), as are `--min-observed` and
    the `n_both_observable` column in `pairwise.tsv`. Remaining: tuning the `--flank` default.
 7. **Stdin/stdout support** (`--gff -`, `-o -`) for pipeline composition.

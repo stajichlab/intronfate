@@ -274,6 +274,23 @@ struct AnalyzeArgs {
     #[arg(long, value_name = "ALPHA")]
     ml_gamma_shape: Option<f64>,
 
+    /// Separate rate classes for the gain rate (`-m likelihood`; discrete gamma, mean 1; 1 = none). Combined with `--ml-loss-categories` as a grid
+    /// of classes (at most 16 in all); not combined with `--ml-rate-categories`, which puts one factor on both rates.
+    #[arg(long, default_value = "1")]
+    ml_gain_categories: usize,
+
+    /// Fix the gamma shape of `--ml-gain-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_gain_shape: Option<f64>,
+
+    /// Separate rate classes for the loss rate (see `--ml-gain-categories`).
+    #[arg(long, default_value = "1")]
+    ml_loss_categories: usize,
+
+    /// Fix the gamma shape of `--ml-loss-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_loss_shape: Option<f64>,
+
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
     outgroups: Vec<String>,
@@ -370,6 +387,23 @@ struct ScoreArgs {
     /// Fix the gamma shape of `--ml-rate-categories` instead of estimating it.
     #[arg(long, value_name = "ALPHA")]
     ml_gamma_shape: Option<f64>,
+
+    /// Separate rate classes for the gain rate (`-m likelihood`; discrete gamma, mean 1; 1 = none). Combined with `--ml-loss-categories` as a grid
+    /// of classes (at most 16 in all); not combined with `--ml-rate-categories`, which puts one factor on both rates.
+    #[arg(long, default_value = "1")]
+    ml_gain_categories: usize,
+
+    /// Fix the gamma shape of `--ml-gain-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_gain_shape: Option<f64>,
+
+    /// Separate rate classes for the loss rate (see `--ml-gain-categories`).
+    #[arg(long, default_value = "1")]
+    ml_loss_categories: usize,
+
+    /// Fix the gamma shape of `--ml-loss-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_loss_shape: Option<f64>,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -1151,6 +1185,10 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     seed: a.ml_seed,
                     categories: a.ml_rate_categories,
                     shape: a.ml_gamma_shape,
+                    gain_categories: a.ml_gain_categories,
+                    gain_shape: a.ml_gain_shape,
+                    loss_categories: a.ml_loss_categories,
+                    loss_shape: a.ml_loss_shape,
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1185,6 +1223,10 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     seed: a.ml_seed,
                     categories: a.ml_rate_categories,
                     shape: a.ml_gamma_shape,
+                    gain_categories: a.ml_gain_categories,
+                    gain_shape: a.ml_gain_shape,
+                    loss_categories: a.ml_loss_categories,
+                    loss_shape: a.ml_loss_shape,
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1239,6 +1281,10 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     seed: a.ml_seed,
                     categories: a.ml_rate_categories,
                     shape: a.ml_gamma_shape,
+                    gain_categories: a.ml_gain_categories,
+                    gain_shape: a.ml_gain_shape,
+                    loss_categories: a.ml_loss_categories,
+                    loss_shape: a.ml_loss_shape,
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1304,6 +1350,10 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 seed: a.ml_seed,
                 categories: a.ml_rate_categories,
                 shape: a.ml_gamma_shape,
+                gain_categories: a.ml_gain_categories,
+                gain_shape: a.ml_gain_shape,
+                loss_categories: a.ml_loss_categories,
+                loss_shape: a.ml_loss_shape,
                 tol: a.ml_tol,
                 param_tol: a.ml_param_tol,
             },
@@ -1345,6 +1395,10 @@ struct MlOpts {
     seed: u64,
     categories: usize,
     shape: Option<f64>,
+    gain_categories: usize,
+    gain_shape: Option<f64>,
+    loss_categories: usize,
+    loss_shape: Option<f64>,
     tol: f64,
     param_tol: f64,
 }
@@ -1541,6 +1595,10 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
             max_iter: o.ml.max_iter,
             categories: o.ml.categories.max(1),
             shape: o.ml.shape,
+            gain_categories: o.ml.gain_categories.max(1),
+            gain_shape: o.ml.gain_shape,
+            loss_categories: o.ml.loss_categories.max(1),
+            loss_shape: o.ml.loss_shape,
             tol: o.ml.tol,
             param_tol: o.ml.param_tol,
             trace: verbose > 1,
@@ -1617,6 +1675,35 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
                     if o.ml.shape.is_some() { " (fixed)" } else { "" }
                 ),
             ));
+        }
+        if fit.params.rates.is_separate() {
+            for (key, k, shape, fixed) in [
+                (
+                    "gain",
+                    fit.params.rates.gain_categories,
+                    fit.params.rates.gain_shape,
+                    o.ml.gain_shape.is_some(),
+                ),
+                (
+                    "loss",
+                    fit.params.rates.loss_categories,
+                    fit.params.rates.loss_shape,
+                    o.ml.loss_shape.is_some(),
+                ),
+            ] {
+                let (kk, ks) = if key == "gain" {
+                    ("ml_gain_categories", "ml_gain_shape")
+                } else {
+                    ("ml_loss_categories", "ml_loss_shape")
+                };
+                summary.push((kk, k.to_string()));
+                if k > 1 {
+                    summary.push((
+                        ks,
+                        format!("{shape:.4}{}", if fixed { " (fixed)" } else { "" }),
+                    ));
+                }
+            }
         }
         summary.push(("ml_expected_gains", format!("{gains:.2}")));
         summary.push(("ml_expected_losses", format!("{losses:.2}")));
@@ -2220,6 +2307,10 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_gain_categories: 1,
+            ml_gain_shape: None,
+            ml_loss_categories: 1,
+            ml_loss_shape: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],
@@ -2261,6 +2352,10 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_gain_categories: 1,
+            ml_gain_shape: None,
+            ml_loss_categories: 1,
+            ml_loss_shape: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2300,6 +2395,10 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_gain_categories: 1,
+            ml_gain_shape: None,
+            ml_loss_categories: 1,
+            ml_loss_shape: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2369,6 +2468,10 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_gain_categories: 1,
+            ml_gain_shape: None,
+            ml_loss_categories: 1,
+            ml_loss_shape: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],

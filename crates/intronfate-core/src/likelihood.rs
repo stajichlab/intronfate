@@ -53,7 +53,17 @@
 //! complete-data log-likelihood by coordinate ascent (the shape by a one-dimensional search, then each branch's `(π, d)`), accepting
 //! only moves that raise it, which keeps the log-likelihood from decreasing (generalised EM).
 //!
-//! Not modelled: separate rate factors for gain and loss; dependence between neighbouring positions.
+//! # Separate rate factors for gain and loss
+//!
+//! With [`FitOptions::gain_categories`] and [`FitOptions::loss_categories`] the gain rate and the loss rate of a position are scaled by
+//! different factors, each a mean-1 discrete gamma with its own shape (MALIN's rate variation has separate loss and gain levels). The
+//! position classes are the grid of gain classes × loss classes, equally likely, with the loss class as the outer index. A branch's
+//! rate-1 probabilities `(g, l)` give `π = g / (g + l)` and `d = 1 − g − l` as above; with factors `(r_g, r_l)` the gain rate is
+//! `π·(−ln d)·r_g` and the loss rate `(1 − π)·(−ln d)·r_l`, so the class has `w = π·r_g + (1 − π)·r_l`, `π' = π·r_g / w` and
+//! `g' = π'(1 − d^w)`, `l' = (1 − π')(1 − d^w)` (the transition matrix of that two-state process over the branch). Equal factors give
+//! the shared form above. Shared classes and separate classes are not combined, and there are at most 16 classes in all.
+//!
+//! Not modelled: free (non-gamma) class probabilities and multipliers; dependence between neighbouring positions.
 
 use rayon::prelude::*;
 use rustc_hash::FxHashMap;
@@ -104,13 +114,78 @@ impl ErrorRates {
     }
 }
 
-/// Rate variation across positions: `categories` equally likely classes from a mean-1 gamma with this `shape`.
+/// Rate variation across positions. Either one factor shared by gain and loss (`categories` equally likely classes from a mean-1 gamma
+/// with this `shape`), or separate factors: `gain_categories` classes for the gain rate and `loss_categories` for the loss rate, each its
+/// own mean-1 gamma, combined as a grid of equally likely classes (as MALIN's rate variation has separate loss and gain levels). The
+/// shared and the separate form are not combined: at most one of them has more than one class.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rates {
-    /// 1 = no rate variation.
+    /// Shared classes; 1 = none.
     pub categories: usize,
-    /// Gamma shape `α` (unused with one category).
+    /// Gamma shape `α` of the shared factor (unused with one shared class).
     pub shape: f64,
+    /// Classes of the gain-rate factor; 1 = none.
+    pub gain_categories: usize,
+    /// Gamma shape of the gain-rate factor.
+    pub gain_shape: f64,
+    /// Classes of the loss-rate factor; 1 = none.
+    pub loss_categories: usize,
+    /// Gamma shape of the loss-rate factor.
+    pub loss_shape: f64,
+}
+
+impl Default for Rates {
+    fn default() -> Self {
+        Rates {
+            categories: 1,
+            shape: 1.0,
+            gain_categories: 1,
+            gain_shape: 1.0,
+            loss_categories: 1,
+            loss_shape: 1.0,
+        }
+    }
+}
+
+impl Rates {
+    /// Shared factor with `categories` classes of shape `shape`.
+    pub fn shared(categories: usize, shape: f64) -> Self {
+        Rates {
+            categories,
+            shape,
+            ..Default::default()
+        }
+    }
+
+    /// Separate gain and loss factors.
+    pub fn separate(
+        gain_categories: usize,
+        gain_shape: f64,
+        loss_categories: usize,
+        loss_shape: f64,
+    ) -> Self {
+        Rates {
+            gain_categories,
+            gain_shape,
+            loss_categories,
+            loss_shape,
+            ..Default::default()
+        }
+    }
+
+    /// `true` when gain and loss have separate factors.
+    pub fn is_separate(&self) -> bool {
+        self.gain_categories > 1 || self.loss_categories > 1
+    }
+
+    /// Number of position classes.
+    pub fn n_classes(&self) -> usize {
+        if self.is_separate() {
+            self.gain_categories.max(1) * self.loss_categories.max(1)
+        } else {
+            self.categories.max(1)
+        }
+    }
 }
 
 /// Bounds of the gamma shape.
@@ -136,10 +211,7 @@ impl Params {
             gain: vec![gain; tree.len()],
             loss: vec![loss; tree.len()],
             root_present,
-            rates: Rates {
-                categories: 1,
-                shape: 1.0,
-            },
+            rates: Rates::default(),
         }
     }
 }
@@ -159,6 +231,14 @@ pub struct FitOptions {
     pub categories: usize,
     /// Fix the gamma shape at this value instead of estimating it.
     pub shape: Option<f64>,
+    /// Separate rate classes for the gain rate (1 = none); not combined with `categories > 1`.
+    pub gain_categories: usize,
+    /// Fix the gamma shape of the gain-rate factor instead of estimating it.
+    pub gain_shape: Option<f64>,
+    /// Separate rate classes for the loss rate (1 = none).
+    pub loss_categories: usize,
+    /// Fix the gamma shape of the loss-rate factor instead of estimating it.
+    pub loss_shape: Option<f64>,
     /// Print one line per acceleration cycle to stderr (log-likelihood, shape, time in E- and M-steps).
     pub trace: bool,
 }
@@ -172,6 +252,10 @@ impl Default for FitOptions {
             init: None,
             categories: 1,
             shape: None,
+            gain_categories: 1,
+            gain_shape: None,
+            loss_categories: 1,
+            loss_shape: None,
             trace: false,
         }
     }
@@ -298,15 +382,48 @@ pub fn category_rates(rates: &Rates) -> Vec<f64> {
 
 /// Transition matrix of a branch with rate-1 probabilities `(g, l)` at rate multiplier `r` (see the module documentation).
 /// `r == 1` returns `(g, l)` themselves.
+#[cfg(test)]
 fn transition_at(g: f64, l: f64, r: f64) -> [[f64; 2]; 2] {
-    if r == 1.0 {
+    transition_gl(g, l, r, r)
+}
+
+/// Transition matrix of a branch with rate-1 probabilities `(g, l)` when the gain rate is multiplied by `rg` and the loss rate by `rl`.
+///
+/// The branch is a two-state continuous-time process with gain rate `a` and loss rate `b` over a unit time, so `π = a/(a+b)` and
+/// `d = e^{−(a+b)} = 1 − g − l`. With factors, `a' = a·rg` and `b' = b·rl`: `a + b = −ln d` is split by `π`, hence
+/// `a' + b' = −ln d · (π·rg + (1 − π)·rl)`, `π' = π·rg / (π·rg + (1 − π)·rl)`, and the branch has `g' = π'(1 − d^{π·rg + (1−π)·rl})`,
+/// `l' = (1 − π')(1 − d^{π·rg + (1−π)·rl})`. With `rg = rl = r` this is the shared-factor form `g' = π(1 − d^r)`.
+fn transition_gl(g: f64, l: f64, rg: f64, rl: f64) -> [[f64; 2]; 2] {
+    if rg == 1.0 && rl == 1.0 {
         return [[1.0 - g, g], [l, 1.0 - l]];
     }
     let s = (g + l).min(1.0 - CLAMP);
-    let e = -(r * (-s).ln_1p()).exp_m1(); // 1 − (1 − s)^r
     let pi = g / (g + l);
-    let (gr, lr) = (pi * e, (1.0 - pi) * e);
+    let w = pi * rg + (1.0 - pi) * rl; // the factor on the total rate
+    let e = -(w * (-s).ln_1p()).exp_m1(); // 1 − (1 − s)^w
+    let pi2 = pi * rg / w;
+    let (gr, lr) = (pi2 * e, (1.0 - pi2) * e);
     [[1.0 - gr, gr], [lr, 1.0 - lr]]
+}
+
+/// The (gain factor, loss factor) of every position class, equally likely. One shared factor gives `(r_k, r_k)`; separate factors give
+/// the grid over loss classes (outer) and gain classes (inner); no variation gives `[(1, 1)]`.
+pub fn class_factors(rates: &Rates) -> Vec<(f64, f64)> {
+    if rates.is_separate() {
+        let gain = category_rates(&Rates::shared(
+            rates.gain_categories.max(1),
+            rates.gain_shape,
+        ));
+        let loss = category_rates(&Rates::shared(
+            rates.loss_categories.max(1),
+            rates.loss_shape,
+        ));
+        loss.iter()
+            .flat_map(|&rl| gain.iter().map(move |&rg| (rg, rl)))
+            .collect()
+    } else {
+        category_rates(rates).into_iter().map(|r| (r, r)).collect()
+    }
 }
 
 /// One rate class: the transition matrix of every branch (indexed by node id) and the root probability.
@@ -316,11 +433,11 @@ struct Cat {
 }
 
 fn cats(p: &Params) -> Vec<Cat> {
-    category_rates(&p.rates)
+    class_factors(&p.rates)
         .iter()
-        .map(|&r| Cat {
+        .map(|&(rg, rl)| Cat {
             tr: (0..p.gain.len())
-                .map(|v| transition_at(p.gain[v], p.loss[v], r))
+                .map(|v| transition_gl(p.gain[v], p.loss[v], rg, rl))
                 .collect(),
             root: p.root_present,
         })
@@ -397,8 +514,12 @@ pub struct FitResult {
     /// Conditional log-likelihood of each character, in [`ScoringData::characters`] order.
     pub site_log_lik: Vec<f64>,
     /// Posterior mean rate multiplier of each character (1 without rate classes): above 1, a position that changes more readily
-    /// than average.
+    /// than average. With separate gain and loss factors it is the mean of the two posterior means below.
     pub site_rate: Vec<f64>,
+    /// Posterior mean multiplier of the gain rate of each character (equal to `site_rate` unless gain and loss have separate factors).
+    pub site_gain_rate: Vec<f64>,
+    /// Posterior mean multiplier of the loss rate of each character.
+    pub site_loss_rate: Vec<f64>,
     /// Expected number of positions that exist but were never seen (all observed cells absent).
     pub unobserved_positions: f64,
 }
@@ -693,7 +814,13 @@ fn ln_mean_exp(x: &[f64]) -> f64 {
 
 /// One column over all classes: conditional ln-likelihood ln P(column) − ln(1 − Z), the no-show probability Z, and the posterior
 /// mean rate multiplier.
-fn column_terms(ctx: &Ctx, cs: &[Cat], rates: &[f64], col: &[u8], w: &mut Work) -> (f64, f64, f64) {
+fn column_terms(
+    ctx: &Ctx,
+    cs: &[Cat],
+    rates: &[(f64, f64)],
+    col: &[u8],
+    w: &mut Work,
+) -> (f64, f64, (f64, f64)) {
     let ph = phantom(col);
     let mut w2 = Work::new(ctx.tree.len());
     let lk: Vec<f64> = cs.iter().map(|c| ctx.upward(c, col, w)).collect();
@@ -704,12 +831,13 @@ fn column_terms(ctx: &Ctx, cs: &[Cat], rates: &[f64], col: &[u8], w: &mut Work) 
         / cs.len() as f64)
         .min(1.0 - 1e-9);
     let ln_l = ln_mean_exp(&lk);
-    let rate = lk
-        .iter()
-        .zip(rates)
-        .map(|(&a, &r)| (a - ln_l).exp() / cs.len() as f64 * r)
-        .sum();
-    (ln_l - (1.0 - z).ln(), z, rate)
+    let (mut rg, mut rl) = (0.0, 0.0);
+    for (&a, &(g, l)) in lk.iter().zip(rates) {
+        let post = (a - ln_l).exp() / cs.len() as f64;
+        rg += post * g;
+        rl += post * l;
+    }
+    (ln_l - (1.0 - z).ln(), z, (rg, rl))
 }
 
 /// One E-step over all distinct columns. Columns are processed in fixed chunks whose partial sums are added in order, so the
@@ -760,10 +888,10 @@ fn e_step(ctx: &Ctx, pats: &Patterns, p: &Params) -> Acc {
 }
 
 /// Expected complete-data log-likelihood of one branch with rate-1 probabilities `(g, l)`, over the classes.
-fn q_branch(acc: &Acc, v: NodeId, rates: &[f64], g: f64, l: f64) -> f64 {
+fn q_branch(acc: &Acc, v: NodeId, rates: &[(f64, f64)], g: f64, l: f64) -> f64 {
     let mut q = 0.0;
-    for (k, &r) in rates.iter().enumerate() {
-        let t = transition_at(g, l, r);
+    for (k, &(rg, rl)) in rates.iter().enumerate() {
+        let t = transition_gl(g, l, rg, rl);
         let c = acc.n[k][v];
         for a in 0..2 {
             for b in 0..2 {
@@ -818,11 +946,53 @@ fn expit(y: f64) -> f64 {
 /// Search range of the branch coordinates (logits of `π` and `g + l`) under rate classes.
 const LOGIT_MAX: f64 = 21.0;
 
-/// The M-step. Without classes it is closed form. With classes it is a generalised M-step: the shape (when `fit_shape`) by a
+/// The shape(s) in use, for the trace line.
+fn shape_summary(r: &Rates) -> String {
+    if r.is_separate() {
+        format!(
+            "gain shape {:.4}  loss shape {:.4}",
+            r.gain_shape, r.loss_shape
+        )
+    } else {
+        format!("shape {:.4}", r.shape)
+    }
+}
+
+/// Which gamma shapes are estimated.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct ShapeFit {
+    shared: bool,
+    gain: bool,
+    loss: bool,
+}
+
+/// The new value of one shape (found by a one-dimensional search of the expected complete-data log-likelihood) when it improves on
+/// the current one.
+fn improve_shape(
+    acc: &Acc,
+    p: &Params,
+    free: &[NodeId],
+    get: fn(&Rates) -> f64,
+    set: fn(&mut Rates, f64),
+) -> Option<f64> {
+    let q = |ln_a: f64| {
+        let mut r = p.rates.clone();
+        set(&mut r, ln_a.exp());
+        let f = class_factors(&r);
+        free.iter()
+            .map(|&v| q_branch(acc, v, &f, p.gain[v], p.loss[v]))
+            .sum::<f64>()
+    };
+    let cur = q(get(&p.rates).ln());
+    let (x, fx) = golden_max(q, SHAPE_MIN.ln(), SHAPE_MAX.ln());
+    (fx > cur).then(|| x.exp())
+}
+
+/// The M-step. Without classes it is closed form. With classes it is a generalised M-step: each estimated shape by a
 /// one-dimensional search, then each branch in `(logit π, logit(g + l))` by safeguarded Newton steps (coordinate searches where
 /// Newton cannot be used); a move is kept only if it raises the expected complete-data log-likelihood.
-fn m_step(acc: &Acc, p: &mut Params, free: &[NodeId], fit_shape: bool) {
-    if p.rates.categories <= 1 {
+fn m_step(acc: &Acc, p: &mut Params, free: &[NodeId], fit: ShapeFit) {
+    if p.rates.n_classes() <= 1 {
         for &v in free {
             let c = acc.n[0][v];
             let from0 = c[0][0] + c[0][1];
@@ -835,24 +1005,24 @@ fn m_step(acc: &Acc, p: &mut Params, free: &[NodeId], fit_shape: bool) {
             }
         }
     } else {
-        let k = p.rates.categories;
-        if fit_shape {
-            let q = |ln_a: f64| {
-                let rates = category_rates(&Rates {
-                    categories: k,
-                    shape: ln_a.exp(),
-                });
-                free.iter()
-                    .map(|&v| q_branch(acc, v, &rates, p.gain[v], p.loss[v]))
-                    .sum::<f64>()
-            };
-            let cur = q(p.rates.shape.ln());
-            let (x, fx) = golden_max(q, SHAPE_MIN.ln(), SHAPE_MAX.ln());
-            if fx > cur {
-                p.rates.shape = x.exp();
+        if fit.shared {
+            if let Some(a) = improve_shape(acc, p, free, |r| r.shape, |r, a| r.shape = a) {
+                p.rates.shape = a;
             }
         }
-        let rates = category_rates(&p.rates);
+        if fit.gain {
+            if let Some(a) = improve_shape(acc, p, free, |r| r.gain_shape, |r, a| r.gain_shape = a)
+            {
+                p.rates.gain_shape = a;
+            }
+        }
+        if fit.loss {
+            if let Some(a) = improve_shape(acc, p, free, |r| r.loss_shape, |r, a| r.loss_shape = a)
+            {
+                p.rates.loss_shape = a;
+            }
+        }
+        let rates = class_factors(&p.rates);
         for &v in free {
             let to_gl = |x: f64, y: f64| {
                 let (pi, s) = (expit(x), expit(y));
@@ -950,7 +1120,7 @@ pub fn fixed_root_branch(tree: &Tree) -> Option<NodeId> {
 pub fn log_likelihood(data: &ScoringData, err: &ErrorRates, p: &Params) -> f64 {
     let ctx = Ctx::new(data, err);
     let mut w = Work::new(data.tree.len());
-    let (cs, rates) = (cats(p), category_rates(&p.rates));
+    let (cs, rates) = (cats(p), class_factors(&p.rates));
     data.characters
         .iter()
         .map(|ch| column_terms(&ctx, &cs, &rates, &ch.states, &mut w).0)
@@ -1037,33 +1207,50 @@ pub fn fixed_branches(data: &ScoringData) -> Vec<Fixed> {
 }
 
 /// The parameters EM may change, as one vector: free gains, free losses, the root probability, and ln(shape) when it is estimated.
-fn pack(p: &Params, free: &[NodeId], fit_shape: bool) -> Vec<f64> {
+fn pack(p: &Params, free: &[NodeId], fit: ShapeFit) -> Vec<f64> {
     let mut x: Vec<f64> = free.iter().map(|&v| p.gain[v]).collect();
     x.extend(free.iter().map(|&v| p.loss[v]));
     x.push(p.root_present);
-    if fit_shape {
+    if fit.shared {
         x.push(p.rates.shape.ln());
+    }
+    if fit.gain {
+        x.push(p.rates.gain_shape.ln());
+    }
+    if fit.loss {
+        x.push(p.rates.loss_shape.ln());
     }
     x
 }
 
 /// Inverse of [`pack`], projecting into the parameter space (with classes, `g + l < 1` on every branch).
-fn unpack(x: &[f64], free: &[NodeId], p: &mut Params) {
+fn unpack(x: &[f64], free: &[NodeId], p: &mut Params, fit: ShapeFit) {
     let k = free.len();
     for (j, &v) in free.iter().enumerate() {
         p.gain[v] = x[j].clamp(CLAMP, 1.0 - CLAMP);
         p.loss[v] = x[k + j].clamp(CLAMP, 1.0 - CLAMP);
     }
     p.root_present = x[2 * k].clamp(CLAMP, 1.0 - CLAMP);
-    if x.len() > 2 * k + 1 {
-        p.rates.shape = x[2 * k + 1].exp().clamp(SHAPE_MIN, SHAPE_MAX);
+    let mut at = 2 * k + 1;
+    let mut next = || {
+        at += 1;
+        x[at - 1].exp().clamp(SHAPE_MIN, SHAPE_MAX)
+    };
+    if fit.shared {
+        p.rates.shape = next();
+    }
+    if fit.gain {
+        p.rates.gain_shape = next();
+    }
+    if fit.loss {
+        p.rates.loss_shape = next();
     }
     keep_below_one(p, free);
 }
 
 /// With rate classes, scale `(g, l)` down where `g + l` is not below 1 (the branch must be a continuous-time process).
 fn keep_below_one(p: &mut Params, free: &[NodeId]) {
-    if p.rates.categories <= 1 {
+    if p.rates.n_classes() <= 1 {
         return;
     }
     let cap = 1.0 - 1e-6;
@@ -1097,7 +1284,31 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
             opt.categories
         ));
     }
-    if let Some(a) = opt.shape {
+    for (what, k) in [("gain", opt.gain_categories), ("loss", opt.loss_categories)] {
+        if !(1..=MAX_CATEGORIES).contains(&k) {
+            return Err(format!(
+                "{k} {what} rate categories; use 1 (no rate variation) to {MAX_CATEGORIES}"
+            ));
+        }
+    }
+    let separate = opt.gain_categories > 1 || opt.loss_categories > 1;
+    if separate && opt.categories > 1 {
+        return Err(
+            "rate classes shared by gain and loss (categories) and separate gain/loss classes cannot be combined; use one or the other".into(),
+        );
+    }
+    if separate && opt.gain_categories * opt.loss_categories > MAX_CATEGORIES {
+        return Err(format!(
+            "{} gain x {} loss classes = {} position classes; the most allowed is {MAX_CATEGORIES}",
+            opt.gain_categories,
+            opt.loss_categories,
+            opt.gain_categories * opt.loss_categories
+        ));
+    }
+    for a in [opt.shape, opt.gain_shape, opt.loss_shape]
+        .into_iter()
+        .flatten()
+    {
         if !(SHAPE_MIN..=SHAPE_MAX).contains(&a) {
             return Err(format!(
                 "gamma shape {a}; it must be in [{SHAPE_MIN}, {SHAPE_MAX}]"
@@ -1144,8 +1355,22 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
             .shape
             .unwrap_or(p.rates.shape)
             .clamp(SHAPE_MIN, SHAPE_MAX),
+        gain_categories: opt.gain_categories,
+        gain_shape: opt
+            .gain_shape
+            .unwrap_or(p.rates.gain_shape)
+            .clamp(SHAPE_MIN, SHAPE_MAX),
+        loss_categories: opt.loss_categories,
+        loss_shape: opt
+            .loss_shape
+            .unwrap_or(p.rates.loss_shape)
+            .clamp(SHAPE_MIN, SHAPE_MAX),
     };
-    let fit_shape = opt.categories > 1 && opt.shape.is_none();
+    let fit_shape = ShapeFit {
+        shared: opt.categories > 1 && opt.shape.is_none(),
+        gain: opt.gain_categories > 1 && opt.gain_shape.is_none(),
+        loss: opt.loss_categories > 1 && opt.loss_shape.is_none(),
+    };
     let fixed = fixed_branches(data);
     let free: Vec<NodeId> = (0..tree.len())
         .filter(|&v| tree.parent(v).is_some() && fixed[v] == Fixed::No)
@@ -1196,8 +1421,9 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
             acc0 = acc1;
             if opt.trace {
                 eprintln!(
-                    "likelihood: E-steps {iterations:>6}  lnL {:.6}  shape {:.4}  dlnL {dlnl:.3e}  dx {dx:.3e}  (plain EM, iteration limit near)",
-                    acc0.log_lik, p.rates.shape
+                    "likelihood: E-steps {iterations:>6}  lnL {:.6}  {}  dlnL {dlnl:.3e}  dx {dx:.3e}  (plain EM, iteration limit near)",
+                    acc0.log_lik,
+                    shape_summary(&p.rates)
                 );
             }
             if dlnl < opt.tol && dx < opt.param_tol {
@@ -1236,7 +1462,7 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
                     .map(|i| x0[i] - 2.0 * alpha * r[i] + alpha * alpha * v[i])
                     .collect();
                 let mut cand = p.clone();
-                unpack(&x, &free, &mut cand);
+                unpack(&x, &free, &mut cand, fit_shape);
                 let (stab, _) = em(&cand); // one stabilising EM step
                 iterations += 1;
                 let acc_s = timed_e(&stab);
@@ -1269,9 +1495,9 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
         acc0 = new_acc;
         if opt.trace {
             eprintln!(
-                "likelihood: E-steps {iterations:>6}  lnL {:.6}  shape {:.4}  dlnL {dlnl:.3e}  dx {dx:.3e}  E {:.1}s  M {:.1}s",
+                "likelihood: E-steps {iterations:>6}  lnL {:.6}  {}  dlnL {dlnl:.3e}  dx {dx:.3e}  E {:.1}s  M {:.1}s",
                 acc0.log_lik,
-                p.rates.shape,
+                shape_summary(&p.rates),
                 t_e.get(),
                 t_m.get()
             );
@@ -1307,8 +1533,8 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
         })
         .collect();
     let mut w = Work::new(tree.len());
-    let (cs, rates) = (cats(&p), category_rates(&p.rates));
-    let per_pattern: Vec<(f64, f64)> = pats
+    let (cs, rates) = (cats(&p), class_factors(&p.rates));
+    let per_pattern: Vec<(f64, (f64, f64))> = pats
         .columns
         .iter()
         .map(|c| {
@@ -1317,7 +1543,13 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
         })
         .collect();
     let site_log_lik = pats.of_char.iter().map(|&k| per_pattern[k].0).collect();
-    let site_rate = pats.of_char.iter().map(|&k| per_pattern[k].1).collect();
+    let site_gain_rate: Vec<f64> = pats.of_char.iter().map(|&k| per_pattern[k].1 .0).collect();
+    let site_loss_rate: Vec<f64> = pats.of_char.iter().map(|&k| per_pattern[k].1 .1).collect();
+    let site_rate = site_gain_rate
+        .iter()
+        .zip(&site_loss_rate)
+        .map(|(g, l)| 0.5 * (g + l))
+        .collect();
     Ok(FitResult {
         params: p,
         log_lik: acc.log_lik,
@@ -1327,6 +1559,8 @@ pub fn fit(data: &ScoringData, err: &ErrorRates, opt: &FitOptions) -> Result<Fit
         tips,
         site_log_lik,
         site_rate,
+        site_gain_rate,
+        site_loss_rate,
         unobserved_positions: acc.unobserved,
     })
 }
@@ -1657,7 +1891,7 @@ mod tests {
             let mut w = Work::new(d.tree.len());
             let ln = ctx.upward(&cats(&p)[0], col, &mut w);
             assert!((ln - lik.ln()).abs() < 1e-10, "{ln} vs {}", lik.ln());
-            let (cond, z2, _) = column_terms(&ctx, &cats(&p), &[1.0], col, &mut w);
+            let (cond, z2, _) = column_terms(&ctx, &cats(&p), &[(1.0, 1.0)], col, &mut w);
             assert!((z - z2).abs() < 1e-12 && (cond - (lik.ln() - (1.0 - z).ln())).abs() < 1e-10);
             let mut acc = Acc::new(d.tree.len(), 5, 1);
             ctx.upward(&cats(&p)[0], col, &mut w);
@@ -1692,7 +1926,9 @@ mod tests {
         let mut total = 0.0;
         for mask in 1u32..32 {
             let col: Vec<u8> = (0..5).map(|i| ((mask >> i) & 1) as u8).collect();
-            total += column_terms(&ctx, &cats(&p), &[1.0], &col, &mut w).0.exp();
+            total += column_terms(&ctx, &cats(&p), &[(1.0, 1.0)], &col, &mut w)
+                .0
+                .exp();
         }
         assert!((total - 1.0).abs() < 1e-12, "{total}");
         // with a missing cell, the patterns over the other four cells sum to one as well
@@ -1700,7 +1936,9 @@ mod tests {
         for mask in 1u32..16 {
             let mut col: Vec<u8> = (0..4).map(|i| ((mask >> i) & 1) as u8).collect();
             col.insert(2, MISSING);
-            total += column_terms(&ctx, &cats(&p), &[1.0], &col, &mut w).0.exp();
+            total += column_terms(&ctx, &cats(&p), &[(1.0, 1.0)], &col, &mut w)
+                .0
+                .exp();
         }
         assert!((total - 1.0).abs() < 1e-12, "{total}");
     }
@@ -2468,10 +2706,7 @@ mod tests {
         }
         // Yang (1994), Table 1: mean rates of four categories
         let check = |shape: f64, want: [f64; 4]| {
-            let r = category_rates(&Rates {
-                categories: 4,
-                shape,
-            });
+            let r = category_rates(&Rates::shared(4, shape));
             for (a, b) in r.iter().zip(want) {
                 assert!((a - b).abs() < 5e-4, "shape {shape}: {r:?}");
             }
@@ -2479,19 +2714,10 @@ mod tests {
         };
         check(0.5, [0.0334, 0.2519, 0.8203, 2.8944]);
         check(1.0, [0.1369, 0.4768, 1.0000, 2.3863]);
-        assert_eq!(
-            category_rates(&Rates {
-                categories: 1,
-                shape: 0.3
-            }),
-            vec![1.0]
-        );
+        assert_eq!(category_rates(&Rates::shared(1, 0.3)), vec![1.0]);
         // extreme shapes stay finite and ordered
         for a in [SHAPE_MIN, SHAPE_MAX] {
-            let r = category_rates(&Rates {
-                categories: 8,
-                shape: a,
-            });
+            let r = category_rates(&Rates::shared(8, a));
             assert!(
                 r.windows(2).all(|w| w[0] <= w[1]) && r.iter().all(|x| x.is_finite() && *x > 0.0),
                 "{a}: {r:?}"
@@ -2528,58 +2754,62 @@ mod tests {
 
     /// `p` with four rate classes of shape `shape`.
     fn with_classes(mut p: Params, k: usize, shape: f64) -> Params {
-        p.rates = Rates {
-            categories: k,
-            shape,
-        };
+        p.rates = Rates::shared(k, shape);
         p
     }
 
-    /// `p` at rate multiplier `r` on every branch, without classes (for brute force).
-    fn at_rate(p: &Params, r: f64) -> Params {
+    /// `p` with separate gain and loss classes.
+    fn with_separate(mut p: Params, kg: usize, ag: f64, kl: usize, al: f64) -> Params {
+        p.rates = Rates::separate(kg, ag, kl, al);
+        p
+    }
+
+    /// `p` with the gain rate multiplied by `rg` and the loss rate by `rl` on every branch, without classes (for brute force).
+    fn at_factors(p: &Params, rg: f64, rl: f64) -> Params {
         let mut q = Params::uniform(&tree(NWK), 0.1, 0.1, p.root_present);
         q.gain = vec![0.0; p.gain.len()];
         q.loss = vec![0.0; p.gain.len()];
         for v in 0..p.gain.len() {
-            let t = transition_at(p.gain[v], p.loss[v], r);
+            let t = transition_gl(p.gain[v], p.loss[v], rg, rl);
             q.gain[v] = t[0][1];
             q.loss[v] = t[1][0];
         }
         q
     }
 
-    #[test]
-    fn class_mixture_matches_brute_force_and_sums_to_one() {
+    /// The class mixture (likelihood, no-show probability, posterior mean factors, posterior presence) of `p` against brute-force
+    /// enumeration under each class, and conditional probabilities of all seen patterns summing to one.
+    fn check_class_mixture(p: &Params) {
         let cols: &[&[u8]] = &[&[1, 0, 1, MISSING, 0], &[0, 0, 0, 1, 1], &[1, 1, 1, 1, 1]];
         let d = data(NWK, cols);
         let err = some_errors();
-        let p = with_classes(some_params(&d.tree), 4, 0.6);
-        let rates = category_rates(&p.rates);
-        let cs = cats(&p);
+        let factors = class_factors(&p.rates);
+        let n = factors.len() as f64;
+        let cs = cats(p);
         let ctx = Ctx::new(&d, &err);
         let mut w = Work::new(d.tree.len());
         for col in cols {
-            let mut lik = 0.0;
-            let mut z = 0.0;
-            let mut post_rate = 0.0;
-            for &r in &rates {
-                let (l, zz, _, _) = brute(&d, &err, &at_rate(&p, r), col);
-                lik += l / 4.0;
-                z += zz / 4.0;
-                post_rate += r * l / 4.0;
+            let (mut lik, mut z, mut post_g, mut post_l) = (0.0, 0.0, 0.0, 0.0);
+            for &(rg, rl) in &factors {
+                let (l, zz, _, _) = brute(&d, &err, &at_factors(p, rg, rl), col);
+                lik += l / n;
+                z += zz / n;
+                post_g += rg * l / n;
+                post_l += rl * l / n;
             }
-            let (cond, z2, rate) = column_terms(&ctx, &cs, &rates, col, &mut w);
+            let (cond, z2, (rg, rl)) = column_terms(&ctx, &cs, &factors, col, &mut w);
             assert!((z - z2).abs() < 1e-12);
             assert!((cond - (lik.ln() - (1.0 - z).ln())).abs() < 1e-10);
-            assert!((rate - post_rate / lik).abs() < 1e-10);
+            assert!((rg - post_g / lik).abs() < 1e-10, "gain factor");
+            assert!((rl - post_l / lik).abs() < 1e-10, "loss factor");
         }
         // the E-step's posterior presence is the class mixture of the brute-force posteriors
         let d1 = data(NWK, &[cols[0]]);
-        let acc = e_step(&ctx, &compress(&d1), &p);
+        let acc = e_step(&ctx, &compress(&d1), p);
         let mut present = vec![0.0; d.tree.len()];
         let mut tot = 0.0;
-        for &r in &rates {
-            let (l, _, pr, _) = brute(&d, &err, &at_rate(&p, r), cols[0]);
+        for &(rg, rl) in &factors {
+            let (l, _, pr, _) = brute(&d, &err, &at_factors(p, rg, rl), cols[0]);
             tot += l;
             for v in 0..d.tree.len() {
                 present[v] += l * pr[v];
@@ -2595,9 +2825,91 @@ mod tests {
         let mut total = 0.0;
         for mask in 1u32..32 {
             let col: Vec<u8> = (0..5).map(|i| ((mask >> i) & 1) as u8).collect();
-            total += column_terms(&ctx, &cs, &rates, &col, &mut w).0.exp();
+            total += column_terms(&ctx, &cs, &factors, &col, &mut w).0.exp();
         }
         assert!((total - 1.0).abs() < 1e-12, "{total}");
+    }
+
+    #[test]
+    fn class_mixture_matches_brute_force_and_sums_to_one() {
+        let t = tree(NWK);
+        check_class_mixture(&with_classes(some_params(&t), 4, 0.6));
+    }
+
+    #[test]
+    fn separate_gain_and_loss_classes_match_brute_force_and_sum_to_one() {
+        let t = tree(NWK);
+        // loss classes only (the structure of MALIN's published rate-variation runs), gain classes only, and the grid of both
+        check_class_mixture(&with_separate(some_params(&t), 1, 1.0, 3, 0.5));
+        check_class_mixture(&with_separate(some_params(&t), 3, 0.7, 1, 1.0));
+        check_class_mixture(&with_separate(some_params(&t), 2, 0.4, 3, 1.5));
+    }
+
+    #[test]
+    fn separate_factors_define_a_two_state_process_with_scaled_rates() {
+        // The branch (g, l) at rate 1 is a two-state process with gain rate a and loss rate b over unit time. With factors (rg, rl) its
+        // transition matrix must be the matrix exponential of the generator with rates (a·rg, b·rl): the closed form of a two-state chain.
+        let two_state = |a: f64, b: f64| -> [[f64; 2]; 2] {
+            let (s, e) = (a + b, (-(a + b)).exp());
+            [
+                [(b + a * e) / s, a * (1.0 - e) / s],
+                [b * (1.0 - e) / s, (a + b * e) / s],
+            ]
+        };
+        for (g, l) in [(0.12, 0.3), (0.02, 0.5), (0.4, 0.05)] {
+            let (s, pi) = (g + l, g / (g + l));
+            let tau = -(1.0f64 - s).ln();
+            let (a, b) = (pi * tau, (1.0 - pi) * tau);
+            // rate 1 reproduces (g, l) themselves
+            let t1 = two_state(a, b);
+            assert!((t1[0][1] - g).abs() < 1e-12 && (t1[1][0] - l).abs() < 1e-12);
+            for (rg, rl) in [
+                (1.0, 1.0),
+                (0.3, 1.0),
+                (1.0, 0.3),
+                (2.5, 0.4),
+                (0.05, 3.0),
+                (1.7, 1.7),
+            ] {
+                let want = two_state(a * rg, b * rl);
+                let got = transition_gl(g, l, rg, rl);
+                for i in 0..2 {
+                    for j in 0..2 {
+                        assert!(
+                            (want[i][j] - got[i][j]).abs() < 1e-12,
+                            "g {g} l {l} rg {rg} rl {rl}: {want:?} vs {got:?}"
+                        );
+                    }
+                }
+            }
+            // equal factors are the shared-factor form
+            assert_eq!(transition_gl(g, l, 0.8, 0.8), transition_at(g, l, 0.8));
+        }
+    }
+
+    #[test]
+    fn class_factors_form_the_expected_grid_and_have_mean_one() {
+        assert_eq!(class_factors(&Rates::default()), vec![(1.0, 1.0)]);
+        let shared = class_factors(&Rates::shared(4, 0.6));
+        assert!(shared.iter().all(|&(g, l)| g == l) && shared.len() == 4);
+        let sep = Rates::separate(2, 0.4, 3, 1.5);
+        let f = class_factors(&sep);
+        assert_eq!(f.len(), 6);
+        assert_eq!(sep.n_classes(), 6);
+        // loss classes are the outer index, gain classes the inner one
+        let (g2, l3) = (
+            category_rates(&Rates::shared(2, 0.4)),
+            category_rates(&Rates::shared(3, 1.5)),
+        );
+        for (i, &(rg, rl)) in f.iter().enumerate() {
+            assert_eq!((rg, rl), (g2[i % 2], l3[i / 2]));
+        }
+        assert!((f.iter().map(|x| x.0).sum::<f64>() / 6.0 - 1.0).abs() < 1e-12);
+        assert!((f.iter().map(|x| x.1).sum::<f64>() / 6.0 - 1.0).abs() < 1e-12);
+        // one separate dimension with a single class leaves the other factor at 1
+        assert!(class_factors(&Rates::separate(1, 1.0, 3, 1.5))
+            .iter()
+            .all(|x| x.0 == 1.0));
     }
 
     const NWK8: &str = "(((A,B),(C,D)),((E,F),(G,H)));";
@@ -2610,7 +2922,7 @@ mod tests {
         n: usize,
         seed: u64,
     ) -> Vec<Vec<u8>> {
-        let rates = category_rates(&p.rates);
+        let rates = class_factors(&p.rates);
         let cs = cats(p);
         let tips = t.tips();
         let mut rng = Rng(seed);
@@ -2657,6 +2969,178 @@ mod tests {
         p.gain[f] = CLAMP;
         p.loss[f] = CLAMP;
         p
+    }
+
+    #[test]
+    fn em_with_separate_loss_classes_recovers_the_shape_and_never_decreases() {
+        // The structure of MALIN's published rate-variation runs: several loss-rate classes, one gain-rate class.
+        let t = tree(NWK8);
+        let err = ErrorRates {
+            sensitivity: vec![0.95; 8],
+            false_rate: vec![0.005; 8],
+        };
+        let mut truth = truth8(0.5);
+        truth.rates = Rates::separate(1, 1.0, 3, 0.5);
+        let d = sim_data(NWK8, simulate_classes(&t, &truth, &err, 40_000, 17));
+        let opt = |it: usize| FitOptions {
+            max_iter: it,
+            tol: 0.0,
+            loss_categories: 3,
+            ..Default::default()
+        };
+        let mut last = f64::NEG_INFINITY;
+        for it in [1, 2, 4, 8, 16, 32] {
+            let r = fit(&d, &err, &opt(it)).unwrap();
+            assert!(
+                r.log_lik >= last - 1e-6,
+                "iteration {it}: {} < {last}",
+                r.log_lik
+            );
+            last = r.log_lik;
+        }
+        let r = fit(
+            &d,
+            &err,
+            &FitOptions {
+                loss_categories: 3,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(r.converged, "{} iterations", r.iterations);
+        let a = r.params.rates.loss_shape;
+        assert!((0.25..1.2).contains(&a), "loss shape {a}");
+        assert_eq!(
+            (r.params.rates.gain_categories, r.params.rates.categories),
+            (1, 1)
+        );
+        assert!(r.log_lik >= log_likelihood(&d, &err, &truth) - 1e-6);
+        // far better than without classes, and better than three classes shared by gain and loss (the truth has no gain variation)
+        let flat = fit(&d, &err, &FitOptions::default()).unwrap();
+        let shared = fit(
+            &d,
+            &err,
+            &FitOptions {
+                categories: 3,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            r.log_lik > flat.log_lik + 50.0,
+            "{} vs {}",
+            r.log_lik,
+            flat.log_lik
+        );
+        assert!(
+            r.log_lik > shared.log_lik + 5.0,
+            "{} vs shared {}",
+            r.log_lik,
+            shared.log_lik
+        );
+        // the posterior loss factor varies between positions and the gain factor does not (one gain class)
+        let spread = |x: &[f64]| {
+            let m = x.iter().sum::<f64>() / x.len() as f64;
+            x.iter().map(|v| (v - m).powi(2)).sum::<f64>() / x.len() as f64
+        };
+        assert!(
+            spread(&r.site_loss_rate) > 0.01,
+            "loss factor spread {}",
+            spread(&r.site_loss_rate)
+        );
+        assert!(r.site_gain_rate.iter().all(|&g| (g - 1.0).abs() < 1e-12));
+        // stationary in the loss shape and in the branches
+        let base = log_likelihood(&d, &err, &r.params);
+        assert!((base - r.log_lik).abs() < 1e-6 * base.abs());
+        for h in [1.01, 0.99] {
+            let mut q = r.params.clone();
+            q.rates.loss_shape *= h;
+            assert!(
+                log_likelihood(&d, &err, &q) <= base + 1e-4,
+                "loss shape × {h}"
+            );
+        }
+        for v in 0..t.len() {
+            if r.nodes[v].fixed != Fixed::No || t.parent(v).is_none() {
+                continue;
+            }
+            for (which, h) in [(0, 1e-4), (0, -1e-4), (1, 1e-4), (1, -1e-4)] {
+                let mut q = r.params.clone();
+                if which == 0 {
+                    q.gain[v] += h
+                } else {
+                    q.loss[v] += h
+                }
+                assert!(
+                    log_likelihood(&d, &err, &q) <= base + 1e-4,
+                    "node {v} ({which}) by {h}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn em_with_gain_and_loss_classes_estimates_both_shapes_and_the_grid_option_is_checked() {
+        let t = tree(NWK8);
+        let err = ErrorRates {
+            sensitivity: vec![0.95; 8],
+            false_rate: vec![0.005; 8],
+        };
+        let mut truth = truth8(0.5);
+        truth.rates = Rates::separate(2, 0.6, 2, 0.6);
+        let d = sim_data(NWK8, simulate_classes(&t, &truth, &err, 40_000, 23));
+        let r = fit(
+            &d,
+            &err,
+            &FitOptions {
+                gain_categories: 2,
+                loss_categories: 2,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(r.converged);
+        assert!(r.log_lik >= log_likelihood(&d, &err, &truth) - 1e-6);
+        assert!(r.params.rates.gain_shape > SHAPE_MIN && r.params.rates.loss_shape > SHAPE_MIN);
+        // fixing a shape keeps it, and the other one is still estimated
+        let f = fit(
+            &d,
+            &err,
+            &FitOptions {
+                gain_categories: 2,
+                gain_shape: Some(0.6),
+                loss_categories: 2,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(f.params.rates.gain_shape, 0.6);
+        assert!(f.params.rates.loss_shape != 1.0);
+        // option checks: shared and separate classes are not combined, the grid is capped, shapes are in range
+        let bad = |o: FitOptions| fit(&d, &err, &o).unwrap_err();
+        assert!(bad(FitOptions {
+            categories: 2,
+            loss_categories: 2,
+            ..Default::default()
+        })
+        .contains("cannot be combined"));
+        assert!(bad(FitOptions {
+            gain_categories: 5,
+            loss_categories: 5,
+            ..Default::default()
+        })
+        .contains("position classes"));
+        assert!(bad(FitOptions {
+            loss_categories: 2,
+            loss_shape: Some(0.0),
+            ..Default::default()
+        })
+        .contains("shape"));
+        assert!(bad(FitOptions {
+            gain_categories: 0,
+            ..Default::default()
+        })
+        .contains("gain rate categories"));
     }
 
     #[test]

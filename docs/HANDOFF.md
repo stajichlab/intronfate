@@ -31,7 +31,7 @@ Analyses for a separate research project (formerly `bench/V8`–`V15`) moved to 
 
 In rough priority order. Items marked SPEC are described there.
 
-1. **Separate gain and loss rate factors** in the likelihood model (SPEC §5.6, §12 item 5).
+1. ~~Separate gain and loss rate factors~~ — done (SPEC §5.5c; `--ml-gain-categories`, `--ml-loss-categories`, `--ml-gain-shape`, `--ml-loss-shape`). Next in this line: free class probabilities and multipliers like MALIN's, to compare with its rate-variation `*.rates` (SPEC §5.6).
 2. ~~Validate the likelihood fit against MALIN's `*.rates`~~ — done for the constant-rates model ([L1](../bench/L1_malin_likelihood/README.md): log-likelihood at MALIN's parameters within 0.002 of this tool's maximum). The rate-variation files wait for item 1.
 3. ~~EM `--ml-max-iter` overshoot~~ — fixed: the limit is exact (plain EM steps near the limit; test `max_iter_is_an_exact_limit_on_e_steps`).
 4. **`--flank` default (1)** is an engineering default, not a tuned one (SPEC §2, §12 item 6). Tune against MALIN's test data.

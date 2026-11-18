@@ -27,5 +27,5 @@ is the same.
 
 **Not covered.** `Rog-ecdysozoa1000.rates` and `Chromo23.rates` come from `calculateRASRates` (rate variation): classes indexed by *loss level*
 and *gain level* with their own probabilities and rate multipliers (for example two loss classes with probabilities 0.20 / 0.80 and loss
-multipliers 0.40 / 1.00, one gain class). That is the separate gain and loss rate factors of SPEC §5.6 (open item 1), and a free-class model
-rather than the equal-weight gamma classes of §5.5b, so those two files cannot be compared until that is implemented.
+multipliers 0.40 / 1.00, one gain class). This tool now has separate gain and loss factors (SPEC §5.5c), but with equal-probability gamma classes,
+not MALIN's free class probabilities and multipliers, so those two files still cannot be compared; that needs the free-class model (SPEC §5.6).

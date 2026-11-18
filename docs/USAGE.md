@@ -143,6 +143,8 @@ Every column of these files is in [`OUTPUTS.md`](OUTPUTS.md); the models and the
 | `--ml-seed N` | 1 | `-m likelihood`: random seed of `--ml-bootstrap`. |
 | `--ml-rate-categories K` | 1 | `-m likelihood`: rate classes across positions (discrete gamma; 4 is usual, 1 = none). |
 | `--ml-gamma-shape A` | estimated | `-m likelihood`: fix the gamma shape instead of estimating it. |
+| `--ml-gain-categories K`, `--ml-loss-categories K` | 1 | `-m likelihood`: separate rate classes for the gain rate and the loss rate (each a discrete gamma with mean 1), combined as a grid of at most 16 classes. Not combined with `--ml-rate-categories`. |
+| `--ml-gain-shape A`, `--ml-loss-shape A` | estimated | `-m likelihood`: fix the gamma shape of the gain or the loss factor. |
 | `--ml-tol X`, `--ml-param-tol Y` | 1e-6, 1e-7 | `-m likelihood`: stop when an EM cycle gains less than X in log-likelihood and moves no parameter by more than Y. With rate classes EM creeps for a long time near the optimum; `--ml-param-tol 1e-5` ends fits several times sooner, about 0.01 short in log-likelihood. |
 
 ## 5. Reading the results
@@ -356,6 +358,11 @@ Read with care:
   add one parameter. Branch probabilities in `likelihood_branches.tsv` are then those at the mean rate, and
   `likelihood_sites.tsv` gets each position's posterior rate (`rate`, above 1 = changes more readily). A fit with classes takes
   several times longer; `-vv` prints one line per EM cycle.
+- **Separate factors for gain and loss** (`--ml-loss-categories 3`, `--ml-gain-categories 2`, ...): the gain rate and the loss rate of a
+  position get their own gamma factors (`ml_gain_shape`, `ml_loss_shape`). Losses often vary much more between positions than gains do, and
+  this is the form of MALIN's rate-variation runs (two loss classes, one gain class); a shared factor forces a position that is lost often
+  to also be gained often. Compare `ml_log_likelihood` with the shared-class fit using the same number of classes. `likelihood_sites.tsv`
+  then has `gain_rate` and `loss_rate` columns (`rate` is their mean).
 - `--ml-bootstrap` resamples whole families when the matrix is combined (`<family>:<column>:<phase>` labels), single positions
   otherwise. Each replicate is a full EM fit, so 100 replicates take about 100 times as long as one fit.
 
