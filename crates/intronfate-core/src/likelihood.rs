@@ -86,7 +86,7 @@
 use rayon::prelude::*;
 use rustc_hash::FxHashMap;
 
-use crate::score::{ScoringData, ABSENT, MISSING, PRESENT};
+use crate::score::{presence_probability, ScoringData, ABSENT, MISSING, PRESENT};
 use crate::tree::{NodeId, Tree};
 
 /// Probabilities are kept inside `[CLAMP, 1 − CLAMP]` so that every transition stays possible.
@@ -653,7 +653,12 @@ fn emission(obs: u8, s: f64, f: f64) -> [f64; 2] {
     match obs {
         PRESENT => [f, s],
         ABSENT => [1.0 - f, 1.0 - s],
-        _ => [1.0, 1.0],
+        MISSING => [1.0, 1.0],
+        // soft evidence: the observation is "present" with probability q and "absent" otherwise
+        k => {
+            let q = presence_probability(k).unwrap_or(0.0);
+            [q * f + (1.0 - q) * (1.0 - f), q * s + (1.0 - q) * (1.0 - s)]
+        }
     }
 }
 
@@ -787,10 +792,9 @@ impl<'a> Ctx<'a> {
             if real {
                 acc.present[v] += weight * post[1];
                 if let Some(i) = self.tip_of[v] {
-                    match col[i] {
-                        ABSENT => acc.missed[i] += weight * post[1],
-                        PRESENT => acc.false_[i] += weight * post[0],
-                        _ => {}
+                    if let Some(q) = presence_probability(col[i]) {
+                        acc.missed[i] += weight * post[1] * (1.0 - q);
+                        acc.false_[i] += weight * post[0] * q;
                     }
                 }
             }
@@ -978,7 +982,7 @@ fn norm(x: [f64; 2]) -> [f64; 2] {
 /// The column with every observed cell turned to "absent": the event "nobody shows an intron" for this pattern of missing cells.
 fn phantom(col: &[u8]) -> Vec<u8> {
     col.iter()
-        .map(|&c| if c == PRESENT { ABSENT } else { c })
+        .map(|&c| if c == MISSING { c } else { ABSENT })
         .collect()
 }
 
@@ -2122,11 +2126,22 @@ pub fn fit_with_precision(
             spec.len()
         ));
     }
-    let count = |i: usize, f: &dyn Fn(u8) -> bool| {
-        data.characters.iter().filter(|c| f(c.states[i])).count() as f64
-    };
-    let carried: Vec<f64> = (0..n).map(|i| count(i, &|s| s == PRESENT)).collect();
-    let observed: Vec<f64> = (0..n).map(|i| count(i, &|s| s != MISSING)).collect();
+    let carried: Vec<f64> = (0..n)
+        .map(|i| {
+            data.characters
+                .iter()
+                .filter_map(|c| presence_probability(c.states[i]))
+                .sum()
+        })
+        .collect();
+    let observed: Vec<f64> = (0..n)
+        .map(|i| {
+            data.characters
+                .iter()
+                .filter(|c| c.states[i] != MISSING)
+                .count() as f64
+        })
+        .collect();
     let rate = |i: usize, unseen: f64| -> f64 {
         match spec[i] {
             FalseSpec::Rate(f) => f,
@@ -2502,6 +2517,103 @@ mod tests {
             let lr = (b[2] / b[1]).ln() - (prior[2] / prior[1]).ln();
             assert!((g.ln_lr_multi - lr).abs() < 1e-9, "{col:?}");
         }
+    }
+
+    #[test]
+    fn soft_evidence_is_the_mixture_of_the_two_hard_cells() {
+        use crate::score::{apply_soft_evidence, soft_state};
+        let err = some_errors();
+        let t = tree(NWK);
+        let p = some_params(&t);
+        let base: &[u8] = &[1, 0, 1, 0, 0];
+        let mut d = data(NWK, &[base]);
+        // tips 0 and 2 become soft; the tip order of `data` is the tree's tip order
+        let names = d.tip_names.clone();
+        let (q0, q2) = (0.25, 0.8);
+        let n = apply_soft_evidence(
+            &mut d,
+            &[
+                ("0:0".to_string(), names[0].clone(), q0),
+                ("0:0".to_string(), names[2].clone(), q2),
+            ],
+        )
+        .unwrap();
+        assert_eq!(n, 2);
+        let (r0, r2) = (
+            presence_probability(soft_state(q0)).unwrap(),
+            presence_probability(soft_state(q2)).unwrap(),
+        );
+        // quantised to 252 steps
+        assert!((r0 - q0).abs() < 0.003 && (r2 - q2).abs() < 0.003);
+        // P(soft cell) = q P(cell seen present) + (1 - q) P(cell seen absent), for each soft cell (multilinear)
+        // compare the uncorrected likelihoods (the global correction's denominator is the same everywhere)
+        let un = |dd: &ScoringData| {
+            log_likelihood_with(dd, &err, &p, NeverSeen::Global)
+                + (1.0 - no_intron_probability(dd, &err, &p)).ln()
+        };
+        let got_un = un(&d).exp();
+        let want_un = r0 * r2 * un(&data(NWK, &[&[1, 0, 1, 0, 0]])).exp()
+            + r0 * (1.0 - r2) * un(&data(NWK, &[&[1, 0, 0, 0, 0]])).exp()
+            + (1.0 - r0) * r2 * un(&data(NWK, &[&[0, 0, 1, 0, 0]])).exp()
+            + (1.0 - r0) * (1.0 - r2) * un(&data(NWK, &[&[0, 0, 0, 0, 0]])).exp();
+        assert!(
+            (got_un - want_un).abs() < 1e-12 * want_un.max(1.0),
+            "{got_un} vs {want_un}"
+        );
+        // p = 0 and p = 1 are the hard cells; MISSING becomes an observation; unknown site or taxon is an error
+        let mut d2 = data(NWK, &[&[MISSING, 0, 1, 0, 0]]);
+        let nm = d2.tip_names.clone();
+        apply_soft_evidence(&mut d2, &[("0:0".into(), nm[0].clone(), 1.0)]).unwrap();
+        assert_eq!(d2.characters[0].states[0], PRESENT);
+        apply_soft_evidence(&mut d2, &[("0:0".into(), nm[0].clone(), 0.0)]).unwrap();
+        assert_eq!(d2.characters[0].states[0], ABSENT);
+        assert!(apply_soft_evidence(&mut d2, &[("9:9".into(), nm[0].clone(), 0.5)]).is_err());
+        assert!(apply_soft_evidence(&mut d2, &[("0:0".into(), "nobody".into(), 0.5)]).is_err());
+        assert!(apply_soft_evidence(&mut d2, &[("0:0".into(), nm[0].clone(), 1.5)]).is_err());
+    }
+
+    #[test]
+    fn soft_evidence_posteriors_and_the_fit_stay_consistent() {
+        use crate::score::apply_soft_evidence;
+        // posterior presence at a soft tip lies between its two hard cases; EM with soft cells never decreases the likelihood
+        let err = some_errors();
+        let cols: &[&[u8]] = &[
+            &[1, 1, 1, 0, 0],
+            &[0, 0, 1, 1, 1],
+            &[1, 0, 0, 1, 0],
+            &[1, 1, 0, 0, 0],
+        ];
+        let mut d = data(NWK, cols);
+        let names = d.tip_names.clone();
+        apply_soft_evidence(
+            &mut d,
+            &[
+                ("0:0".into(), names[3].clone(), 0.5),
+                ("2:0".into(), names[1].clone(), 0.3),
+                ("3:0".into(), names[4].clone(), 0.9),
+            ],
+        )
+        .unwrap();
+        let r = fit(&d, &err, &FitOptions::default()).unwrap();
+        assert!(r.log_lik.is_finite() && r.converged);
+        // soft evidence of 0.5 gives a likelihood between the two hard versions at the fitted parameters
+        let ll = |c3: u8| {
+            let mut cc: Vec<Vec<u8>> = cols.iter().map(|c| c.to_vec()).collect();
+            cc[0][3] = c3;
+            let refs: Vec<&[u8]> = cc.iter().map(|c| c.as_slice()).collect();
+            let dd = data(NWK, &refs);
+            log_likelihood(&dd, &err, &r.params)
+        };
+        let (a, b) = (ll(0), ll(1));
+        let mid = {
+            let mut dd = data(NWK, cols);
+            apply_soft_evidence(&mut dd, &[("0:0".into(), names[3].clone(), 0.5)]).unwrap();
+            log_likelihood(&dd, &err, &r.params)
+        };
+        assert!(
+            mid > a.min(b) - 1e-9 && mid < a.max(b) + 1e-9,
+            "{a} {mid} {b}"
+        );
     }
 
     #[test]

@@ -28,6 +28,68 @@ use crate::tree::{NodeId, Tree};
 pub const ABSENT: u8 = 0;
 pub const PRESENT: u8 = 1;
 pub const MISSING: u8 = 2;
+/// First of the *soft* states used by the likelihood model: a cell whose presence is only probable. State `SOFT_MIN + k` means
+/// "present with probability `k / 252`" (`k` in 0..=252). Dollo, parsimony and the counts never see these; they are made by
+/// [`apply_soft_evidence`] on the data handed to `-m likelihood`.
+pub const SOFT_MIN: u8 = 3;
+const SOFT_STEPS: f64 = 252.0;
+
+/// The state for "present with probability `p`" (0 and 1 give the ordinary absent and present).
+pub fn soft_state(p: f64) -> u8 {
+    if p <= 0.0 {
+        ABSENT
+    } else if p >= 1.0 {
+        PRESENT
+    } else {
+        SOFT_MIN + (p * SOFT_STEPS).round() as u8
+    }
+}
+
+/// Probability that the cell is present: 1 or 0 for an ordinary cell, `p` for a soft one, `None` for a missing one.
+pub fn presence_probability(s: u8) -> Option<f64> {
+    match s {
+        ABSENT => Some(0.0),
+        PRESENT => Some(1.0),
+        MISSING => None,
+        k => Some(f64::from(k - SOFT_MIN) / SOFT_STEPS),
+    }
+}
+
+/// Replace cells by soft evidence: `(site label, taxon name, probability of presence)`. Returns how many cells were set. The label is
+/// the site's `<column>:<phase>` label and the taxon one of the tree's tips. A cell that is missing becomes an observation; a cell
+/// already present or absent is overwritten.
+pub fn apply_soft_evidence(
+    data: &mut ScoringData,
+    entries: &[(String, String, f64)],
+) -> std::result::Result<usize, String> {
+    let by_site: std::collections::HashMap<&str, usize> = data
+        .characters
+        .iter()
+        .enumerate()
+        .map(|(i, c)| (c.label.as_str(), i))
+        .collect();
+    let mut todo = Vec::with_capacity(entries.len());
+    for (site, taxon, p) in entries {
+        if !(0.0..=1.0).contains(p) || p.is_nan() {
+            return Err(format!(
+                "soft evidence for {site} / {taxon}: probability {p} is not in [0, 1]"
+            ));
+        }
+        let ci = *by_site
+            .get(site.as_str())
+            .ok_or_else(|| format!("soft evidence: no site {site}"))?;
+        let ti = data
+            .tip_names
+            .iter()
+            .position(|n| n == taxon)
+            .ok_or_else(|| format!("soft evidence: no taxon {taxon} among the tree's tips"))?;
+        todo.push((ci, ti, soft_state(*p)));
+    }
+    for &(ci, ti, s) in &todo {
+        data.characters[ci].states[ti] = s;
+    }
+    Ok(todo.len())
+}
 
 /// Internal Dollo states.
 const D_NEVER: u8 = 0;

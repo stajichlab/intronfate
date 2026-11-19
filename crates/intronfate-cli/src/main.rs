@@ -313,6 +313,12 @@ struct AnalyzeArgs {
     #[arg(long)]
     ml_origins: bool,
 
+    /// With `-m likelihood`, a TSV (header `site`, `taxon`, `p_present`) of cells whose presence is only probable. The model treats such
+    /// a cell as "present" with that probability instead of a hard 0, 1 or `?` (SPEC §5.6b). Sites are `<column>:<phase>` labels as in
+    /// `matrix.tsv`; the other methods do not see these cells.
+    #[arg(long, value_name = "FILE")]
+    ml_soft_evidence: Option<PathBuf>,
+
     /// With rate classes, do not fix the larger root branch to "no change" (as MALIN does not). The two root branches are then only
     /// weakly identifiable, so the fit is slower and the root branches poorly determined; the likelihood can be slightly higher.
     #[arg(long)]
@@ -453,6 +459,12 @@ struct ScoreArgs {
     /// one (SPEC §5.6).
     #[arg(long)]
     ml_origins: bool,
+
+    /// With `-m likelihood`, a TSV (header `site`, `taxon`, `p_present`) of cells whose presence is only probable. The model treats such
+    /// a cell as "present" with that probability instead of a hard 0, 1 or `?` (SPEC §5.6b). Sites are `<column>:<phase>` labels as in
+    /// `matrix.tsv`; the other methods do not see these cells.
+    #[arg(long, value_name = "FILE")]
+    ml_soft_evidence: Option<PathBuf>,
 
     /// With rate classes, do not fix the larger root branch to "no change" (as MALIN does not). The two root branches are then only
     /// weakly identifiable, so the fit is slower and the root branches poorly determined; the likelihood can be slightly higher.
@@ -1248,6 +1260,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     free_root_branch: a.ml_free_root_branch,
                     never_seen_global: a.ml_never_seen == "global",
                     origins: a.ml_origins,
+                    soft_evidence: a.ml_soft_evidence.clone(),
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1291,6 +1304,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     free_root_branch: a.ml_free_root_branch,
                     never_seen_global: a.ml_never_seen == "global",
                     origins: a.ml_origins,
+                    soft_evidence: a.ml_soft_evidence.clone(),
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1354,6 +1368,7 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     free_root_branch: a.ml_free_root_branch,
                     never_seen_global: a.ml_never_seen == "global",
                     origins: a.ml_origins,
+                    soft_evidence: a.ml_soft_evidence.clone(),
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1428,6 +1443,7 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 free_root_branch: a.ml_free_root_branch,
                 never_seen_global: a.ml_never_seen == "global",
                 origins: a.ml_origins,
+                soft_evidence: a.ml_soft_evidence.clone(),
                 tol: a.ml_tol,
                 param_tol: a.ml_param_tol,
             },
@@ -1478,6 +1494,7 @@ struct MlOpts {
     free_root_branch: bool,
     never_seen_global: bool,
     origins: bool,
+    soft_evidence: Option<PathBuf>,
     tol: f64,
     param_tol: f64,
 }
@@ -1669,7 +1686,20 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
                 o.min_taxa
             );
         }
-        let (sens, spec) = read_error_rates(o.ml.error_rates.as_deref(), &data)?;
+        let soft_data;
+        let data: &intronfate_core::score::ScoringData = match o.ml.soft_evidence.as_deref() {
+            Some(path) => {
+                let mut d = data.clone();
+                let entries = read_soft_evidence(path)?;
+                let n = intronfate_core::score::apply_soft_evidence(&mut d, &entries)
+                    .map_err(|e| anyhow::anyhow!("{}: {e}", path.display()))?;
+                notes.push(format!("likelihood soft evidence on {n} cell(s)"));
+                soft_data = d;
+                &soft_data
+            }
+            None => &data,
+        };
+        let (sens, spec) = read_error_rates(o.ml.error_rates.as_deref(), data)?;
         let opt = intronfate_core::likelihood::FitOptions {
             max_iter: o.ml.max_iter,
             categories: o.ml.categories.max(1),
@@ -1692,7 +1722,7 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
             ..Default::default()
         };
         let (fit, err, settled) =
-            intronfate_core::likelihood::fit_with_precision(&data, &sens, &spec, &opt)
+            intronfate_core::likelihood::fit_with_precision(data, &sens, &spec, &opt)
                 .map_err(|e| anyhow::anyhow!("likelihood: {e}"))?;
         if !settled {
             eprintln!("warn: likelihood: the false-intron rates converted from precision did not settle in 20 rounds");
@@ -1706,7 +1736,7 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         let boot = if o.ml.bootstrap > 0 {
             Some(
                 intronfate_core::likelihood::bootstrap(
-                    &data,
+                    data,
                     &err,
                     &opt,
                     &fit.params,
@@ -1718,13 +1748,13 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         } else {
             None
         };
-        tables::likelihood_branch_table(&data, &fit, boot.as_ref())
+        tables::likelihood_branch_table(data, &fit, boot.as_ref())
             .write(dir.join("likelihood_branches.tsv"))?;
-        tables::likelihood_tip_table(&data, &err, &fit).write(dir.join("likelihood_tips.tsv"))?;
+        tables::likelihood_tip_table(data, &err, &fit).write(dir.join("likelihood_tips.tsv"))?;
         let origins =
             o.ml.origins
-                .then(|| intronfate_core::likelihood::origin_posteriors(&data, &err, &fit.params));
-        tables::likelihood_site_table(&data, &fit, origins.as_deref())
+                .then(|| intronfate_core::likelihood::origin_posteriors(data, &err, &fit.params));
+        tables::likelihood_site_table(data, &fit, origins.as_deref())
             .write(dir.join("likelihood_sites.tsv"))?;
         let root = data.tree.root();
         let gains: f64 = (0..data.tree.len())
@@ -1931,6 +1961,44 @@ fn resolve_methods(requested: &[String]) -> Result<Vec<Method>> {
 
 /// Per-tip annotation error for `-m likelihood` from a TSV (`taxon`, `sensitivity`, and `false_rate` or `precision`).
 /// Unlisted taxa are error-free. Precision is converted to a false-intron rate inside the fit (`fit_with_precision`).
+/// Read `--ml-soft-evidence`: a TSV with the columns `site`, `taxon` and `p_present` (by header name; `#` lines are skipped).
+fn read_soft_evidence(path: &std::path::Path) -> anyhow::Result<Vec<(String, String, f64)>> {
+    let text = std::fs::read_to_string(path)
+        .map_err(|e| anyhow::anyhow!("cannot read {}: {e}", path.display()))?;
+    let mut lines = text
+        .lines()
+        .filter(|l| !l.starts_with('#') && !l.trim().is_empty());
+    let head: Vec<&str> = lines
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("{} is empty", path.display()))?
+        .split('\t')
+        .collect();
+    let col = |n: &str| {
+        head.iter()
+            .position(|h| *h == n)
+            .ok_or_else(|| anyhow::anyhow!("{}: no `{n}` column", path.display()))
+    };
+    let (si, ti, pi) = (col("site")?, col("taxon")?, col("p_present")?);
+    let mut out = Vec::new();
+    for (k, l) in lines.enumerate() {
+        let f: Vec<&str> = l.split('\t').collect();
+        let get = |i: usize| {
+            f.get(i)
+                .copied()
+                .ok_or_else(|| anyhow::anyhow!("{}: row {} is short", path.display(), k + 1))
+        };
+        let p: f64 = get(pi)?.trim().parse().map_err(|_| {
+            anyhow::anyhow!(
+                "{}: row {}: p_present is not a number",
+                path.display(),
+                k + 1
+            )
+        })?;
+        out.push((get(si)?.to_string(), get(ti)?.to_string(), p));
+    }
+    Ok(out)
+}
+
 fn read_error_rates(
     path: Option<&Path>,
     data: &ScoringData,
@@ -2427,6 +2495,7 @@ mod tests {
             ml_free_root_branch: false,
             ml_never_seen: "per-pattern".to_string(),
             ml_origins: false,
+            ml_soft_evidence: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],
@@ -2477,6 +2546,7 @@ mod tests {
             ml_free_root_branch: false,
             ml_never_seen: "per-pattern".to_string(),
             ml_origins: false,
+            ml_soft_evidence: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2525,6 +2595,7 @@ mod tests {
             ml_free_root_branch: false,
             ml_never_seen: "per-pattern".to_string(),
             ml_origins: false,
+            ml_soft_evidence: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2603,6 +2674,7 @@ mod tests {
             ml_free_root_branch: false,
             ml_never_seen: "per-pattern".to_string(),
             ml_origins: false,
+            ml_soft_evidence: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],

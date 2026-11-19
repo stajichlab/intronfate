@@ -443,12 +443,28 @@ likely a second origin is. It is a Bayes factor under fitted parameters, not a n
 are treated as known. Validated against enumeration of every state assignment with origins counted directly (no classes and a three-class
 mixture). Reported by `--ml-origins` in `likelihood_sites.tsv` ([`OUTPUTS.md`](OUTPUTS.md)).
 
-### 5.6b Planned
+### 5.6b Soft cell evidence (first step of probabilistic projection)
+
+A cell can carry a probability `q` that the intron is present, instead of a hard present, absent or missing. The observation is then
+treated as "present" with probability `q` and "absent" with `1 − q`, so the tip's emission is
+`q · P(seen present | state) + (1 − q) · P(seen absent | state)` for each true state. The error model (sensitivity, false rate) applies on
+top; the expected missed and false counts used for the error rates are weighted by `q`. A cell with `q` of 0 or 1 is the ordinary absent or
+present cell, and a missing cell given `q` becomes an observation. Inside the engine a soft cell is one of 253 extra cell states
+(`q` rounded to 1/252), so the pattern compression and the rest of the model are unchanged; Dollo, parsimony and the counts never see
+them. `--ml-soft-evidence FILE` supplies them from a table; nothing in the tool yet *produces* the probabilities.
+Validated against the uncorrected likelihood written as the mixture of the hard cells (two soft cells, four terms), the range of the
+likelihood between the two hard versions, errors for unknown sites, taxa and out-of-range probabilities, and a CLI run.
+
+Planned next, in the order the sources of uncertainty can be modelled: **column ambiguity** (an intron beside an indel could sit in any column of the
+gap run; weights over those columns instead of masking the cell) and **annotation boundary uncertainty** (needs a per-intron confidence
+from the annotation source).
+
+### 5.6c Planned
 
 - ~~**Free class probabilities and multipliers**~~ — done (§5.5d).
-- ~~**Ancient versus convergent introns**~~ — done (`--ml-origins`, below).
-- **Probabilistic projection** (planned): propagate annotation uncertainty into the sharing matrix rather than
-  treating every boundary as exact.
+- ~~**Ancient versus convergent introns**~~ — done (`--ml-origins`, §5.6).
+- **Probabilistic projection**: the likelihood takes soft cell evidence (§5.6b). Remaining: produce the probabilities from the projection
+  (column ambiguity beside indels; annotation boundary confidence) and carry them through `matrix.tsv`.
 
 Done and removed from this list: the bias correction for gappy, poorly aligned columns (per-cell observability with the flank rule, §2).
 
