@@ -78,13 +78,15 @@ class MissingCells(unittest.TestCase):
             self.assertEqual(kinds, {"short": 1, "long": 0, "edge": 2, "other": 0, "no_row": 0})
             self.assertIn("sites with a carrier and at least one short-gap missing cell: 1", r.stdout)
 
-    def test_a_missing_cell_without_a_gap_is_other(self):
+    def test_a_missing_cell_without_a_gap_is_other_and_the_column_is_zero_based(self):
         with tempfile.TemporaryDirectory() as d:
-            write_fixture(d, ["X", "Y"], [(7, 1, ["1", "?"])])  # Y has residues at 6..8: not a gap
+            # Y is gap-free over columns 4..6, so a `?` at column 5 is not a gap. A script that read the column as 1-based would look at
+            # columns 3..5, find the gap at 3 and call it short.
+            write_fixture(d, ["X", "Y"], [(5, 1, ["1", "?"])])
             r = run(MISS, "--matrix", os.path.join(d, "matrix.tsv"), "--aln-dir", os.path.join(d, "aln"),
                     "--taxon-map", os.path.join(d, "taxon_map.tsv"), "--flank", "1")
-            self.assertIn("other", r.stdout)
             self.assertRegex(r.stdout, r"other\s+1 ")
+            self.assertRegex(r.stdout, r"short\s+0 ")
 
 
 if __name__ == "__main__":
