@@ -67,6 +67,7 @@ pub mod annotation;
 pub mod error;
 pub mod gff;
 pub mod inputs;
+pub mod junctions;
 pub mod likelihood;
 pub mod malin;
 pub mod matrix;

@@ -78,6 +78,8 @@ enum Command {
     Analyze(Box<AnalyzeArgs>),
     /// Convert between this tool's matrix.tsv files and MALIN intron tables.
     Convert(ConvertArgs),
+    /// Turn RNA-seq splice-junction read counts into soft evidence for the likelihood (`--ml-soft-evidence`).
+    Junctions(JunctionsArgs),
     /// Run the whole pipeline on a built-in toy dataset and print the tables.
     Demo(DemoArgs),
 }
@@ -547,6 +549,41 @@ struct ConvertArgs {
 }
 
 #[derive(Args, Debug)]
+struct JunctionsArgs {
+    /// `introns.tsv` of the run (genomic coordinates of every intron).
+    #[arg(long, value_name = "FILE")]
+    introns: PathBuf,
+
+    /// `sites.tsv` of ONE alignment (`<out-dir>/<alignment>/sites.tsv`): which cell each intron fills.
+    #[arg(long, value_name = "FILE")]
+    sites: PathBuf,
+
+    /// `TAXON=FILE`: junction read counts for that taxon's genome. Repeatable. Taxa without one keep their hard cells.
+    #[arg(long, value_name = "TAXON=FILE", required = true)]
+    junctions: Vec<String>,
+
+    /// Layout of the junction tables: `star` (SJ.out.tab) or `bed` (score = reads).
+    #[arg(long, default_value = "star")]
+    junction_format: String,
+
+    /// Add STAR's multi-mapping reads to the unique ones.
+    #[arg(long)]
+    count_multi: bool,
+
+    /// Probability that an intron with no supporting reads is real (supported ones rise from here towards 1).
+    #[arg(long, default_value = "0.8")]
+    unsupported_p: f64,
+
+    /// Reads that halve the remaining doubt: p = 1 - (1 - unsupported_p) * k / (reads + k).
+    #[arg(long, default_value = "3")]
+    half_reads: f64,
+
+    /// Soft-evidence table to write (`-` = standard output).
+    #[arg(long, short = 'o')]
+    out: PathBuf,
+}
+
+#[derive(Args, Debug)]
 struct DemoArgs {
     #[arg(long, short = 'o', default_value = "intron_demo")]
     out_dir: PathBuf,
@@ -676,6 +713,12 @@ fn run(cli: Cli, out_given: bool) -> Result<()> {
             let plan = stdout_plan(&table, "score", problem, &mut a.out_dir, out_given)?;
             cmd_score(&a, verbose)?;
             stdout_finish(plan)
+        }
+        Command::Junctions(a) => {
+            if table.is_some() {
+                bail!("--stdout applies to project, matrix, score and analyze; for junctions use `-o -`");
+            }
+            cmd_junctions(&a)
         }
         Command::Demo(a) => {
             if table.is_some() {
@@ -998,6 +1041,64 @@ fn process_memory_kb() -> Option<(u64, u64)> {
             .ok()
     };
     Some((field("VmRSS:")?, field("VmHWM:")?))
+}
+
+fn cmd_junctions(a: &JunctionsArgs) -> Result<()> {
+    use intronfate_core::junctions as jn;
+    let fmt: jn::Format = a
+        .junction_format
+        .parse()
+        .map_err(|e: String| anyhow::anyhow!(e))?;
+    let mut tables = Vec::new();
+    for spec in &a.junctions {
+        let (taxon, file) = spec
+            .split_once('=')
+            .filter(|(t, f)| !t.is_empty() && !f.is_empty())
+            .with_context(|| format!("--junctions {spec:?}: expected TAXON=FILE"))?;
+        if tables.iter().any(|(t, _): &(String, _)| t == taxon) {
+            bail!("--junctions: taxon {taxon} is given twice");
+        }
+        let text = intronfate_core::util::read_text(Path::new(file))
+            .with_context(|| format!("could not read junction table {file}"))?;
+        let j = jn::JunctionReads::parse(&text, fmt, a.count_multi)
+            .with_context(|| format!("junction table {file}"))?;
+        if j.is_empty() {
+            bail!("junction table {file} has no junctions");
+        }
+        tables.push((taxon.to_string(), j));
+    }
+    let introns = intronfate_core::util::read_text(&a.introns)
+        .with_context(|| format!("could not read {}", a.introns.display()))?;
+    let sites = intronfate_core::util::read_text(&a.sites)
+        .with_context(|| format!("could not read {}", a.sites.display()))?;
+    let opts = jn::Options {
+        p0: a.unsupported_p,
+        k: a.half_reads,
+    };
+    let (cells, s) = jn::soft_evidence(&introns, &sites, &tables, &opts)?;
+    for (t, _) in &tables {
+        if !cells.iter().any(|c| &c.taxon == t) {
+            eprintln!("warn: taxon {t} has no cell in {}", a.sites.display());
+        }
+    }
+    let text = jn::soft_table(&cells, &opts, &format!("{} taxa", tables.len()));
+    if a.out.as_os_str() == "-" {
+        outmode::progress_to_stderr();
+        outmode::emit_bytes(text.as_bytes())?;
+    } else {
+        intronfate_core::util::write_atomic(&a.out, text.as_bytes())?;
+    }
+    say!(
+        "{} soft cell(s): {} backed by reads, {} without (p = {}); {} cell(s) of taxa without a junction table left hard; {} without an intron record -> {}",
+        s.cells,
+        s.supported,
+        s.unsupported,
+        a.unsupported_p,
+        s.taxa_without_junctions,
+        s.no_intron_record,
+        a.out.display()
+    );
+    Ok(())
 }
 
 fn cmd_project(a: &ProjectArgs, verbose: u8) -> Result<()> {

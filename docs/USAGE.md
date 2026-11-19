@@ -119,6 +119,7 @@ intronfate matrix   --gff a.gff3 -p a.faa --msa fam.aln -o out      # -> alignme
 intronfate score    --matrix out/fam/matrix.tsv -t fam.nwk          # -> scores (methods: -m, below)
 intronfate analyze  --gff ... -p ... --msa ... -t ...               # all of the above in one pass
 intronfate convert  --from-malin t.table -o dir | --to-malin m.tsv... -o t.table
+intronfate junctions --introns out/introns.tsv --sites out/fam/sites.tsv --junctions Ncrassa=SJ.out.tab -o soft.tsv   # RNA-seq support -> soft cells
 intronfate demo     -o intron_demo                                  # built-in worked example
 ```
 
@@ -145,6 +146,28 @@ These names are used throughout the documentation. `-m` takes a comma-separated 
 | `likelihood` | Gain/loss likelihood model with per-genome annotation error and optional rate classes (§11) | yes | `likelihood_*.tsv` |
 
 Every column of these files is in [`OUTPUTS.md`](OUTPUTS.md); the models and their assumptions are in [`SPEC.md`](SPEC.md) §5.
+
+### RNA-seq support for introns: `junctions`
+
+An annotated intron that RNA-seq reads span with the same splice coordinates is probably real; one without reads may be real but
+unexpressed, or a gene-model error. `junctions` writes the table that `-m likelihood --ml-soft-evidence` reads, using the introns that
+`matrix`/`analyze` already wrote:
+
+```sh
+intronfate analyze --gff ... -p ... --msa fam.aln -t tree.nwk -o out
+intronfate junctions --introns out/introns.tsv --sites out/fam.aln/sites.tsv \
+    --junctions Ncrassa=Ncrassa.SJ.out.tab --junctions Anidulans=Anidulans.SJ.out.tab -o soft.tsv
+intronfate score --matrix out/fam.aln/matrix.tsv -t tree.nwk -m likelihood --ml-soft-evidence soft.tsv -o out_soft
+```
+
+- `--junctions TAXON=FILE` (repeat per taxon) gives that genome's junction read counts: STAR `SJ.out.tab` (default; `--count-multi` adds
+  multi-mapping reads) or BED with the read count in the score column (`--junction-format bed`). The chromosome names must be those of the
+  GFF. Taxa without a table keep their hard cells; the table covers one alignment (`sites.tsv` is per alignment).
+- An intron with `n` reads gets `p = 1 − (1 − p0)·k/(n + k)`: `--unsupported-p` is `p0` (default 0.8, the probability with no reads) and
+  `--half-reads` is `k` (default 3). `p` rises from `p0` towards 1, so reads only raise confidence; **no reads is not evidence of absence**.
+  Only exact coordinates and strand count as support. These two numbers are priors, not fitted values; try other settings and see whether
+  the likelihood conclusions move (SPEC §5.6b).
+- `-o -` writes the table to standard output. The output has the extra columns `reads` and `introns`, which the likelihood ignores.
 
 ### Verbosity and threads
 
