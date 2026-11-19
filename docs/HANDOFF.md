@@ -41,7 +41,7 @@ In rough priority order. Items marked SPEC are described there.
    output (SPEC §12 item 2).
 8. **Scaling**: a synthetic generator and `matrix`/`analyze` scaling in taxa and sites; remaining memory levers for `project` (one
    allocation per id, parallel parsing inside one file, `zlib-rs`) are in [V3](../bench/V3_gff_scale/README.md).
-9. **Stdout** (`-o -`; stdin inputs are done, USAGE §3); Python bindings only if needed (SPEC §12 items 7–8).
+9. Python bindings only if needed (stdin inputs and `--stdout TABLE` are done, USAGE §3) (SPEC §12 items 7–8).
 10. **Dollo reporting ideas**: `gain_ambiguous` when all-missing lineages sit beside the MRCA; per-branch "assessable sites"
     denominators.
 11. **Suspected bugs, checked** (each with a test): resolved: GTF `;` inside quoted values (attributes are split quote-aware); a 0/1 MALIN
