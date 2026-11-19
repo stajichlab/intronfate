@@ -26,7 +26,7 @@ Purgeable on the HPCC: `results/` is small and kept. Run: `mkdir -p logs results
 Each step of flank discards sites and turns annotated introns into `?`. The question is whether what it removes is unreliable. If gaps near an
 intron produced false losses, the absence rate of conserved introns would be raised close to a gap. **It is not**: within every taxon the rate
 is flat from distance 0 to 8 or more (for example *N. crassa* 0.85 / 0.82 / 0.86 / 0.83 / 0.87, *C. cinerea* 0.35 / 0.40 / 0.34 / 0.40 / 0.35;
-`absence_by_gap_distance.tsv.by_taxon`). Pooled over taxa it is 0.70–0.72 at every distance, which is dominated by the taxa that have lost most
+`absence_by_gap_distance.tsv.by_taxon`). Pooled over taxa it is 0.69–0.73 at every distance, which is dominated by the taxa that have lost most
 introns and is why the table is also given per taxon.
 
 **Conclusion: keep 1.** Nothing in these data supports a larger flank (it only discards data), and flank 1 is what MALIN's rule needs for a

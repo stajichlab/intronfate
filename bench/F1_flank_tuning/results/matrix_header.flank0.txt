@@ -1,0 +1,1 @@
+# format=2 alignment=combined alen=11983387 phase_mode=strict flank=0 masked_present=584 taxa=9 sites=16504 unannotated=- residues=- families=1106 family_pad=10000
