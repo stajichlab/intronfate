@@ -431,11 +431,23 @@ two loss levels (0.8 at 1, 0.2 at 0.4; 40,000 positions): EM never decreasing, t
 0.15–0.8), the log-likelihood above the value at the truth and above the no-class fit by more than 50, stationary points in the multiplier, the
 probability and every branch; option checks; and against MALIN's own rate-variation estimates (§6b item 3, `bench/L1_malin_likelihood`).
 
-### 5.6 Planned
+### 5.6 Ancient or convergent: how many origins does a position have?
+
+Under the fitted model (rate classes included) an *origin* of a position is a presence at the root or a 0 → 1 change on a branch. Pruning is
+done with the number of origins carried along, capped at two (`origin_posteriors`), which gives for every position, given the data, the
+posterior probability of **none** (the presences are annotation errors), **one** (ancient, or one insertion) and **two or more**
+(convergent insertion). The likelihood ratio is `P(data | ≥2) / P(data | 1) = posterior odds / prior odds`, with the prior odds taken from
+the same model with every cell unobserved, so a position is not rewarded for being likely a priori. It is the per-position counterpart of the
+note that Dollo prints (positions needing many independent losses): where Dollo asks how many losses a single origin would need, this asks how
+likely a second origin is. It is a Bayes factor under fitted parameters, not a null-calibrated test: no p-value is given, and the parameters
+are treated as known. Validated against enumeration of every state assignment with origins counted directly (no classes and a three-class
+mixture). Reported by `--ml-origins` in `likelihood_sites.tsv` ([`OUTPUTS.md`](OUTPUTS.md)).
+
+### 5.6b Planned
 
 - ~~**Free class probabilities and multipliers**~~ — done (§5.5d).
-- **A likelihood-ratio test** of "ancient intron" vs "convergent insertion" per position.
-- **Probabilistic projection**: propagate annotation uncertainty into the sharing matrix rather than
+- ~~**Ancient versus convergent introns**~~ — done (`--ml-origins`, below).
+- **Probabilistic projection** (planned): propagate annotation uncertainty into the sharing matrix rather than
   treating every boundary as exact.
 
 Done and removed from this list: the bias correction for gappy, poorly aligned columns (per-cell observability with the flank rule, §2).
@@ -715,9 +727,9 @@ comparison the tool exists to make mechanically repeatable.
    done ([V3](../bench/V3_gff_scale/README.md), §6).
 4. **`AnnotationSource` for SQL/Chado/Ensembl** — the seam exists; needs a schema decision.
 5. **Likelihood-based scoring**: v1 done (§5.5: branch-specific probabilities, annotation error, ascertainment, EM, bootstrap).
-   Rate variation across positions done (§5.5b), including separate gain and loss factors (§5.5c). Validated against MALIN's constant-rates `*.rates` (§6b, L1). Free levels (§5.5d) are compared with MALIN's rate-variation output in §6b. Remaining: the likelihood-ratio test of ancient versus convergent introns (§5.6).
+   Rate variation across positions done (§5.5b), including separate gain and loss factors (§5.5c). Validated against MALIN's constant-rates `*.rates` (§6b, L1). Free levels (§5.5d) are compared with MALIN's rate-variation output in §6b. Ancient versus convergent introns: §5.6.
 6. ~~Column observability~~ — done (§2: per-cell observability with a flank rule), as are `--min-observed` and
-   the `n_both_observable` column in `pairwise.tsv`. Remaining: tuning the `--flank` default.
+   the `n_both_observable` column in `pairwise.tsv`. The `--flank` default was examined in [F1](../bench/F1_flank_tuning/README.md): kept at 1.
 7. **Stdin/stdout support** (`--gff -`, `-o -`) for pipeline composition.
 8. **Python bindings** returning numpy arrays, if exploration in pandas becomes the bottleneck.
 

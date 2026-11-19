@@ -307,6 +307,12 @@ struct AnalyzeArgs {
     #[arg(long, default_value = "per-pattern", value_parser = ["per-pattern", "global"])]
     ml_never_seen: String,
 
+    /// With `-m likelihood`, add per-position evidence for convergent insertion to `likelihood_sites.tsv`: the posterior probability
+    /// of no, one, or two or more independent origins (a root presence or a gain) and the log likelihood ratio of two or more against
+    /// one (SPEC §5.6).
+    #[arg(long)]
+    ml_origins: bool,
+
     /// With rate classes, do not fix the larger root branch to "no change" (as MALIN does not). The two root branches are then only
     /// weakly identifiable, so the fit is slower and the root branches poorly determined; the likelihood can be slightly higher.
     #[arg(long)]
@@ -441,6 +447,12 @@ struct ScoreArgs {
     /// agree when no cell is missing.
     #[arg(long, default_value = "per-pattern", value_parser = ["per-pattern", "global"])]
     ml_never_seen: String,
+
+    /// With `-m likelihood`, add per-position evidence for convergent insertion to `likelihood_sites.tsv`: the posterior probability
+    /// of no, one, or two or more independent origins (a root presence or a gain) and the log likelihood ratio of two or more against
+    /// one (SPEC §5.6).
+    #[arg(long)]
+    ml_origins: bool,
 
     /// With rate classes, do not fix the larger root branch to "no change" (as MALIN does not). The two root branches are then only
     /// weakly identifiable, so the fit is slower and the root branches poorly determined; the likelihood can be slightly higher.
@@ -1235,6 +1247,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     loss_levels: a.ml_loss_levels,
                     free_root_branch: a.ml_free_root_branch,
                     never_seen_global: a.ml_never_seen == "global",
+                    origins: a.ml_origins,
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1277,6 +1290,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     loss_levels: a.ml_loss_levels,
                     free_root_branch: a.ml_free_root_branch,
                     never_seen_global: a.ml_never_seen == "global",
+                    origins: a.ml_origins,
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1339,6 +1353,7 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     loss_levels: a.ml_loss_levels,
                     free_root_branch: a.ml_free_root_branch,
                     never_seen_global: a.ml_never_seen == "global",
+                    origins: a.ml_origins,
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1412,6 +1427,7 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 loss_levels: a.ml_loss_levels,
                 free_root_branch: a.ml_free_root_branch,
                 never_seen_global: a.ml_never_seen == "global",
+                origins: a.ml_origins,
                 tol: a.ml_tol,
                 param_tol: a.ml_param_tol,
             },
@@ -1461,6 +1477,7 @@ struct MlOpts {
     loss_levels: usize,
     free_root_branch: bool,
     never_seen_global: bool,
+    origins: bool,
     tol: f64,
     param_tol: f64,
 }
@@ -1704,7 +1721,11 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         tables::likelihood_branch_table(&data, &fit, boot.as_ref())
             .write(dir.join("likelihood_branches.tsv"))?;
         tables::likelihood_tip_table(&data, &err, &fit).write(dir.join("likelihood_tips.tsv"))?;
-        tables::likelihood_site_table(&data, &fit).write(dir.join("likelihood_sites.tsv"))?;
+        let origins =
+            o.ml.origins
+                .then(|| intronfate_core::likelihood::origin_posteriors(&data, &err, &fit.params));
+        tables::likelihood_site_table(&data, &fit, origins.as_deref())
+            .write(dir.join("likelihood_sites.tsv"))?;
         let root = data.tree.root();
         let gains: f64 = (0..data.tree.len())
             .filter(|&v| v != root && fit.nodes[v].has_data)
@@ -2405,6 +2426,7 @@ mod tests {
             ml_loss_levels: 1,
             ml_free_root_branch: false,
             ml_never_seen: "per-pattern".to_string(),
+            ml_origins: false,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],
@@ -2454,6 +2476,7 @@ mod tests {
             ml_loss_levels: 1,
             ml_free_root_branch: false,
             ml_never_seen: "per-pattern".to_string(),
+            ml_origins: false,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2501,6 +2524,7 @@ mod tests {
             ml_loss_levels: 1,
             ml_free_root_branch: false,
             ml_never_seen: "per-pattern".to_string(),
+            ml_origins: false,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2578,6 +2602,7 @@ mod tests {
             ml_loss_levels: 1,
             ml_free_root_branch: false,
             ml_never_seen: "per-pattern".to_string(),
+            ml_origins: false,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],

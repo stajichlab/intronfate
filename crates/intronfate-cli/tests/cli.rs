@@ -1581,6 +1581,42 @@ fn likelihood_writes_its_tables_and_reads_error_rates() {
     a.extend(["--ml-never-seen".into(), "sometimes".into()]);
     assert!(!run_s(&a).status.success());
 
+    // convergent-insertion evidence: extra columns whose three probabilities sum to one
+    let out = w.join("origins");
+    let mut a = base(&out);
+    a.push("--ml-origins".into());
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let tsv = fs::read_to_string(out.join("family.aln").join("likelihood_sites.tsv")).unwrap();
+    let mut lines = tsv.lines();
+    let head: Vec<&str> = lines.next().unwrap().split('\t').collect();
+    let at = |n: &str| head.iter().position(|h| *h == n).unwrap();
+    let (i0, i1, i2, ilr) = (
+        at("p_no_origin"),
+        at("p_one_origin"),
+        at("p_multi_origin"),
+        at("ln_lr_multi"),
+    );
+    let mut n = 0;
+    for l in lines {
+        let f: Vec<&str> = l.split('\t').collect();
+        let sum: f64 = [i0, i1, i2]
+            .iter()
+            .map(|&i| f[i].parse::<f64>().unwrap())
+            .sum();
+        assert!((sum - 1.0).abs() < 1e-4, "{l}");
+        assert!(f[ilr].parse::<f64>().unwrap().is_finite(), "{l}");
+        n += 1;
+    }
+    assert!(n > 0);
+    let plain = fs::read_to_string(
+        w.join("global")
+            .join("family.aln")
+            .join("likelihood_sites.tsv"),
+    )
+    .unwrap();
+    assert!(!plain.lines().next().unwrap().contains("p_multi_origin"));
+
     // refusals: --min-taxa > 1, a bad file
     let mut a = base(&w.join("mt"));
     a.extend(["--min-taxa".into(), "2".into()]);

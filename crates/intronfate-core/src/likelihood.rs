@@ -846,6 +846,130 @@ impl<'a> Ctx<'a> {
     }
 }
 
+impl<'a> Ctx<'a> {
+    /// Felsenstein pruning that also counts independent origins (the root being present, or a 0 → 1 change on a branch), capped at
+    /// 2. Returns the log of a common scale and `[P(data, 0 origins), P(data, 1 origin), P(data, 2 or more)]` divided by that scale.
+    fn origin_pass(&self, c: &Cat, col: &[u8]) -> (f64, [f64; 3]) {
+        type Cnt = [[f64; 3]; 2];
+        let tree = self.tree;
+        let mut log_scale = 0.0;
+        let mut up: Vec<Cnt> = vec![[[0.0; 3]; 2]; tree.len()];
+        let mut msg: Vec<Cnt> = vec![[[0.0; 3]; 2]; tree.len()];
+        for &v in tree.postorder() {
+            let e = self.emit(v, col);
+            let mut l: Cnt = [[e[0], 0.0, 0.0], [e[1], 0.0, 0.0]];
+            for &ch in tree.children(v) {
+                let m = msg[ch];
+                let mut out: Cnt = [[0.0; 3]; 2];
+                for s in 0..2 {
+                    for a in 0..3 {
+                        for b in 0..3 {
+                            out[s][(a + b).min(2)] += l[s][a] * m[s][b];
+                        }
+                    }
+                }
+                l = out;
+            }
+            let mx = l.iter().flatten().fold(0.0_f64, |a, &b| a.max(b));
+            if mx <= 0.0 {
+                return (f64::NEG_INFINITY, [0.0; 3]);
+            }
+            for row in l.iter_mut() {
+                for x in row.iter_mut() {
+                    *x /= mx;
+                }
+            }
+            log_scale += mx.ln();
+            up[v] = l;
+            if tree.parent(v).is_some() {
+                let t = c.tr[v];
+                let mut m: Cnt = [[0.0; 3]; 2];
+                for s in 0..2 {
+                    for s2 in 0..2 {
+                        let shift = usize::from(s == 0 && s2 == 1);
+                        for k in 0..3 {
+                            m[s][(k + shift).min(2)] += t[s][s2] * l[s2][k];
+                        }
+                    }
+                }
+                msg[v] = m;
+            }
+        }
+        let l = up[tree.root()];
+        let r = c.root;
+        let p0 = (1.0 - r) * l[0][0];
+        let p1 = (1.0 - r) * l[0][1] + r * l[1][0];
+        let p2 = (1.0 - r) * l[0][2] + r * (l[1][1] + l[1][2]);
+        (log_scale, [p0, p1, p2])
+    }
+
+    /// The class mixture of [`Ctx::origin_pass`], normalised to `P(data, n origins)` shares (they sum to 1 unless the column is
+    /// impossible) together with `ln P(data)`.
+    fn origin_mixture(&self, cs: &[Cat], col: &[u8]) -> (f64, [f64; 3]) {
+        let parts: Vec<(f64, [f64; 3])> = cs.iter().map(|c| self.origin_pass(c, col)).collect();
+        let m = parts.iter().map(|p| p.0).fold(f64::NEG_INFINITY, f64::max);
+        if !m.is_finite() {
+            return (f64::NEG_INFINITY, [0.0; 3]);
+        }
+        let mut tot = [0.0; 3];
+        for (c, (ls, v)) in cs.iter().zip(&parts) {
+            let f = c.w * (ls - m).exp();
+            for j in 0..3 {
+                tot[j] += f * v[j];
+            }
+        }
+        let z: f64 = tot.iter().sum();
+        (m + z.ln(), [tot[0] / z, tot[1] / z, tot[2] / z])
+    }
+}
+
+/// How many independent origins a position has: the posterior given the data, and the evidence for convergence (SPEC §5.6).
+#[derive(Clone, Copy, Debug)]
+pub struct OriginPosterior {
+    /// Posterior probability of no origin (the presences are annotation errors).
+    pub p_none: f64,
+    /// Posterior probability of exactly one origin: ancient (present at the root) or a single insertion.
+    pub p_one: f64,
+    /// Posterior probability of two or more independent origins (convergent insertion).
+    pub p_multi: f64,
+    /// `ln` of the likelihood ratio of "two or more origins" against "exactly one": the posterior odds divided by the prior odds
+    /// under the fitted model. Positive: the pattern is better explained by convergence than a single origin is, per unit of prior.
+    pub ln_lr_multi: f64,
+}
+
+/// Per-position evidence for convergent insertion against a single ancestral origin, under the fitted parameters `p`.
+///
+/// The model is the one fitted (rate classes included); an *origin* is a root presence or a 0 → 1 change on a branch. The prior odds
+/// of "two or more" against "exactly one" are those of the model with every cell unobserved, so the likelihood ratio
+/// `P(data | ≥ 2) / P(data | 1)` does not reward a position for being likely a priori.
+pub fn origin_posteriors(data: &ScoringData, err: &ErrorRates, p: &Params) -> Vec<OriginPosterior> {
+    let ctx = Ctx::new_for_origins(data, err);
+    let cs = cats(p);
+    let (_, prior) = ctx.origin_mixture(&cs, &vec![MISSING; data.tips.len()]);
+    let prior_ln_odds = (prior[2] / prior[1]).ln();
+    let pats = compress(data);
+    let per: Vec<OriginPosterior> = pats
+        .columns
+        .iter()
+        .map(|c| {
+            let (_, q) = ctx.origin_mixture(&cs, c);
+            OriginPosterior {
+                p_none: q[0],
+                p_one: q[1],
+                p_multi: q[2],
+                ln_lr_multi: (q[2] / q[1]).ln() - prior_ln_odds,
+            }
+        })
+        .collect();
+    pats.of_char.iter().map(|&k| per[k]).collect()
+}
+
+impl<'a> Ctx<'a> {
+    fn new_for_origins(data: &'a ScoringData, err: &'a ErrorRates) -> Self {
+        Self::with(data, err, NeverSeen::PerPattern)
+    }
+}
+
 fn norm(x: [f64; 2]) -> [f64; 2] {
     let s = x[0] + x[1];
     [x[0] / s, x[1] / s]
@@ -2273,6 +2397,110 @@ mod tests {
         ErrorRates {
             sensitivity: vec![0.9, 1.0, 0.7, 0.95, 0.8],
             false_rate: vec![0.01, 0.0, 0.05, 0.02, 0.0],
+        }
+    }
+
+    /// Sum over every assignment of true states: P(column, number of origins) with the origins counted directly (the root being
+    /// present, plus every 0 -> 1 change on a branch), capped at 2.
+    fn brute_origins(d: &ScoringData, err: &ErrorRates, p: &Params, col: &[u8]) -> [f64; 3] {
+        let t = &d.tree;
+        let n = t.len();
+        let mut tip_of = vec![None; n];
+        for (i, &v) in d.tips.iter().enumerate() {
+            tip_of[v] = Some(i);
+        }
+        let mut out = [0.0; 3];
+        for mask in 0u32..(1 << n) {
+            let st = |v: usize| ((mask >> v) & 1) as usize;
+            let mut prob = if st(t.root()) == 1 {
+                p.root_present
+            } else {
+                1.0 - p.root_present
+            };
+            let mut origins = st(t.root());
+            for v in 0..n {
+                if let Some(u) = t.parent(v) {
+                    prob *= transition(p, v)[st(u)][st(v)];
+                    origins += usize::from(st(u) == 0 && st(v) == 1);
+                }
+            }
+            let mut e = 1.0;
+            for v in 0..n {
+                if let Some(i) = tip_of[v] {
+                    e *= emission(col[i], err.sensitivity[i], err.false_rate[i])[st(v)];
+                }
+            }
+            out[origins.min(2)] += prob * e;
+        }
+        out
+    }
+
+    #[test]
+    fn origin_posteriors_match_brute_force() {
+        let cols: &[&[u8]] = &[
+            &[1, 0, 1, MISSING, 0],
+            &[0, 0, 0, 1, 1],
+            &[1, 1, 1, 1, 1],
+            &[1, 0, 0, 1, 0],
+            &[MISSING, MISSING, 1, 0, MISSING],
+            &[0, 0, 0, 0, 0],
+        ];
+        let d = data(NWK, cols);
+        let err = some_errors();
+        let p = some_params(&d.tree);
+        let got = origin_posteriors(&d, &err, &p);
+        let none = vec![MISSING; 5];
+        let prior = brute_origins(&d, &err, &p, &none);
+        let prior_ln = (prior[2] / prior[1]).ln();
+        for (col, g) in cols.iter().zip(&got) {
+            let b = brute_origins(&d, &err, &p, col);
+            let z: f64 = b.iter().sum();
+            let want = [b[0] / z, b[1] / z, b[2] / z];
+            for (x, y) in [
+                (g.p_none, want[0]),
+                (g.p_one, want[1]),
+                (g.p_multi, want[2]),
+            ] {
+                assert!((x - y).abs() < 1e-12, "{col:?}: {x} vs {y}");
+            }
+            let lr = (b[2] / b[1]).ln() - prior_ln;
+            assert!((g.ln_lr_multi - lr).abs() < 1e-9, "{col:?}");
+            assert!((g.p_none + g.p_one + g.p_multi - 1.0).abs() < 1e-12);
+        }
+        // sanity on the direction: a pattern shared by distant tips only (A and E) is more convergent than one shared by a clade
+        let d2 = data(NWK, &[&[1, 1, 0, 0, 0], &[1, 0, 0, 0, 1]]);
+        let g2 = origin_posteriors(&d2, &err, &p);
+        assert!(g2[1].ln_lr_multi > g2[0].ln_lr_multi);
+    }
+
+    #[test]
+    fn origin_posteriors_with_rate_classes_match_a_brute_force_mixture() {
+        let t = tree(NWK);
+        let mut p = some_params(&t);
+        p.rates = Rates::shared(3, 0.6);
+        let err = some_errors();
+        let cols: &[&[u8]] = &[&[1, 0, 1, 0, 0], &[1, 1, 1, 1, 0], &[0, 1, 0, 0, 1]];
+        let d = data(NWK, cols);
+        let got = origin_posteriors(&d, &err, &p);
+        let classes = class_list(&p.rates);
+        let mix = |col: &[u8]| {
+            let mut tot = [0.0; 3];
+            for c in &classes {
+                let b = brute_origins(&d, &err, &at_factors(&p, c.rg, c.rl), col);
+                for j in 0..3 {
+                    tot[j] += c.w * b[j];
+                }
+            }
+            tot
+        };
+        let prior = mix(&[MISSING; 5]);
+        for (col, g) in cols.iter().zip(&got) {
+            let b = mix(col);
+            let z: f64 = b.iter().sum();
+            assert!((g.p_multi - b[2] / z).abs() < 1e-12, "{col:?}");
+            assert!((g.p_one - b[1] / z).abs() < 1e-12, "{col:?}");
+            let lr = (b[2] / b[1]).ln() - (prior[2] / prior[1]).ln();
+            assert!((g.ln_lr_multi - lr).abs() < 1e-9, "{col:?}");
         }
     }
 
