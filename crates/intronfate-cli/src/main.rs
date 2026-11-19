@@ -274,6 +274,56 @@ struct AnalyzeArgs {
     #[arg(long, value_name = "ALPHA")]
     ml_gamma_shape: Option<f64>,
 
+    /// Separate rate classes for the gain rate (`-m likelihood`; discrete gamma, mean 1; 1 = none). Combined with `--ml-loss-categories` as a grid
+    /// of classes (at most 16 in all); not combined with `--ml-rate-categories`, which puts one factor on both rates.
+    #[arg(long, default_value = "1")]
+    ml_gain_categories: usize,
+
+    /// Fix the gamma shape of `--ml-gain-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_gain_shape: Option<f64>,
+
+    /// Separate rate classes for the loss rate (see `--ml-gain-categories`).
+    #[arg(long, default_value = "1")]
+    ml_loss_categories: usize,
+
+    /// Fix the gamma shape of `--ml-loss-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_loss_shape: Option<f64>,
+
+    /// Free gain levels for `-m likelihood` (MALIN-style: each level has its own probability and rate multiplier; the first level
+    /// fitted is the reference with multiplier 1; 1 = none). Combined with `--ml-loss-levels` as a grid of classes (at most 16); not
+    /// combined with the gamma options. Several starting points are tried and the best fit kept.
+    #[arg(long, default_value = "1")]
+    ml_gain_levels: usize,
+
+    /// Free loss levels (see `--ml-gain-levels`); MALIN's published runs use two loss levels and one gain level.
+    #[arg(long, default_value = "1")]
+    ml_loss_levels: usize,
+
+    /// How `-m likelihood` models positions that were never seen: `per-pattern` (default) conditions each position on being seen given its
+    /// own pattern of missing cells; `global` is MALIN's correction (one probability that a position has no intron at any genome). They
+    /// agree when no cell is missing.
+    #[arg(long, default_value = "per-pattern", value_parser = ["per-pattern", "global"])]
+    ml_never_seen: String,
+
+    /// With `-m likelihood`, add per-position evidence for convergent insertion to `likelihood_sites.tsv`: the posterior probability
+    /// of no, one, or two or more independent origins (a root presence or a gain) and the log likelihood ratio of two or more against
+    /// one (SPEC §5.6).
+    #[arg(long)]
+    ml_origins: bool,
+
+    /// With `-m likelihood`, a TSV (header `site`, `taxon`, `p_present`) of cells whose presence is only probable. The model treats such
+    /// a cell as "present" with that probability instead of a hard 0, 1 or `?` (SPEC §5.6b). Sites are `<column>:<phase>` labels as in
+    /// `matrix.tsv`; the other methods do not see these cells.
+    #[arg(long, value_name = "FILE")]
+    ml_soft_evidence: Option<PathBuf>,
+
+    /// With rate classes, do not fix the larger root branch to "no change" (as MALIN does not). The two root branches are then only
+    /// weakly identifiable, so the fit is slower and the root branches poorly determined; the likelihood can be slightly higher.
+    #[arg(long)]
+    ml_free_root_branch: bool,
+
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
     outgroups: Vec<String>,
@@ -370,6 +420,56 @@ struct ScoreArgs {
     /// Fix the gamma shape of `--ml-rate-categories` instead of estimating it.
     #[arg(long, value_name = "ALPHA")]
     ml_gamma_shape: Option<f64>,
+
+    /// Separate rate classes for the gain rate (`-m likelihood`; discrete gamma, mean 1; 1 = none). Combined with `--ml-loss-categories` as a grid
+    /// of classes (at most 16 in all); not combined with `--ml-rate-categories`, which puts one factor on both rates.
+    #[arg(long, default_value = "1")]
+    ml_gain_categories: usize,
+
+    /// Fix the gamma shape of `--ml-gain-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_gain_shape: Option<f64>,
+
+    /// Separate rate classes for the loss rate (see `--ml-gain-categories`).
+    #[arg(long, default_value = "1")]
+    ml_loss_categories: usize,
+
+    /// Fix the gamma shape of `--ml-loss-categories` instead of estimating it.
+    #[arg(long, value_name = "ALPHA")]
+    ml_loss_shape: Option<f64>,
+
+    /// Free gain levels for `-m likelihood` (MALIN-style: each level has its own probability and rate multiplier; the first level
+    /// fitted is the reference with multiplier 1; 1 = none). Combined with `--ml-loss-levels` as a grid of classes (at most 16); not
+    /// combined with the gamma options. Several starting points are tried and the best fit kept.
+    #[arg(long, default_value = "1")]
+    ml_gain_levels: usize,
+
+    /// Free loss levels (see `--ml-gain-levels`); MALIN's published runs use two loss levels and one gain level.
+    #[arg(long, default_value = "1")]
+    ml_loss_levels: usize,
+
+    /// How `-m likelihood` models positions that were never seen: `per-pattern` (default) conditions each position on being seen given its
+    /// own pattern of missing cells; `global` is MALIN's correction (one probability that a position has no intron at any genome). They
+    /// agree when no cell is missing.
+    #[arg(long, default_value = "per-pattern", value_parser = ["per-pattern", "global"])]
+    ml_never_seen: String,
+
+    /// With `-m likelihood`, add per-position evidence for convergent insertion to `likelihood_sites.tsv`: the posterior probability
+    /// of no, one, or two or more independent origins (a root presence or a gain) and the log likelihood ratio of two or more against
+    /// one (SPEC §5.6).
+    #[arg(long)]
+    ml_origins: bool,
+
+    /// With `-m likelihood`, a TSV (header `site`, `taxon`, `p_present`) of cells whose presence is only probable. The model treats such
+    /// a cell as "present" with that probability instead of a hard 0, 1 or `?` (SPEC §5.6b). Sites are `<column>:<phase>` labels as in
+    /// `matrix.tsv`; the other methods do not see these cells.
+    #[arg(long, value_name = "FILE")]
+    ml_soft_evidence: Option<PathBuf>,
+
+    /// With rate classes, do not fix the larger root branch to "no change" (as MALIN does not). The two root branches are then only
+    /// weakly identifiable, so the fit is slower and the root branches poorly determined; the likelihood can be slightly higher.
+    #[arg(long)]
+    ml_free_root_branch: bool,
 
     /// Outgroup tip name(s) used to root the tree. Repeatable.
     #[arg(long = "outgroup", value_name = "NAME")]
@@ -1151,6 +1251,16 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     seed: a.ml_seed,
                     categories: a.ml_rate_categories,
                     shape: a.ml_gamma_shape,
+                    gain_categories: a.ml_gain_categories,
+                    gain_shape: a.ml_gain_shape,
+                    loss_categories: a.ml_loss_categories,
+                    loss_shape: a.ml_loss_shape,
+                    gain_levels: a.ml_gain_levels,
+                    loss_levels: a.ml_loss_levels,
+                    free_root_branch: a.ml_free_root_branch,
+                    never_seen_global: a.ml_never_seen == "global",
+                    origins: a.ml_origins,
+                    soft_evidence: a.ml_soft_evidence.clone(),
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1185,6 +1295,16 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     seed: a.ml_seed,
                     categories: a.ml_rate_categories,
                     shape: a.ml_gamma_shape,
+                    gain_categories: a.ml_gain_categories,
+                    gain_shape: a.ml_gain_shape,
+                    loss_categories: a.ml_loss_categories,
+                    loss_shape: a.ml_loss_shape,
+                    gain_levels: a.ml_gain_levels,
+                    loss_levels: a.ml_loss_levels,
+                    free_root_branch: a.ml_free_root_branch,
+                    never_seen_global: a.ml_never_seen == "global",
+                    origins: a.ml_origins,
+                    soft_evidence: a.ml_soft_evidence.clone(),
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1239,6 +1359,16 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     seed: a.ml_seed,
                     categories: a.ml_rate_categories,
                     shape: a.ml_gamma_shape,
+                    gain_categories: a.ml_gain_categories,
+                    gain_shape: a.ml_gain_shape,
+                    loss_categories: a.ml_loss_categories,
+                    loss_shape: a.ml_loss_shape,
+                    gain_levels: a.ml_gain_levels,
+                    loss_levels: a.ml_loss_levels,
+                    free_root_branch: a.ml_free_root_branch,
+                    never_seen_global: a.ml_never_seen == "global",
+                    origins: a.ml_origins,
+                    soft_evidence: a.ml_soft_evidence.clone(),
                     tol: a.ml_tol,
                     param_tol: a.ml_param_tol,
                 },
@@ -1304,6 +1434,16 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 seed: a.ml_seed,
                 categories: a.ml_rate_categories,
                 shape: a.ml_gamma_shape,
+                gain_categories: a.ml_gain_categories,
+                gain_shape: a.ml_gain_shape,
+                loss_categories: a.ml_loss_categories,
+                loss_shape: a.ml_loss_shape,
+                gain_levels: a.ml_gain_levels,
+                loss_levels: a.ml_loss_levels,
+                free_root_branch: a.ml_free_root_branch,
+                never_seen_global: a.ml_never_seen == "global",
+                origins: a.ml_origins,
+                soft_evidence: a.ml_soft_evidence.clone(),
                 tol: a.ml_tol,
                 param_tol: a.ml_param_tol,
             },
@@ -1345,6 +1485,16 @@ struct MlOpts {
     seed: u64,
     categories: usize,
     shape: Option<f64>,
+    gain_categories: usize,
+    gain_shape: Option<f64>,
+    loss_categories: usize,
+    loss_shape: Option<f64>,
+    gain_levels: usize,
+    loss_levels: usize,
+    free_root_branch: bool,
+    never_seen_global: bool,
+    origins: bool,
+    soft_evidence: Option<PathBuf>,
     tol: f64,
     param_tol: f64,
 }
@@ -1536,18 +1686,43 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
                 o.min_taxa
             );
         }
-        let (sens, spec) = read_error_rates(o.ml.error_rates.as_deref(), &data)?;
+        let soft_data;
+        let data: &intronfate_core::score::ScoringData = match o.ml.soft_evidence.as_deref() {
+            Some(path) => {
+                let mut d = data.clone();
+                let entries = read_soft_evidence(path)?;
+                let n = intronfate_core::score::apply_soft_evidence(&mut d, &entries)
+                    .map_err(|e| anyhow::anyhow!("{}: {e}", path.display()))?;
+                notes.push(format!("likelihood soft evidence on {n} cell(s)"));
+                soft_data = d;
+                &soft_data
+            }
+            None => &data,
+        };
+        let (sens, spec) = read_error_rates(o.ml.error_rates.as_deref(), data)?;
         let opt = intronfate_core::likelihood::FitOptions {
             max_iter: o.ml.max_iter,
             categories: o.ml.categories.max(1),
             shape: o.ml.shape,
+            gain_categories: o.ml.gain_categories.max(1),
+            gain_shape: o.ml.gain_shape,
+            loss_categories: o.ml.loss_categories.max(1),
+            loss_shape: o.ml.loss_shape,
+            free_gain_levels: o.ml.gain_levels.max(1),
+            free_loss_levels: o.ml.loss_levels.max(1),
+            free_root_branch: o.ml.free_root_branch,
+            never_seen: if o.ml.never_seen_global {
+                intronfate_core::likelihood::NeverSeen::Global
+            } else {
+                intronfate_core::likelihood::NeverSeen::PerPattern
+            },
             tol: o.ml.tol,
             param_tol: o.ml.param_tol,
             trace: verbose > 1,
             ..Default::default()
         };
         let (fit, err, settled) =
-            intronfate_core::likelihood::fit_with_precision(&data, &sens, &spec, &opt)
+            intronfate_core::likelihood::fit_with_precision(data, &sens, &spec, &opt)
                 .map_err(|e| anyhow::anyhow!("likelihood: {e}"))?;
         if !settled {
             eprintln!("warn: likelihood: the false-intron rates converted from precision did not settle in 20 rounds");
@@ -1561,7 +1736,7 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         let boot = if o.ml.bootstrap > 0 {
             Some(
                 intronfate_core::likelihood::bootstrap(
-                    &data,
+                    data,
                     &err,
                     &opt,
                     &fit.params,
@@ -1573,10 +1748,14 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
         } else {
             None
         };
-        tables::likelihood_branch_table(&data, &fit, boot.as_ref())
+        tables::likelihood_branch_table(data, &fit, boot.as_ref())
             .write(dir.join("likelihood_branches.tsv"))?;
-        tables::likelihood_tip_table(&data, &err, &fit).write(dir.join("likelihood_tips.tsv"))?;
-        tables::likelihood_site_table(&data, &fit).write(dir.join("likelihood_sites.tsv"))?;
+        tables::likelihood_tip_table(data, &err, &fit).write(dir.join("likelihood_tips.tsv"))?;
+        let origins =
+            o.ml.origins
+                .then(|| intronfate_core::likelihood::origin_posteriors(data, &err, &fit.params));
+        tables::likelihood_site_table(data, &fit, origins.as_deref())
+            .write(dir.join("likelihood_sites.tsv"))?;
         let root = data.tree.root();
         let gains: f64 = (0..data.tree.len())
             .filter(|&v| v != root && fit.nodes[v].has_data)
@@ -1617,6 +1796,55 @@ fn score_matrix(m: &SiteMatrix, dir: &Path, o: &ScoreOpts, verbose: u8) -> Resul
                     if o.ml.shape.is_some() { " (fixed)" } else { "" }
                 ),
             ));
+        }
+        if o.ml.never_seen_global {
+            summary.push(("ml_never_seen", "global (MALIN's correction)".to_string()));
+        }
+        if fit.params.rates.is_free() {
+            let fmt = |lv: &[(f64, f64)]| {
+                lv.iter()
+                    .map(|(p, m)| format!("{p:.4}@{m:.4}"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            };
+            let (g, l) = (&fit.params.rates.free_gain, &fit.params.rates.free_loss);
+            summary.push(("ml_gain_levels", g.len().max(1).to_string()));
+            summary.push(("ml_loss_levels", l.len().max(1).to_string()));
+            if g.len() > 1 {
+                summary.push(("ml_gain_level_prob_at_mult", fmt(g)));
+            }
+            if l.len() > 1 {
+                summary.push(("ml_loss_level_prob_at_mult", fmt(l)));
+            }
+        }
+        if fit.params.rates.is_separate() {
+            for (key, k, shape, fixed) in [
+                (
+                    "gain",
+                    fit.params.rates.gain_categories,
+                    fit.params.rates.gain_shape,
+                    o.ml.gain_shape.is_some(),
+                ),
+                (
+                    "loss",
+                    fit.params.rates.loss_categories,
+                    fit.params.rates.loss_shape,
+                    o.ml.loss_shape.is_some(),
+                ),
+            ] {
+                let (kk, ks) = if key == "gain" {
+                    ("ml_gain_categories", "ml_gain_shape")
+                } else {
+                    ("ml_loss_categories", "ml_loss_shape")
+                };
+                summary.push((kk, k.to_string()));
+                if k > 1 {
+                    summary.push((
+                        ks,
+                        format!("{shape:.4}{}", if fixed { " (fixed)" } else { "" }),
+                    ));
+                }
+            }
         }
         summary.push(("ml_expected_gains", format!("{gains:.2}")));
         summary.push(("ml_expected_losses", format!("{losses:.2}")));
@@ -1733,6 +1961,44 @@ fn resolve_methods(requested: &[String]) -> Result<Vec<Method>> {
 
 /// Per-tip annotation error for `-m likelihood` from a TSV (`taxon`, `sensitivity`, and `false_rate` or `precision`).
 /// Unlisted taxa are error-free. Precision is converted to a false-intron rate inside the fit (`fit_with_precision`).
+/// Read `--ml-soft-evidence`: a TSV with the columns `site`, `taxon` and `p_present` (by header name; `#` lines are skipped).
+fn read_soft_evidence(path: &std::path::Path) -> anyhow::Result<Vec<(String, String, f64)>> {
+    let text = std::fs::read_to_string(path)
+        .map_err(|e| anyhow::anyhow!("cannot read {}: {e}", path.display()))?;
+    let mut lines = text
+        .lines()
+        .filter(|l| !l.starts_with('#') && !l.trim().is_empty());
+    let head: Vec<&str> = lines
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("{} is empty", path.display()))?
+        .split('\t')
+        .collect();
+    let col = |n: &str| {
+        head.iter()
+            .position(|h| *h == n)
+            .ok_or_else(|| anyhow::anyhow!("{}: no `{n}` column", path.display()))
+    };
+    let (si, ti, pi) = (col("site")?, col("taxon")?, col("p_present")?);
+    let mut out = Vec::new();
+    for (k, l) in lines.enumerate() {
+        let f: Vec<&str> = l.split('\t').collect();
+        let get = |i: usize| {
+            f.get(i)
+                .copied()
+                .ok_or_else(|| anyhow::anyhow!("{}: row {} is short", path.display(), k + 1))
+        };
+        let p: f64 = get(pi)?.trim().parse().map_err(|_| {
+            anyhow::anyhow!(
+                "{}: row {}: p_present is not a number",
+                path.display(),
+                k + 1
+            )
+        })?;
+        out.push((get(si)?.to_string(), get(ti)?.to_string(), p));
+    }
+    Ok(out)
+}
+
 fn read_error_rates(
     path: Option<&Path>,
     data: &ScoringData,
@@ -2220,6 +2486,16 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_gain_categories: 1,
+            ml_gain_shape: None,
+            ml_loss_categories: 1,
+            ml_loss_shape: None,
+            ml_gain_levels: 1,
+            ml_loss_levels: 1,
+            ml_free_root_branch: false,
+            ml_never_seen: "per-pattern".to_string(),
+            ml_origins: false,
+            ml_soft_evidence: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],
@@ -2261,6 +2537,16 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_gain_categories: 1,
+            ml_gain_shape: None,
+            ml_loss_categories: 1,
+            ml_loss_shape: None,
+            ml_gain_levels: 1,
+            ml_loss_levels: 1,
+            ml_free_root_branch: false,
+            ml_never_seen: "per-pattern".to_string(),
+            ml_origins: false,
+            ml_soft_evidence: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2300,6 +2586,16 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_gain_categories: 1,
+            ml_gain_shape: None,
+            ml_loss_categories: 1,
+            ml_loss_shape: None,
+            ml_gain_levels: 1,
+            ml_loss_levels: 1,
+            ml_free_root_branch: false,
+            ml_never_seen: "per-pattern".to_string(),
+            ml_origins: false,
+            ml_soft_evidence: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec![],
@@ -2369,6 +2665,16 @@ mod tests {
             ml_seed: 1,
             ml_rate_categories: 1,
             ml_gamma_shape: None,
+            ml_gain_categories: 1,
+            ml_gain_shape: None,
+            ml_loss_categories: 1,
+            ml_loss_shape: None,
+            ml_gain_levels: 1,
+            ml_loss_levels: 1,
+            ml_free_root_branch: false,
+            ml_never_seen: "per-pattern".to_string(),
+            ml_origins: false,
+            ml_soft_evidence: None,
             ml_tol: 1e-6,
             ml_param_tol: 1e-7,
             outgroups: vec!["outgroup".into()],

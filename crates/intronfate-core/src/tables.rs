@@ -594,16 +594,45 @@ pub fn likelihood_tip_table(
 }
 
 /// Conditional log-likelihood per position (for site-wise tree comparisons, e.g. CONSEL/AU) and its posterior mean rate multiplier
-/// (1 without rate classes).
-pub fn likelihood_site_table(data: &ScoringData, r: &crate::likelihood::FitResult) -> Table {
-    let mut t = Table::with_capacity(&["site", "log_lik", "rate"], data.characters.len());
-    for ((ch, l), x) in data
-        .characters
-        .iter()
-        .zip(&r.site_log_lik)
-        .zip(&r.site_rate)
-    {
-        t.push(vec![ch.label.clone(), format!("{l:.6}"), format!("{x:.4}")]);
+/// (1 without rate classes). With separate gain and loss factors the posterior means of the two are written as `gain_rate` and
+/// `loss_rate`, and `rate` is their mean.
+pub fn likelihood_site_table(
+    data: &ScoringData,
+    r: &crate::likelihood::FitResult,
+    origins: Option<&[crate::likelihood::OriginPosterior]>,
+) -> Table {
+    let separate = r.params.rates.is_separate() || r.params.rates.is_free();
+    let mut header: Vec<&str> = if separate {
+        vec!["site", "log_lik", "rate", "gain_rate", "loss_rate"]
+    } else {
+        vec!["site", "log_lik", "rate"]
+    };
+    if origins.is_some() {
+        header.extend([
+            "p_no_origin",
+            "p_one_origin",
+            "p_multi_origin",
+            "ln_lr_multi",
+        ]);
+    }
+    let mut t = Table::with_capacity(&header, data.characters.len());
+    for (i, ch) in data.characters.iter().enumerate() {
+        let mut row = vec![
+            ch.label.clone(),
+            format!("{:.6}", r.site_log_lik[i]),
+            format!("{:.4}", r.site_rate[i]),
+        ];
+        if separate {
+            row.push(format!("{:.4}", r.site_gain_rate[i]));
+            row.push(format!("{:.4}", r.site_loss_rate[i]));
+        }
+        if let Some(o) = origins {
+            row.push(format!("{:.6}", o[i].p_none));
+            row.push(format!("{:.6}", o[i].p_one));
+            row.push(format!("{:.6}", o[i].p_multi));
+            row.push(format!("{:.4}", o[i].ln_lr_multi));
+        }
+        t.push(row);
     }
     t
 }

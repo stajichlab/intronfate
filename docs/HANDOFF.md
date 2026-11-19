@@ -31,11 +31,10 @@ Analyses for a separate research project (formerly `bench/V8`–`V15`) moved to 
 
 In rough priority order. Items marked SPEC are described there.
 
-1. **Separate gain and loss rate factors** in the likelihood model (SPEC §5.6, §12 item 5).
-2. **Validate the likelihood fit against MALIN's `*.rates`** output on MALIN's test data (SPEC §6b item 3).
-3. **EM `--ml-max-iter` can overshoot by one acceleration cycle**: the limit is checked per SQUAREM cycle, so a fit may report a few
-   E-steps more than the limit. Harmless; document or enforce exactly.
-4. **`--flank` default (1)** is an engineering default, not a tuned one (SPEC §2, §12 item 6). Tune against MALIN's test data.
+1. ~~Separate gain and loss rate factors~~ and ~~free class levels like MALIN's~~ — done (SPEC §5.5c, §5.5d; `--ml-gain-categories` etc., `--ml-gain-levels`, `--ml-loss-levels`, `--ml-free-root-branch`).
+2. ~~Validate the likelihood fit against MALIN's `*.rates`~~ — done ([L1](../bench/L1_malin_likelihood/README.md)): constant rates (within 0.002), Rogozin rate variation (within 0.07), and `Chromo23` rate variation, which reproduces MALIN's printed log-likelihood (-28430.9249) to four decimals at MALIN's parameters once the same never-seen correction is used (`--ml-never-seen global`); this tool's maximum is 0.009 higher.
+3. ~~EM `--ml-max-iter` overshoot~~ — fixed: the limit is exact (plain EM steps near the limit; test `max_iter_is_an_exact_limit_on_e_steps`).
+4. ~~`--flank` default~~ — examined ([F1](../bench/F1_flank_tuning/README.md)): MALIN's test data has no alignments, so it was done on nine fungal genomes; the absence rate of conserved introns does not depend on the distance to a gap, so a larger flank only discards data. Kept at 1.
 5. **SQL/Chado/Ensembl annotation sources** (`AnnotationSource` seam exists; needs a schema decision; SPEC §12 item 4).
 6. **HOWTO Docker route is untested** (the page says so; D1 used Apptainer/Singularity and conda is not run by the test either).
 7. **MALIN FASTA headers** (`/organism=` + `{i … i}`) as an `AnnotationSource`, and a site-by-site comparison with MALIN's own Dollo
@@ -45,10 +44,12 @@ In rough priority order. Items marked SPEC are described there.
 9. **Stdin/stdout** (`--gff -`, `-o -`); Python bindings only if needed (SPEC §12 items 7–8).
 10. **Dollo reporting ideas**: `gain_ambiguous` when all-missing lineages sit beside the MRCA; per-branch "assessable sites"
     denominators.
-11. **Suspected, unconfirmed** (each needs a test before a fix): a phase-0 intron right before the stop codon dropped as out of range;
-    an intron inside a skipped 5' partial codon not listed when the file has no exon rows; Stockholm `#=GS SF/SE` may not be a real
-    convention (Pfam uses `name/start-end`); FlyBase `Derives_from` protein links; GTF `;` inside quoted values; a MALIN table that
-    uses `1` for every presence is rejected at phase-0 sites.
+11. **Suspected bugs, checked** (each with a test): resolved: GTF `;` inside quoted values (attributes are split quote-aware); a 0/1 MALIN
+    table with `#MAP` lines (MALIN treats `1`, `2`, `3` alike; the phase comes from `alipos` unless the table uses `2`/`3`); an intron inside
+    the skipped 5' partial codon, which without exon rows vanished from the intron list and shifted later `intron_rank`s (fixed). Not bugs:
+    an intron between the last residue and the stop codon is reported (`site_beyond_protein_end`, `tail_sites_dropped`) and set aside by
+    design; `--clamp-tail` places it one codon early (documented as approximate); Stockholm `SF/SE` is this tool's own convention, now
+    stated as such (SPEC §3, USAGE). Still unchecked: FlyBase `Derives_from` protein links (no FlyBase file at hand).
 
 ## Settled (see SPEC; do not relitigate without a reason)
 

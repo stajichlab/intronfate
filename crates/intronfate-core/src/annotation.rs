@@ -666,6 +666,8 @@ fn finalize_tx(
 
     // --- coding structure -------------------------------------------------------------
     let mut coding_gaps: Vec<(u64, u64, u32)> = Vec::new(); // (lo, hi, cds_offset)
+                                                            // Gaps inside the skipped 5' partial codon: no protein position, but still introns of the transcript (they come first, in order).
+    let mut unprojectable_gaps: Vec<(u64, u64)> = Vec::new();
     let mut cds_len = 0u64;
     if !acc.cds.is_empty() {
         let mut segs = order_segments(&acc.cds, strand);
@@ -689,13 +691,16 @@ fn finalize_tx(
                 if hi >= lo {
                     match cum.checked_sub(skip) {
                         Some(off) => coding_gaps.push((lo, hi, off as u32)),
-                        None => note(
-                            &mut diags,
-                            Level::Warn,
-                            "intron_before_first_codon",
-                            id,
-                            "intron lies inside the skipped 5' partial codon, not projectable",
-                        ),
+                        None => {
+                            unprojectable_gaps.push((lo, hi));
+                            note(
+                                &mut diags,
+                                Level::Warn,
+                                "intron_before_first_codon",
+                                id,
+                                "intron lies inside the skipped 5' partial codon, not projectable",
+                            )
+                        }
                     }
                 }
             }
@@ -713,7 +718,11 @@ fn finalize_tx(
         }
         g
     } else {
-        coding_gaps.iter().map(|&(lo, hi, _)| (lo, hi)).collect()
+        unprojectable_gaps
+            .iter()
+            .copied()
+            .chain(coding_gaps.iter().map(|&(lo, hi, _)| (lo, hi)))
+            .collect()
     };
 
     // A coding gap that is not an exon gap means CDS and exon features disagree; keep it so the
@@ -1376,6 +1385,45 @@ c\tt\tCDS\t101\t112\t.\t+\t0\tParent=pp;protein_id=PP\n",
         assert_eq!(tx.introns[0].cds_offset, Some(9));
         assert_eq!(tx.frame_mismatches, 0, "{:?}", s.diagnostics.retained());
         assert_eq!(tx.cds_len, 21, "22 CDS bases minus 1 skipped");
+    }
+
+    #[test]
+    fn an_intron_inside_the_skipped_partial_codon_is_still_counted_in_the_intron_ranks() {
+        // The first CDS feature is 1 base with phase 2: both bases of the cut-off codon are not all in this feature, so the intron after it
+        // lies inside the skipped 5' partial codon and cannot be projected (warned). Without exon rows it must still occupy a rank, so the
+        // next intron is rank 1, as it is when exon rows are given.
+        let cds_only = load(
+            "c\tt\tCDS\t1\t1\t.\t+\t2\tParent=pp;protein_id=PP\n\
+c\tt\tCDS\t101\t110\t.\t+\t1\tParent=pp;protein_id=PP\n\
+c\tt\tCDS\t201\t212\t.\t+\t0\tParent=pp;protein_id=PP\n",
+        );
+        let tx = &cds_only.transcripts[0];
+        assert_eq!(tx.introns.len(), 2, "{:?}", tx.introns);
+        assert_eq!(tx.introns[0].rank, 0);
+        assert_eq!(tx.introns[0].cds_offset, None);
+        assert_eq!(tx.introns[1].rank, 1);
+        assert!(tx.introns[1].cds_offset.is_some());
+        assert_eq!(
+            cds_only.diagnostics.count_of("intron_before_first_codon"),
+            1
+        );
+        let with_exons = load(
+            "c\tt\texon\t1\t1\t.\t+\t.\tParent=pp\nc\tt\texon\t101\t110\t.\t+\t.\tParent=pp\nc\tt\texon\t201\t212\t.\t+\t.\tParent=pp\n\
+c\tt\tCDS\t1\t1\t.\t+\t2\tParent=pp;protein_id=PP\nc\tt\tCDS\t101\t110\t.\t+\t1\tParent=pp;protein_id=PP\n\
+c\tt\tCDS\t201\t212\t.\t+\t0\tParent=pp;protein_id=PP\n",
+        );
+        let tw = &with_exons.transcripts[0];
+        assert_eq!(
+            tw.introns
+                .iter()
+                .map(|i| (i.rank, i.cds_offset))
+                .collect::<Vec<_>>(),
+            tx.introns
+                .iter()
+                .map(|i| (i.rank, i.cds_offset))
+                .collect::<Vec<_>>(),
+            "with and without exon rows the introns agree"
+        );
     }
 
     #[test]

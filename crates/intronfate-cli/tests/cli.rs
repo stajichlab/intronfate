@@ -1488,6 +1488,135 @@ fn likelihood_writes_its_tables_and_reads_error_rates() {
     let o = run_s(&a);
     assert!(!o.status.success() && String::from_utf8_lossy(&o.stderr).contains("gamma shape"));
 
+    // separate gain and loss classes: the grid, both shapes (one fixed), the extra site columns, and the refusal to mix with shared classes
+    let out = w.join("separate");
+    let mut a = base(&out);
+    a.extend([
+        "--ml-gain-categories".into(),
+        "2".into(),
+        "--ml-gain-shape".into(),
+        "0.8".into(),
+        "--ml-loss-categories".into(),
+        "3".into(),
+        "--ml-param-tol".into(),
+        "1e-5".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let summary = fs::read_to_string(out.join("family.aln/summary_score.tsv")).unwrap();
+    assert!(
+        summary.contains("ml_gain_categories\t2\n")
+            && summary.contains("ml_gain_shape\t0.8000 (fixed)")
+            && summary.contains("ml_loss_categories\t3\n")
+            && summary.contains("ml_loss_shape\t")
+            && !summary.contains("ml_gamma_shape"),
+        "{summary}"
+    );
+    let sites = fs::read_to_string(out.join("family.aln/likelihood_sites.tsv")).unwrap();
+    assert!(
+        sites.starts_with("site\tlog_lik\trate\tgain_rate\tloss_rate\n"),
+        "{sites}"
+    );
+    assert_eq!(sites.lines().count(), 3);
+    let mut a = base(&w.join("separate_mixed"));
+    a.extend([
+        "--ml-rate-categories".into(),
+        "2".into(),
+        "--ml-loss-categories".into(),
+        "2".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(
+        !o.status.success() && String::from_utf8_lossy(&o.stderr).contains("cannot be combined")
+    );
+
+    // free levels (MALIN-style classes): summary lines, the factor columns, and the refusal to mix with gamma classes
+    let out = w.join("levels");
+    let mut a = base(&out);
+    a.extend([
+        "--ml-loss-levels".into(),
+        "2".into(),
+        "--ml-max-iter".into(), // two positions: the fit is flat, so cap it
+        "300".into(),
+        "--ml-free-root-branch".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let summary = fs::read_to_string(out.join("family.aln/summary_score.tsv")).unwrap();
+    assert!(
+        summary.contains("ml_gain_levels\t1\n")
+            && summary.contains("ml_loss_levels\t2\n")
+            && summary.contains("ml_loss_level_prob_at_mult\t")
+            && !summary.contains("ml_gain_level_prob_at_mult"),
+        "{summary}"
+    );
+    let sites = fs::read_to_string(out.join("family.aln/likelihood_sites.tsv")).unwrap();
+    assert!(
+        sites.starts_with("site\tlog_lik\trate\tgain_rate\tloss_rate\n"),
+        "{sites}"
+    );
+    let mut a = base(&w.join("levels_mixed"));
+    a.extend([
+        "--ml-loss-levels".into(),
+        "2".into(),
+        "--ml-rate-categories".into(),
+        "2".into(),
+    ]);
+    let o = run_s(&a);
+    assert!(
+        !o.status.success() && String::from_utf8_lossy(&o.stderr).contains("cannot be combined")
+    );
+
+    // MALIN's never-seen correction
+    let out = w.join("global");
+    let mut a = base(&out);
+    a.extend(["--ml-never-seen".into(), "global".into()]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert!(summary_has(
+        &out.join("family.aln"),
+        "ml_never_seen\tglobal"
+    ));
+    let mut a = base(&w.join("never_bad"));
+    a.extend(["--ml-never-seen".into(), "sometimes".into()]);
+    assert!(!run_s(&a).status.success());
+
+    // convergent-insertion evidence: extra columns whose three probabilities sum to one
+    let out = w.join("origins");
+    let mut a = base(&out);
+    a.push("--ml-origins".into());
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let tsv = fs::read_to_string(out.join("family.aln").join("likelihood_sites.tsv")).unwrap();
+    let mut lines = tsv.lines();
+    let head: Vec<&str> = lines.next().unwrap().split('\t').collect();
+    let at = |n: &str| head.iter().position(|h| *h == n).unwrap();
+    let (i0, i1, i2, ilr) = (
+        at("p_no_origin"),
+        at("p_one_origin"),
+        at("p_multi_origin"),
+        at("ln_lr_multi"),
+    );
+    let mut n = 0;
+    for l in lines {
+        let f: Vec<&str> = l.split('\t').collect();
+        let sum: f64 = [i0, i1, i2]
+            .iter()
+            .map(|&i| f[i].parse::<f64>().unwrap())
+            .sum();
+        assert!((sum - 1.0).abs() < 1e-4, "{l}");
+        assert!(f[ilr].parse::<f64>().unwrap().is_finite(), "{l}");
+        n += 1;
+    }
+    assert!(n > 0);
+    let plain = fs::read_to_string(
+        w.join("global")
+            .join("family.aln")
+            .join("likelihood_sites.tsv"),
+    )
+    .unwrap();
+    assert!(!plain.lines().next().unwrap().contains("p_multi_origin"));
+
     // refusals: --min-taxa > 1, a bad file
     let mut a = base(&w.join("mt"));
     a.extend(["--min-taxa".into(), "2".into()]);
@@ -1498,4 +1627,101 @@ fn likelihood_writes_its_tables_and_reads_error_rates() {
     a.extend(["--error-rates".into(), ef.to_str().unwrap().into()]);
     let o = run_s(&a);
     assert!(!o.status.success() && String::from_utf8_lossy(&o.stderr).contains("false_rate"));
+}
+
+#[test]
+fn likelihood_takes_soft_evidence_from_a_table() {
+    let w = scratch("soft_evidence");
+    let q = example("01_quickstart");
+    let base = |out: &Path| -> Vec<String> {
+        [
+            "analyze",
+            "--gff",
+            q.join("family.gff3").to_str().unwrap(),
+            "-p",
+            q.join("proteins.faa").to_str().unwrap(),
+            "--msa",
+            q.join("family.aln.fasta").to_str().unwrap(),
+            "-t",
+            q.join("family.nwk").to_str().unwrap(),
+            "-m",
+            "likelihood",
+            "--ml-max-iter",
+            "300",
+            "-o",
+            out.to_str().unwrap(),
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
+    };
+    let run_s = |v: &[String]| run(&v.iter().map(String::as_str).collect::<Vec<_>>());
+    let lnl = |d: &Path| -> f64 {
+        fs::read_to_string(d.join("summary_score.tsv"))
+            .unwrap()
+            .lines()
+            .find(|l| l.starts_with("ml_log_likelihood"))
+            .unwrap()
+            .split('\t')
+            .nth(1)
+            .unwrap()
+            .parse()
+            .unwrap()
+    };
+    let out = w.join("plain");
+    let o = run_s(&base(&out));
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let sites = fs::read_to_string(out.join("family.aln").join("likelihood_sites.tsv")).unwrap();
+    let site = sites
+        .lines()
+        .nth(1)
+        .unwrap()
+        .split('\t')
+        .next()
+        .unwrap()
+        .to_string();
+
+    // p_present 1 for a cell that already is present changes nothing; 0.5 does
+    let f = w.join("soft.tsv");
+    fs::write(
+        &f,
+        format!("# a comment\nsite\ttaxon\tp_present\n{site}\tA\t0.5\n"),
+    )
+    .unwrap();
+    let out2 = w.join("soft");
+    let mut a = base(&out2);
+    a.extend(["--ml-soft-evidence".into(), f.to_str().unwrap().into()]);
+    let o = run_s(&a);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let (l0, l1) = (lnl(&out.join("family.aln")), lnl(&out2.join("family.aln")));
+    assert!(
+        l0.is_finite() && l1.is_finite() && (l0 - l1).abs() > 1e-6,
+        "{l0} {l1}"
+    );
+
+    for (body, why) in [
+        (
+            format!("site\ttaxon\tp_present\n{site}\tNOBODY\t0.5\n"),
+            "no taxon",
+        ),
+        (
+            "site\ttaxon\tp_present\n99999:9\tA\t0.5\n".to_string(),
+            "no site",
+        ),
+        (
+            format!("site\ttaxon\tp_present\n{site}\tA\t1.5\n"),
+            "not in [0, 1]",
+        ),
+        (format!("site\ttaxon\n{site}\tA\n"), "no `p_present` column"),
+    ] {
+        fs::write(&f, body).unwrap();
+        let mut a = base(&w.join("bad"));
+        a.extend(["--ml-soft-evidence".into(), f.to_str().unwrap().into()]);
+        let o = run_s(&a);
+        assert!(
+            !o.status.success() && String::from_utf8_lossy(&o.stderr).contains(why),
+            "{why}: {}",
+            String::from_utf8_lossy(&o.stderr)
+        );
+    }
 }

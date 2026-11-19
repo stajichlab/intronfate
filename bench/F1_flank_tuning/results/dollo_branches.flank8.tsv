@@ -1,0 +1,18 @@
+branch	node	n_tips	gains	losses	tips
+root	0	9	2494	0	Spunctatus,Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidulans
+Spunctatus	1	1	1606	0	Spunctatus
+Mmucedo,Smaydis,Ccinerea,Cneoformans…(8 tips)	2	8	494	0	Mmucedo,Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidulans
+Mmucedo	3	1	645	923	Mmucedo
+Smaydis,Ccinerea,Cneoformans,Spombe…(7 tips)	4	7	148	261	Smaydis,Ccinerea,Cneoformans,Spombe,Scerevisiae,Ncrassa,Anidulans
+Smaydis,Ccinerea,Cneoformans	5	3	23	166	Smaydis,Ccinerea,Cneoformans
+Smaydis	6	1	92	2481	Smaydis
+Ccinerea,Cneoformans	7	2	616	5	Ccinerea,Cneoformans
+Ccinerea	8	1	1150	285	Ccinerea
+Cneoformans	9	1	1294	623	Cneoformans
+Spombe,Scerevisiae,Ncrassa,Anidulans	10	4	49	1544	Spombe,Scerevisiae,Ncrassa,Anidulans
+Spombe	11	1	197	602	Spombe
+Scerevisiae,Ncrassa,Anidulans	12	3	5	316	Scerevisiae,Ncrassa,Anidulans
+Scerevisiae	13	1	5	871	Scerevisiae
+Ncrassa,Anidulans	14	2	297	43	Ncrassa,Anidulans
+Ncrassa	15	1	267	385	Ncrassa
+Anidulans	16	1	411	85	Anidulans
