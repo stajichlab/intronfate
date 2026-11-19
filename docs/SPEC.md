@@ -455,16 +455,17 @@ them. `--ml-soft-evidence FILE` supplies them from a table; nothing in the tool 
 Validated against the uncorrected likelihood written as the mixture of the hard cells (two soft cells, four terms), the range of the
 likelihood between the two hard versions, errors for unknown sites, taxa and out-of-range probabilities, and a CLI run.
 
-Planned next, in the order the sources of uncertainty can be modelled: **column ambiguity** (an intron beside an indel could sit in any column of the
-gap run; weights over those columns instead of masking the cell) and **annotation boundary uncertainty** (needs a per-intron confidence
-from the annotation source).
+Other sources of the probabilities: **column ambiguity** (an intron beside an indel could sit in any column of the gap run) was measured in
+[F2](../bench/F2_column_ambiguity/README.md) and set aside: short gaps are about 2% of cells, and long gaps (most missing data) are
+regions with no homologous sequence. **Annotation boundary uncertainty** needs a per-intron confidence from the annotation source, which
+most GFFs lack.
 
 ### 5.6c Planned
 
 - ~~**Free class probabilities and multipliers**~~ — done (§5.5d).
 - ~~**Ancient versus convergent introns**~~ — done (`--ml-origins`, §5.6).
 - **Probabilistic projection**: the likelihood takes soft cell evidence (§5.6b). Remaining: produce the probabilities from the projection
-  (column ambiguity beside indels; annotation boundary confidence) and carry them through `matrix.tsv`.
+  (annotation boundary confidence; column ambiguity was measured and set aside, F2) and carry them through `matrix.tsv`.
 
 Done and removed from this list: the bias correction for gappy, poorly aligned columns (per-cell observability with the flank rule, §2).
 

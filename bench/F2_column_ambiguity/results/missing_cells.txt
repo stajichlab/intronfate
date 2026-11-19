@@ -1,0 +1,38 @@
+cells 141273  missing 17251 (0.122)
+  short      2492  0.144 of missing
+  long      10571  0.613 of missing
+  edge       2612  0.151 of missing
+  other      1567  0.091 of missing
+  no_row        9  0.001 of missing
+sites with a carrier and at least one short-gap missing cell: 929
+gap-run length	missing cells
+1	557
+2	433
+3	423
+4	421
+5	321
+6	337
+7	285
+8	268
+9	273
+10	232
+11	199
+12	236
+13	186
+14	222
+15	209
+16	181
+17	158
+18	118
+19	169
+20	143
+21	156
+22	130
+23	132
+24	122
+25	139
+26	116
+27	116
+28	132
+29	93
+30	6556
