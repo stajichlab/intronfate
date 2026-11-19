@@ -2616,6 +2616,138 @@ mod tests {
         );
     }
 
+    /// Simulate columns with the true number of origins of each (a root presence plus every 0 -> 1 change), keeping columns that
+    /// show an intron. No missing cells, so the only uncertainty is the model's own.
+    fn simulate_origins(
+        t: &Tree,
+        p: &Params,
+        err: &ErrorRates,
+        n: usize,
+        seed: u64,
+    ) -> Vec<(Vec<u8>, usize)> {
+        let tips = t.tips();
+        let mut rng = Rng(seed);
+        let order: Vec<NodeId> = t.postorder().iter().rev().copied().collect();
+        let mut out = Vec::new();
+        while out.len() < n {
+            let mut st = vec![0u8; t.len()];
+            let mut origins = 0;
+            for &v in &order {
+                st[v] = match t.parent(v) {
+                    None => {
+                        let s = (rng.f() < p.root_present) as u8;
+                        origins += s as usize;
+                        s
+                    }
+                    Some(u) if st[u] == 0 => {
+                        let g = (rng.f() < p.gain[v]) as u8;
+                        origins += g as usize;
+                        g
+                    }
+                    Some(_) => (rng.f() >= p.loss[v]) as u8,
+                };
+            }
+            let col: Vec<u8> = tips
+                .iter()
+                .enumerate()
+                .map(|(i, &v)| {
+                    if st[v] == 1 {
+                        (rng.f() < err.sensitivity[i]) as u8
+                    } else {
+                        (rng.f() < err.false_rate[i]) as u8
+                    }
+                })
+                .collect();
+            if col.contains(&PRESENT) {
+                out.push((col, origins));
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn origin_evidence_separates_convergent_from_single_origin_positions_in_simulated_data() {
+        // 12 tips in two clades plus an outgroup pair; gains are rare enough that most positions have one origin
+        let nwk = "(((A,B),(C,D)),((E,F),(G,H)),(I,J),(K,L));";
+        let t = tree(nwk);
+        let mut truth = Params::uniform(&t, 0.02, 0.2, 0.5);
+        for v in 0..t.len() {
+            if t.parent(v).is_none() {
+                continue;
+            }
+            truth.loss[v] = 0.1 + 0.02 * (v % 5) as f64;
+        }
+        let n_tips = t.tips().len();
+        let err = ErrorRates {
+            sensitivity: vec![0.95; n_tips],
+            false_rate: vec![0.005; n_tips],
+        };
+        let sim = simulate_origins(&t, &truth, &err, 6_000, 20_261_119);
+        let d = sim_data(nwk, sim.iter().map(|(c, _)| c.clone()).collect());
+        // the analysis fits the model to the data, as a user would, and does not use the truth
+        let r = fit(&d, &err, &FitOptions::default()).unwrap();
+        let ev = origin_posteriors(&d, &err, &r.params);
+        let kind = |o: usize| if o >= 2 { 2 } else { 1 };
+        let single: Vec<f64> = sim
+            .iter()
+            .zip(&ev)
+            .filter(|((_, o), _)| kind(*o) == 1)
+            .map(|(_, e)| e.ln_lr_multi)
+            .collect();
+        let multi: Vec<f64> = sim
+            .iter()
+            .zip(&ev)
+            .filter(|((_, o), _)| kind(*o) == 2)
+            .map(|(_, e)| e.ln_lr_multi)
+            .collect();
+        assert!(
+            single.len() > 1000 && multi.len() > 100,
+            "{} {}",
+            single.len(),
+            multi.len()
+        );
+        // area under the ROC curve: the chance that a convergent position outscores a single-origin one
+        let mut wins = 0.0;
+        for m in &multi {
+            for s in &single {
+                wins += if m > s {
+                    1.0
+                } else if m == s {
+                    0.5
+                } else {
+                    0.0
+                };
+            }
+        }
+        let auc = wins / (single.len() * multi.len()) as f64;
+        let rate =
+            |v: &[f64], thr: f64| v.iter().filter(|&&x| x > thr).count() as f64 / v.len() as f64;
+        // measured on this seed: AUC 0.83; at ln LR > 2, 2.3 % of single-origin and 32 % of convergent positions; most convergent
+        // positions cannot be told apart (two gains in sister tips look like one), so the detection rate is modest by nature
+        assert!(auc > 0.75, "AUC {auc}");
+        assert!(
+            rate(&single, 2.0) < 0.06,
+            "false flags {}",
+            rate(&single, 2.0)
+        );
+        assert!(rate(&multi, 2.0) > 0.2, "detected {}", rate(&multi, 2.0));
+        let mean = |kind_want: usize| {
+            let v: Vec<f64> = sim
+                .iter()
+                .zip(&ev)
+                .filter(|((_, o), _)| kind(*o) == kind_want)
+                .map(|(_, e)| e.p_multi)
+                .collect();
+            v.iter().sum::<f64>() / v.len() as f64
+        };
+        assert!(mean(2) > 3.0 * mean(1), "{} {}", mean(2), mean(1));
+        // calibration: positions given a posterior above one half are mostly convergent
+        let hi: Vec<usize> = (0..sim.len()).filter(|&i| ev[i].p_multi > 0.5).collect();
+        assert!(hi.len() > 20);
+        let prec = hi.iter().filter(|&&i| sim[i].1 >= 2).count() as f64 / hi.len() as f64;
+        assert!(prec > 0.5, "precision at p_multi > 0.5: {prec}");
+    }
+
     #[test]
     fn pruning_and_posteriors_match_brute_force() {
         let cols: &[&[u8]] = &[

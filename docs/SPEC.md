@@ -440,7 +440,10 @@ posterior probability of **none** (the presences are annotation errors), **one**
 the same model with every cell unobserved, so a position is not rewarded for being likely a priori. It is the per-position counterpart of the
 note that Dollo prints (positions needing many independent losses): where Dollo asks how many losses a single origin would need, this asks how
 likely a second origin is. It is a Bayes factor under fitted parameters, not a null-calibrated test: no p-value is given, and the parameters
-are treated as known. Validated against enumeration of every state assignment with origins counted directly (no classes and a three-class
+are treated as known. How well it separates the cases was measured on simulated data with known origins (12 tips, parameters re-fitted from
+the data): area under the ROC curve 0.83; at ln LR > 2, 2% of single-origin and 32% of convergent positions are flagged. Many convergent
+positions cannot be told from a single origin (two gains in sister tips look like one), so the detection rate is modest by nature; a high
+score is good evidence, a low one is not evidence of an ancient intron. Validated against enumeration of every state assignment with origins counted directly (no classes and a three-class
 mixture). Reported by `--ml-origins` in `likelihood_sites.tsv` ([`OUTPUTS.md`](OUTPUTS.md)).
 
 ### 5.6b Soft cell evidence (first step of probabilistic projection)
