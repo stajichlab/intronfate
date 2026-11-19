@@ -121,11 +121,14 @@ impl Alignment {
     /// Read an alignment, sniffing FASTA vs Stockholm from the first line.
     pub fn read(path: impl Into<PathBuf>) -> Result<Alignment> {
         let path = path.into();
-        let name = path
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .map(|s| s.strip_suffix(".gz").unwrap_or(s).to_string())
-            .unwrap_or_else(|| path.display().to_string());
+        let name = if crate::util::is_stdin(&path) {
+            "stdin".to_string()
+        } else {
+            path.file_stem()
+                .and_then(|s| s.to_str())
+                .map(|s| s.strip_suffix(".gz").unwrap_or(s).to_string())
+                .unwrap_or_else(|| path.display().to_string())
+        };
         let reader = util::open_buffered(&path, 1 << 18)?;
         let mut aln = Self::read_reader(reader, name)?;
         aln.source = Some(path);

@@ -3,6 +3,7 @@
 use std::borrow::Cow;
 use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::error::{Error, Result};
 
@@ -49,11 +50,66 @@ pub fn unescape_gff(value: &str) -> Cow<'_, str> {
     String::from_utf8_lossy(&out).into_owned().into()
 }
 
-/// Open a plain or gzip-compressed text file (`.gz`, `.bgz`) as a buffered byte reader.
+/// `-` names standard input wherever an input file is expected.
+pub fn is_stdin(path: &Path) -> bool {
+    path.as_os_str() == "-"
+}
+
+static STDIN_TAKEN: AtomicBool = AtomicBool::new(false);
+
+/// Claim standard input. It can be read once, so a second claim in the same run is an error that names the cause
+/// (two inputs given as `-`, or one input that is read twice).
+fn claim(flag: &AtomicBool) -> Result<()> {
+    if flag.swap(true, Ordering::SeqCst) {
+        return Err(Error::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "standard input (-) can supply only one input per run (it was already used, or two inputs are given as -)",
+        )));
+    }
+    Ok(())
+}
+
+fn stdin_reader(
+    flag: &AtomicBool,
+    input: impl Read + 'static,
+    buf_capacity: usize,
+) -> Result<Box<dyn BufRead>> {
+    claim(flag)?;
+    // A stream cannot be reopened to look at its first bytes, so peek through the buffer: gzip is recognised by its magic
+    // number, whatever the data is called.
+    let mut br = BufReader::with_capacity(buf_capacity.max(1 << 16), input);
+    let gz = br.fill_buf()?.starts_with(&[0x1f, 0x8b]);
+    Ok(if gz {
+        Box::new(BufReader::with_capacity(
+            buf_capacity.max(8 * 1024),
+            flate2::read::MultiGzDecoder::new(br),
+        ))
+    } else {
+        Box::new(br)
+    })
+}
+
+/// The whole text of a file, or of standard input when `path` is `-`.
+pub fn read_text(path: &Path) -> std::io::Result<String> {
+    if is_stdin(path) {
+        claim(&STDIN_TAKEN)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string()))?;
+        let mut s = String::new();
+        std::io::stdin().lock().read_to_string(&mut s)?;
+        return Ok(s);
+    }
+    std::fs::read_to_string(path)
+}
+
+/// Open a plain or gzip-compressed text file (`.gz`, `.bgz`) as a buffered byte reader. `-` is standard input (gzip is
+/// recognised by its first two bytes); it can be used for one input per run.
 ///
 /// Callers work in bytes and validate UTF-8 per record, which avoids a whole-file check on
 /// multi-gigabyte annotations.
 pub fn open_buffered(path: &Path, buf_capacity: usize) -> Result<Box<dyn BufRead>> {
+    if is_stdin(path) {
+        return stdin_reader(&STDIN_TAKEN, std::io::stdin(), buf_capacity);
+    }
     let file = std::fs::File::open(path).map_err(|e| {
         Error::Io(std::io::Error::new(
             e.kind(),
@@ -243,6 +299,91 @@ pub fn ellipsis(s: &str, max: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn gz(bytes: &[u8]) -> Vec<u8> {
+        use std::io::Write;
+        let mut e = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        e.write_all(bytes).unwrap();
+        e.finish().unwrap()
+    }
+
+    fn all(mut r: Box<dyn BufRead>) -> String {
+        let mut s = String::new();
+        r.read_to_string(&mut s).unwrap();
+        s
+    }
+
+    #[test]
+    fn stdin_is_named_by_a_dash_only() {
+        assert!(is_stdin(Path::new("-")));
+        for p in ["", "--", "-x", "./-", "a-", "stdin"] {
+            assert!(!is_stdin(Path::new(p)), "{p}");
+        }
+    }
+
+    #[test]
+    fn a_stream_is_read_whole_whether_plain_or_gzipped() {
+        let text = "line one\nline two\n".repeat(50_000); // larger than one buffer
+        let plain = stdin_reader(
+            &AtomicBool::new(false),
+            std::io::Cursor::new(text.clone().into_bytes()),
+            1 << 12,
+        )
+        .unwrap();
+        assert_eq!(all(plain), text);
+        // gzip is recognised by its magic number alone; the name plays no part for a stream
+        let zipped = stdin_reader(
+            &AtomicBool::new(false),
+            std::io::Cursor::new(gz(text.as_bytes())),
+            1 << 12,
+        )
+        .unwrap();
+        assert_eq!(all(zipped), text);
+        // two members (a concatenated gzip file) are both read
+        let mut two = gz(b"first\n");
+        two.extend(gz(b"second\n"));
+        let r = stdin_reader(&AtomicBool::new(false), std::io::Cursor::new(two), 1 << 12).unwrap();
+        assert_eq!(all(r), "first\nsecond\n");
+        // empty input is an empty reader, not an error
+        let r = stdin_reader(
+            &AtomicBool::new(false),
+            std::io::Cursor::new(Vec::new()),
+            1 << 12,
+        )
+        .unwrap();
+        assert_eq!(all(r), "");
+        // a plain file whose first byte is 0x1f but not a gzip header stays plain
+        let r = stdin_reader(
+            &AtomicBool::new(false),
+            std::io::Cursor::new(vec![0x1f, b'a', b'\n']),
+            1 << 12,
+        )
+        .unwrap();
+        assert_eq!(all(r).as_bytes(), &[0x1f, b'a', b'\n']);
+    }
+
+    #[test]
+    fn standard_input_can_be_claimed_once() {
+        let flag = AtomicBool::new(false);
+        assert!(claim(&flag).is_ok());
+        let e = claim(&flag).unwrap_err().to_string();
+        assert!(e.contains("only one input"), "{e}");
+        // a reader built on a used flag is refused, and the refusal does not consume anything
+        let e = stdin_reader(&flag, std::io::Cursor::new(b"x".to_vec()), 1 << 12)
+            .err()
+            .unwrap()
+            .to_string();
+        assert!(e.contains("only one input"), "{e}");
+    }
+
+    #[test]
+    fn read_text_reads_a_file_and_reports_a_missing_one() {
+        let p = std::env::temp_dir().join(format!("intronfate_util_text_{}", std::process::id()));
+        std::fs::write(&p, "a\tb\n").unwrap();
+        assert_eq!(read_text(&p).unwrap(), "a\tb\n");
+        std::fs::remove_file(&p).unwrap();
+        assert!(read_text(&p).is_err());
+    }
 
     #[test]
     fn unescape_basics() {

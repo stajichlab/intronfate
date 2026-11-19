@@ -53,7 +53,7 @@ pub fn matches_ext(name: &str, ext: &str) -> bool {
 }
 
 fn read_list(list: &Path, out: &mut Vec<PathBuf>, what: &str) -> Result<()> {
-    let text = std::fs::read_to_string(list).map_err(|e| {
+    let text = crate::util::read_text(list).map_err(|e| {
         bad(format!(
             "could not read {what} list {}: {e}",
             list.display()
@@ -154,7 +154,11 @@ pub fn expand(spec: &Inputs) -> Result<Vec<PathBuf>> {
         }
     }
     let mut seen = HashSet::new();
-    all.retain(|p| seen.insert(std::fs::canonicalize(p).unwrap_or_else(|_| p.clone())));
+    // two `-` are kept, so the second use of standard input is refused with its own message instead of being dropped silently
+    all.retain(|p| {
+        crate::util::is_stdin(p)
+            || seen.insert(std::fs::canonicalize(p).unwrap_or_else(|_| p.clone()))
+    });
     Ok(all)
 }
 

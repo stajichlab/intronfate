@@ -375,7 +375,7 @@ impl SiteMatrix {
     /// taxa were unannotated; without it those absences would be indistinguishable from losses.
     pub fn read_tsv(path: impl AsRef<Path>) -> Result<SiteMatrix> {
         let path = path.as_ref();
-        let text = std::fs::read_to_string(path)?;
+        let text = crate::util::read_text(path)?;
         let mut meta: Vec<(String, String)> = Vec::new();
         let mut header: Option<Vec<String>> = None;
         let mut rows: Vec<Vec<String>> = Vec::new();
