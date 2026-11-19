@@ -1725,3 +1725,335 @@ fn likelihood_takes_soft_evidence_from_a_table() {
         );
     }
 }
+
+/// Run the binary with `input` on its standard input.
+fn run_stdin(args: &[&str], input: &[u8]) -> Output {
+    use std::io::Write;
+    use std::process::Stdio;
+    let mut child = Command::new(BIN)
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("binary runs");
+    // write on another thread so a large input cannot deadlock against the child's output
+    let mut stdin = child.stdin.take().unwrap();
+    let data = input.to_vec();
+    let t = std::thread::spawn(move || {
+        let _ = stdin.write_all(&data);
+    });
+    let out = child.wait_with_output().unwrap();
+    t.join().unwrap();
+    out
+}
+
+/// Every file under `dir` as (relative path, bytes), sorted.
+fn tree_bytes(dir: &Path) -> Vec<(String, Vec<u8>)> {
+    fn walk(base: &Path, d: &Path, out: &mut Vec<(String, Vec<u8>)>) {
+        for e in fs::read_dir(d).unwrap() {
+            let p = e.unwrap().path();
+            if p.is_dir() {
+                walk(base, &p, out);
+            } else {
+                out.push((
+                    p.strip_prefix(base).unwrap().display().to_string(),
+                    fs::read(&p).unwrap(),
+                ));
+            }
+        }
+    }
+    let mut v = Vec::new();
+    walk(dir, dir, &mut v);
+    v.sort();
+    v
+}
+
+/// Names of the files that differ between two outputs, ignoring the `matrix` line of `summary_score.tsv` (it holds the output path).
+fn differing(a: &[(String, Vec<u8>)], b: &[(String, Vec<u8>)]) -> Vec<String> {
+    let mask = |name: &str, bytes: &[u8]| -> Vec<u8> {
+        if !name.ends_with("summary_score.tsv") {
+            return bytes.to_vec();
+        }
+        String::from_utf8_lossy(bytes)
+            .lines()
+            .filter(|l| !l.starts_with("matrix\t"))
+            .collect::<Vec<_>>()
+            .join("\n")
+            .into_bytes()
+    };
+    let mut bad: Vec<String> = Vec::new();
+    if a.len() != b.len() {
+        bad.push(format!("file count {} vs {}", a.len(), b.len()));
+    }
+    for ((na, ba), (nb, bb)) in a.iter().zip(b) {
+        if na != nb || mask(na, ba) != mask(nb, bb) {
+            bad.push(format!("{na} / {nb}"));
+        }
+    }
+    bad
+}
+
+fn gzip(bytes: &[u8]) -> Vec<u8> {
+    use std::io::Write;
+    let mut e = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+    e.write_all(bytes).unwrap();
+    e.finish().unwrap()
+}
+
+#[test]
+fn standard_input_gives_the_same_results_as_a_file() {
+    let w = scratch("stdin");
+    let q = example("01_quickstart");
+    let (gff, faa, aln, nwk) = (
+        q.join("family.gff3"),
+        q.join("proteins.faa"),
+        q.join("family.aln.fasta"),
+        q.join("family.nwk"),
+    );
+    let analyze = |out: &Path, g: &str, p: &str, a: &str, t: &str| -> Vec<String> {
+        [
+            "analyze",
+            "--gff",
+            g,
+            "-p",
+            p,
+            "--msa",
+            a,
+            "-t",
+            t,
+            "-m",
+            "dollo,counts",
+            "-o",
+            out.to_str().unwrap(),
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
+    };
+    let s = |p: &Path| p.to_str().unwrap().to_string();
+    let args = |v: &[String]| -> Vec<String> { v.to_vec() };
+    fn refs(v: &[String]) -> Vec<&str> {
+        v.iter().map(String::as_str).collect()
+    }
+
+    // the reference: every input from a file
+    let want_dir = w.join("files");
+    let a = analyze(&want_dir, &s(&gff), &s(&faa), &s(&aln), &s(&nwk));
+    let o = run(&refs(&a));
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let want = tree_bytes(&want_dir);
+    assert!(!want.is_empty());
+
+    // each single-file input in turn from standard input (the alignment keeps its name only when it is a file, so it is tested apart)
+    for (which, bytes) in [
+        ("gff", fs::read(&gff).unwrap()),
+        ("proteins", fs::read(&faa).unwrap()),
+        ("tree", fs::read(&nwk).unwrap()),
+    ] {
+        let out = w.join(format!("stdin_{which}"));
+        let mut a = args(&analyze(&out, &s(&gff), &s(&faa), &s(&aln), &s(&nwk)));
+        let at = match which {
+            "gff" => a.iter().position(|x| *x == s(&gff)).unwrap(),
+            "proteins" => a.iter().position(|x| *x == s(&faa)).unwrap(),
+            _ => a.iter().position(|x| *x == s(&nwk)).unwrap(),
+        };
+        a[at] = "-".into();
+        let o = run_stdin(&refs(&a), &bytes);
+        assert!(
+            o.status.success(),
+            "{which}: {}",
+            String::from_utf8_lossy(&o.stderr)
+        );
+        assert_eq!(
+            differing(&tree_bytes(&out), &want),
+            Vec::<String>::new(),
+            "{which} from stdin differs from the file route"
+        );
+        // the same input gzipped: recognised by its first bytes
+        let outz = w.join(format!("stdin_{which}_gz"));
+        let mut a = args(&analyze(&outz, &s(&gff), &s(&faa), &s(&aln), &s(&nwk)));
+        a[at] = "-".into();
+        let o = run_stdin(&refs(&a), &gzip(&bytes));
+        assert!(
+            o.status.success(),
+            "{which} gz: {}",
+            String::from_utf8_lossy(&o.stderr)
+        );
+        assert_eq!(
+            differing(&tree_bytes(&outz), &want),
+            Vec::<String>::new(),
+            "{which} gzipped from stdin differs"
+        );
+    }
+
+    // the alignment from standard input is named `stdin`; apart from that folder name the output is the same
+    let out = w.join("stdin_aln");
+    let mut a = args(&analyze(&out, &s(&gff), &s(&faa), &s(&aln), &s(&nwk)));
+    let at = a.iter().position(|x| *x == s(&aln)).unwrap();
+    a[at] = "-".into();
+    let o = run_stdin(&refs(&a), &fs::read(&aln).unwrap());
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let got = tree_bytes(&out);
+    assert_eq!(got.len(), want.len());
+    assert!(
+        got.iter()
+            .all(|(n, _)| n.starts_with("stdin/") || !n.contains('/')),
+        "{:?}",
+        got.iter().map(|g| &g.0).collect::<Vec<_>>()
+    );
+    // same content once the alignment's name is swapped: the folder, and the name inside the tables
+    let rename = |v: &[(String, Vec<u8>)], from: &str, to: &str| -> Vec<(String, Vec<u8>)> {
+        let mut r: Vec<(String, Vec<u8>)> = v
+            .iter()
+            .map(|(n, b)| {
+                (
+                    n.replacen(from, to, 1),
+                    String::from_utf8_lossy(b).replace(from, to).into_bytes(),
+                )
+            })
+            .collect();
+        r.sort();
+        r
+    };
+    let (got, want_renamed) = (
+        rename(&got, "stdin", "NAME"),
+        rename(&want, "family.aln", "NAME"),
+    );
+    assert_eq!(
+        differing(&got, &want_renamed),
+        Vec::<String>::new(),
+        "alignment from stdin differs from the file route"
+    );
+
+    // score a matrix from standard input
+    let mdir = w.join("matrix_out");
+    let o = run(&[
+        "matrix",
+        "--gff",
+        gff.to_str().unwrap(),
+        "-p",
+        faa.to_str().unwrap(),
+        "--msa",
+        aln.to_str().unwrap(),
+        "-o",
+        mdir.to_str().unwrap(),
+    ]);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let matrix = fs::read_dir(&mdir)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .find_map(|p| {
+            p.is_dir()
+                .then(|| p.join("matrix.tsv"))
+                .filter(|m| m.exists())
+        })
+        .or_else(|| Some(mdir.join("matrix.tsv")).filter(|m| m.exists()))
+        .expect("a matrix.tsv");
+    let from_file = w.join("score_file");
+    let o = run(&[
+        "score",
+        "--matrix",
+        matrix.to_str().unwrap(),
+        "-t",
+        nwk.to_str().unwrap(),
+        "-m",
+        "dollo,counts",
+        "-o",
+        from_file.to_str().unwrap(),
+    ]);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let from_stdin = w.join("score_stdin");
+    let o = run_stdin(
+        &[
+            "score",
+            "--matrix",
+            "-",
+            "-t",
+            nwk.to_str().unwrap(),
+            "-m",
+            "dollo,counts",
+            "-o",
+            from_stdin.to_str().unwrap(),
+        ],
+        &fs::read(&matrix).unwrap(),
+    );
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let (f, st) = (tree_bytes(&from_file), tree_bytes(&from_stdin));
+    assert_eq!(f.len(), st.len());
+    let names = |v: &[(String, Vec<u8>)]| {
+        v.iter()
+            .map(|(n, b)| (n.rsplit('/').next().unwrap().to_string(), b.clone()))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        differing(&names(&f), &names(&st)),
+        Vec::<String>::new(),
+        "score from stdin differs"
+    );
+}
+
+#[test]
+fn standard_input_can_be_used_for_one_input_only() {
+    let w = scratch("stdin_twice");
+    let q = example("01_quickstart");
+    let out = w.join("o");
+    let o = run_stdin(
+        &[
+            "analyze",
+            "--gff",
+            "-",
+            "-p",
+            "-",
+            "--msa",
+            q.join("family.aln.fasta").to_str().unwrap(),
+            "-t",
+            q.join("family.nwk").to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ],
+        &fs::read(q.join("proteins.faa")).unwrap(),
+    );
+    assert!(!o.status.success());
+    let e = String::from_utf8_lossy(&o.stderr);
+    assert!(e.contains("only one input"), "{e}");
+    // the same input twice in one list is not silently merged into one
+    let o = run_stdin(
+        &[
+            "analyze",
+            "--gff",
+            "-",
+            "--gff",
+            "-",
+            "-p",
+            q.join("proteins.faa").to_str().unwrap(),
+            "--msa",
+            q.join("family.aln.fasta").to_str().unwrap(),
+            "-t",
+            q.join("family.nwk").to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ],
+        &fs::read(q.join("family.gff3")).unwrap(),
+    );
+    assert!(!o.status.success());
+    assert!(
+        String::from_utf8_lossy(&o.stderr).contains("only one input"),
+        "{}",
+        String::from_utf8_lossy(&o.stderr)
+    );
+    // empty standard input is an error, not a hang
+    let o = run_stdin(
+        &[
+            "score",
+            "--matrix",
+            "-",
+            "-t",
+            q.join("family.nwk").to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ],
+        b"",
+    );
+    assert!(!o.status.success());
+}

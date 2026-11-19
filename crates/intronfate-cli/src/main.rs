@@ -681,6 +681,9 @@ impl ScoreArgs {
 /// Output-folder name for a matrix file: the family folder for `<family>/matrix.tsv`, else the file name without
 /// `.matrix.tsv`/`.tsv`.
 fn matrix_stem(p: &Path) -> String {
+    if intronfate_core::util::is_stdin(p) {
+        return "stdin".to_string();
+    }
     let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("matrix");
     let name = name.strip_suffix(".gz").unwrap_or(name);
     if name == "matrix.tsv" {
@@ -1176,13 +1179,17 @@ fn write_combined(parts: &[SiteMatrix], dir: &Path, tolerance: u32) -> Result<Si
 
 fn cmd_convert(a: &ConvertArgs) -> Result<()> {
     if let Some(table) = &a.from_malin {
-        let text = std::fs::read_to_string(table)
+        let text = intronfate_core::util::read_text(table)
             .with_context(|| format!("could not read MALIN table {}", table.display()))?;
-        let stem = table
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("malin")
-            .to_string();
+        let stem = if intronfate_core::util::is_stdin(table) {
+            "malin".to_string()
+        } else {
+            table
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("malin")
+                .to_string()
+        };
         let matrices = intronfate_core::malin::from_malin(&text, &stem)
             .with_context(|| format!("could not parse {}", table.display()))?;
         let mut used = std::collections::HashSet::new();
@@ -1963,7 +1970,7 @@ fn resolve_methods(requested: &[String]) -> Result<Vec<Method>> {
 /// Unlisted taxa are error-free. Precision is converted to a false-intron rate inside the fit (`fit_with_precision`).
 /// Read `--ml-soft-evidence`: a TSV with the columns `site`, `taxon` and `p_present` (by header name; `#` lines are skipped).
 fn read_soft_evidence(path: &std::path::Path) -> anyhow::Result<Vec<(String, String, f64)>> {
-    let text = std::fs::read_to_string(path)
+    let text = intronfate_core::util::read_text(path)
         .map_err(|e| anyhow::anyhow!("cannot read {}: {e}", path.display()))?;
     let mut lines = text
         .lines()
@@ -2010,7 +2017,7 @@ fn read_error_rates(
     let Some(path) = path else {
         return Ok((sens, spec));
     };
-    let text = std::fs::read_to_string(path)
+    let text = intronfate_core::util::read_text(path)
         .with_context(|| format!("could not read {}", path.display()))?;
     let mut lines = text
         .lines()

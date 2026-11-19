@@ -750,7 +750,7 @@ comparison the tool exists to make mechanically repeatable.
    Rate variation across positions done (§5.5b), including separate gain and loss factors (§5.5c). Validated against MALIN's constant-rates `*.rates` (§6b, L1). Free levels (§5.5d) are compared with MALIN's rate-variation output in §6b. Ancient versus convergent introns: §5.6.
 6. ~~Column observability~~ — done (§2: per-cell observability with a flank rule), as are `--min-observed` and
    the `n_both_observable` column in `pairwise.tsv`. The `--flank` default was examined in [F1](../bench/F1_flank_tuning/README.md): kept at 1.
-7. **Stdin/stdout support** (`--gff -`, `-o -`) for pipeline composition.
+7. **Stdin/stdout support**: inputs done (`-` for any single-file input, one per run; gzip by magic number; `util::open_buffered`, `util::read_text`). Remaining: `-o -` (one table to standard output; `analyze` writes a folder of files, so it needs a design choice).
 8. **Python bindings** returning numpy arrays, if exploration in pandas becomes the bottleneck.
 
 ## 13. References

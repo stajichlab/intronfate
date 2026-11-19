@@ -67,6 +67,20 @@ Three requirements that cause most problems:
    `--taxon-map` names) and tree tips. Nothing is fuzzily matched, because a wrong match would place introns on the
    wrong species.
 
+### Reading from a pipe
+
+Any single-file input can be `-`, meaning standard input: `--gff`, `-p`, `--msa`, `-t`, `score --matrix`, `convert --from-malin`,
+`--error-rates`, `--ml-soft-evidence`, `--id-map`. Gzip is recognised from the first two bytes, whatever the stream is called.
+
+```sh
+curl -s https://example.org/genome.gff3.gz | intronfate analyze --gff - -p proteins.faa --msa family.aln.fasta -t tree.nwk -o out
+mafft --auto family.faa | intronfate analyze --gff genome.gff3 -p family.faa --msa - -t tree.nwk -o out   # the family is named `stdin`
+```
+
+Standard input can be read **once**: two inputs given as `-`, or one that the run needs twice, is refused with a message that says so. A
+file that is a folder, a list (`--gff-list`) or a `--*-dir` cannot be `-`. Output is always written to files in `-o`; writing tables to
+standard output is not supported yet.
+
 ### GFF conventions that are handled
 
 `Parent=` is tried first, then `transcript_id` (so NCBI RefSeq, Ensembl, MAKER, Augustus/BRAKER and
