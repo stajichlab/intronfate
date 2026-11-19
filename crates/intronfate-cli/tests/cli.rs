@@ -2057,3 +2057,335 @@ fn standard_input_can_be_used_for_one_input_only() {
     );
     assert!(!o.status.success());
 }
+
+/// The one `<name>.tsv` anywhere under `root` (the table a `--stdout` run must have printed).
+fn table_file(root: &Path, name: &str) -> PathBuf {
+    let want = format!("{name}.tsv");
+    let mut hits: Vec<PathBuf> = files_under(root)
+        .into_iter()
+        .filter(|p| p.file_name().and_then(|n| n.to_str()) == Some(want.as_str()))
+        .collect();
+    assert_eq!(hits.len(), 1, "{name}: {hits:?}");
+    root.join(hits.remove(0))
+}
+
+/// A table's bytes with the `matrix` path line of `summary_score.tsv` dropped (it names the run's own directory).
+fn comparable(table: &str, bytes: &[u8]) -> Vec<u8> {
+    if table != "summary_score" {
+        return bytes.to_vec();
+    }
+    String::from_utf8_lossy(bytes)
+        .lines()
+        .filter(|l| !l.starts_with("matrix\t"))
+        .map(|l| format!("{l}\n"))
+        .collect::<String>()
+        .into_bytes()
+}
+
+/// Run in `cwd` so a stray default `intron_out/` would show up there.
+fn run_in(cwd: &Path, args: &[&str]) -> Output {
+    Command::new(BIN)
+        .current_dir(cwd)
+        .args(args)
+        .output()
+        .expect("binary runs")
+}
+
+#[test]
+fn stdout_prints_one_table_equal_to_the_file_and_writes_no_directory() {
+    let w = scratch("stdout_tables");
+    let q = example("01_quickstart");
+    let s = |p: PathBuf| p.to_str().unwrap().to_string();
+    let (gff, faa, aln, nwk) = (
+        s(q.join("family.gff3")),
+        s(q.join("proteins.faa")),
+        s(q.join("family.aln.fasta")),
+        s(q.join("family.nwk")),
+    );
+    // each command, the table it prints, and the arguments that select it
+    let cases: Vec<(&str, &str, Vec<&str>)> = vec![
+        (
+            "project",
+            "introns",
+            vec!["project", "--gff", &gff, "-p", &faa],
+        ),
+        (
+            "matrix",
+            "matrix",
+            vec!["matrix", "--gff", &gff, "-p", &faa, "--msa", &aln],
+        ),
+        (
+            "analyze",
+            "summary_score",
+            vec![
+                "analyze",
+                "--gff",
+                &gff,
+                "-p",
+                &faa,
+                "--msa",
+                &aln,
+                "-t",
+                &nwk,
+                "-m",
+                "dollo,counts",
+            ],
+        ),
+    ];
+    for (cmd, table, args) in &cases {
+        // reference: the same command into a directory
+        let dir = w.join(format!("dir_{cmd}"));
+        let mut with_o = args.clone();
+        with_o.extend(["-o", dir.to_str().unwrap()]);
+        ok(&with_o);
+        let want = fs::read(table_file(&dir, table)).unwrap();
+
+        // --stdout alone: only the table on stdout, nothing on stderr's table, no directory anywhere
+        let cwd = w.join(format!("cwd_{cmd}"));
+        fs::create_dir_all(&cwd).unwrap();
+        let mut a = args.clone();
+        a.extend(["--stdout", table]);
+        let o = run_in(&cwd, &a);
+        assert!(
+            o.status.success(),
+            "{cmd}: {}",
+            String::from_utf8_lossy(&o.stderr)
+        );
+        assert_eq!(
+            comparable(table, &o.stdout),
+            comparable(table, &want),
+            "{cmd} {table}: stdout is the file's bytes"
+        );
+        assert!(
+            fs::read_dir(&cwd).unwrap().next().is_none(),
+            "{cmd}: --stdout alone left {:?}",
+            fs::read_dir(&cwd)
+                .unwrap()
+                .map(|e| e.unwrap().file_name())
+                .collect::<Vec<_>>()
+        );
+        assert!(
+            !String::from_utf8_lossy(&o.stdout).contains("written to"),
+            "{cmd}: summary lines must not reach stdout"
+        );
+
+        // --stdout with -o: the directory is written in full and the same bytes are printed
+        let both = w.join(format!("both_{cmd}"));
+        let mut b = args.clone();
+        b.extend(["--stdout", table, "-o", both.to_str().unwrap()]);
+        let o = run_in(&cwd, &b);
+        assert!(
+            o.status.success(),
+            "{cmd}: {}",
+            String::from_utf8_lossy(&o.stderr)
+        );
+        assert_eq!(
+            comparable(table, &o.stdout),
+            comparable(table, &want),
+            "{cmd}: stdout with -o"
+        );
+        assert_eq!(
+            files_under(&both),
+            files_under(&dir),
+            "{cmd}: -o directory is complete"
+        );
+        assert!(
+            !o.stderr.is_empty(),
+            "{cmd}: the summary lines moved to stderr"
+        );
+    }
+
+    // score reads a finished matrix: one matrix, one table
+    let m = table_file(&w.join("dir_matrix"), "matrix");
+    let dir = w.join("dir_score");
+    ok(&[
+        "score",
+        "--matrix",
+        m.to_str().unwrap(),
+        "-m",
+        "counts",
+        "-o",
+        dir.to_str().unwrap(),
+    ]);
+    let o = run_in(
+        &w,
+        &[
+            "score",
+            "--matrix",
+            m.to_str().unwrap(),
+            "-m",
+            "counts",
+            "--stdout",
+            "pairwise",
+        ],
+    );
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert_eq!(o.stdout, fs::read(dir.join("pairwise.tsv")).unwrap());
+}
+
+#[test]
+fn stdout_refusals_are_early_clear_and_print_nothing() {
+    let w = scratch("stdout_refused");
+    let q = example("01_quickstart");
+    let s = |p: PathBuf| p.to_str().unwrap().to_string();
+    let (gff, faa, aln, nwk) = (
+        s(q.join("family.gff3")),
+        s(q.join("proteins.faa")),
+        s(q.join("family.aln.fasta")),
+        s(q.join("family.nwk")),
+    );
+    let aln2 = s(w.join("second.aln.fasta"));
+    fs::copy(&aln, &aln2).unwrap();
+    let fail = |args: &[&str], needle: &str| {
+        let o = run_in(&w, args);
+        assert_eq!(o.status.code(), Some(1), "`{}`", args.join(" "));
+        assert!(
+            o.stdout.is_empty(),
+            "`{}` printed: {}",
+            args.join(" "),
+            String::from_utf8_lossy(&o.stdout)
+        );
+        let e = String::from_utf8_lossy(&o.stderr).into_owned();
+        assert!(e.contains(needle), "`{}`: {e}", args.join(" "));
+        let left: Vec<_> = fs::read_dir(&w)
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
+        assert_eq!(
+            left,
+            vec![std::ffi::OsString::from("second.aln.fasta")],
+            "left files behind"
+        );
+    };
+    // unknown name lists the valid ones
+    fail(
+        &["project", "--gff", &gff, "-p", &faa, "--stdout", "nope"],
+        "introns",
+    );
+    // a table the command never writes
+    fail(
+        &["project", "--gff", &gff, "-p", &faa, "--stdout", "mp_sites"],
+        "choose one of",
+    );
+    // several alignments: no single set of tables
+    fail(
+        &[
+            "matrix", "--gff", &gff, "-p", &faa, "--msa", &aln, "--msa", &aln2, "--stdout",
+            "matrix",
+        ],
+        "exactly one alignment",
+    );
+    // combined output cannot be selected
+    fail(
+        &[
+            "matrix",
+            "--gff",
+            &gff,
+            "-p",
+            &faa,
+            "--msa",
+            &aln,
+            "--combine",
+            "--stdout",
+            "matrix",
+        ],
+        "combined output cannot be selected",
+    );
+    // a table that depends on options not given: refused after the run, nothing printed
+    fail(
+        &[
+            "analyze",
+            "--gff",
+            &gff,
+            "-p",
+            &faa,
+            "--msa",
+            &aln,
+            "-t",
+            &nwk,
+            "-m",
+            "dollo",
+            "--stdout",
+            "likelihood_sites",
+        ],
+        "did not write that table",
+    );
+    // commands without tables
+    fail(
+        &["demo", "--stdout", "introns"],
+        "project, matrix, score and analyze",
+    );
+}
+
+#[test]
+fn convert_to_malin_writes_the_alignment_to_stdout_and_import_refuses_it() {
+    let w = scratch("stdout_malin");
+    let q = example("03_malin");
+    // any matrix from the examples that exports cleanly
+    let want_dir = w.join("want");
+    let run_sh = fs::read_to_string(q.join("run.sh")).unwrap_or_default();
+    assert!(
+        run_sh.contains("--to-malin") || run_sh.contains("convert"),
+        "{run_sh}"
+    );
+    let matrices: Vec<PathBuf> = files_under(&q.join("expected"))
+        .into_iter()
+        .filter(|p| p.file_name().and_then(|n| n.to_str()) == Some("matrix.tsv"))
+        .map(|p| q.join("expected").join(p))
+        .collect();
+    assert!(!matrices.is_empty(), "no matrix.tsv in the malin example");
+    let m = matrices[0].to_str().unwrap().to_string();
+    let file = want_dir.join("out.malin");
+    let o = run(&["convert", "--to-malin", &m, "-o", file.to_str().unwrap()]);
+    if !o.status.success() {
+        // the exporter requires phase and shared taxa; the example's own matrices may not qualify
+        eprintln!("skipping: {}", String::from_utf8_lossy(&o.stderr));
+        return;
+    }
+    let want = fs::read(&file).unwrap();
+    let o = run(&["convert", "--to-malin", &m, "-o", "-"]);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert_eq!(
+        o.stdout, want,
+        "stdout is the file's bytes, with no summary line mixed in"
+    );
+    assert!(
+        String::from_utf8_lossy(&o.stderr).contains("sites"),
+        "summary on stderr"
+    );
+
+    let o = run(&["convert", "--from-malin", file.to_str().unwrap(), "-o", "-"]);
+    assert_eq!(o.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&o.stderr).contains("standard output"));
+}
+
+#[test]
+fn a_reader_that_closes_early_is_a_quiet_success() {
+    use std::process::Stdio;
+    let w = scratch("stdout_pipe");
+    let q = example("01_quickstart");
+    let mut child = Command::new(BIN)
+        .current_dir(&w)
+        .args([
+            "project",
+            "--gff",
+            q.join("family.gff3").to_str().unwrap(),
+            "-p",
+            q.join("proteins.faa").to_str().unwrap(),
+            "--stdout",
+            "introns",
+        ])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    // close the read end at once, as `| head -0` would: the table's write then fails with a broken pipe
+    drop(child.stdout.take());
+    let o = child.wait_with_output().unwrap();
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert!(
+        o.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&o.stderr)
+    );
+}

@@ -78,8 +78,30 @@ mafft --auto family.faa | intronfate analyze --gff genome.gff3 -p family.faa --m
 ```
 
 Standard input can be read **once**: two inputs given as `-`, or one that the run needs twice, is refused with a message that says so. A
-file that is a folder, a list (`--gff-list`) or a `--*-dir` cannot be `-`. Output is always written to files in `-o`; writing tables to
-standard output is not supported yet.
+file that is a folder, a list (`--gff-list`) or a `--*-dir` cannot be `-`.
+
+### Writing one table to a pipe
+
+`--stdout TABLE` (project, matrix, score, analyze) prints one output table to standard output as plain TSV, the same bytes as
+`TABLE.tsv` in the output directory. `TABLE` is the file name without `.tsv`: `introns`, `summary_score`, `matrix`, `pairwise`, ... An
+unknown name lists the ones that command can write. A table that depends on options (`likelihood_sites` without `-m likelihood`) is
+refused after the run, and nothing is printed.
+
+```sh
+intronfate project --gff genome.gff3 -p proteins.faa --stdout introns | cut -f1-6 | head
+intronfate matrix --gff g.gff3 -p p.faa --msa family.aln --stdout matrix | intronfate score --matrix - -t tree.nwk -m dollo --stdout summary_score
+intronfate convert --to-malin family/matrix.tsv -o - | gzip > family.malin.gz   # the MALIN alignment
+```
+
+- **No output directory.** `--stdout` alone writes nothing into the working directory (the tables are built in a scratch folder under
+  `$TMPDIR` that is removed at exit). With `-o DIR` the directory is written in full first, then the table is printed.
+- **One set of tables.** `matrix` and `analyze` need exactly one alignment and `score` exactly one matrix, and `--combine` is refused,
+  all before any work starts; otherwise there would be several tables of that name. For many families, write `-o DIR`.
+- **Stdout is only data.** Summary lines move to stderr (dropped when no `-o` was given, since they would name the scratch folder);
+  diagnostics and `-v` output were already on stderr.
+- **A reader that stops early** (`| head`) ends the run quietly with exit 0; no file is left half-written. Any other write error is an
+  error (exit 1).
+- `convert --to-malin -o -` writes the alignment to stdout; `convert --from-malin -o -` is an error (it writes a directory).
 
 ### GFF conventions that are handled
 

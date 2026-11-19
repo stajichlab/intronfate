@@ -14,7 +14,8 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use anyhow::{bail, Context, Result};
-use clap::{Args, Parser, Subcommand};
+use clap::parser::ValueSource;
+use clap::{Args, CommandFactory, FromArgMatches, Parser, Subcommand};
 use intronfate_core::annotation::{AnnotationSet, AnnotationSource, GffOptions, GffSource};
 use intronfate_core::matrix::SiteMatrix;
 use intronfate_core::msa::Alignment;
@@ -27,6 +28,14 @@ use intronfate_core::score::{self, Method, PrepareReport, ScoringData};
 use intronfate_core::seqio::ProteinSet;
 use intronfate_core::tables;
 use intronfate_core::tree::Tree;
+
+mod outmode;
+
+/// `println!` that follows the stdout/stderr rule of `outmode` (summary lines must not mix with data on stdout).
+macro_rules! say {
+    () => { crate::outmode::say(format_args!("")) };
+    ($($t:tt)*) => { crate::outmode::say(format_args!($($t)*)) };
+}
 
 #[derive(Parser, Debug)]
 #[command(
@@ -48,6 +57,13 @@ struct Cli {
     /// Print timing and per-stage record counts.
     #[arg(short = 'v', long, global = true, action = clap::ArgAction::Count)]
     verbose: u8,
+
+    /// For project, matrix, score and analyze: print one output table (by file name without `.tsv`, e.g. `introns`,
+    /// `summary_score`) to standard output as plain TSV. Alone it writes no output directory; with `-o DIR` the
+    /// directory is written in full first. Needs a single input set (one alignment or matrix, no `--combine`).
+    /// Progress lines move to stderr. `convert --to-malin -o -` does the same for a MALIN alignment.
+    #[arg(long, global = true, value_name = "TABLE")]
+    stdout: Option<String>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -525,7 +541,7 @@ struct ConvertArgs {
     )]
     matrix_ext: Vec<String>,
 
-    /// Output directory (import) or output file (export).
+    /// Output directory (import) or output file (export); `-` writes the exported MALIN alignment to standard output.
     #[arg(long, short = 'o')]
     out: PathBuf,
 }
@@ -537,13 +553,21 @@ struct DemoArgs {
 }
 
 fn main() -> Result<()> {
-    let cli = Cli::parse();
+    let matches = Cli::command().get_matches();
+    let cli = match Cli::from_arg_matches(&matches) {
+        Ok(c) => c,
+        Err(e) => e.exit(),
+    };
+    let out_given = matches.subcommand().is_some_and(|(_, m)| {
+        m.try_get_one::<PathBuf>("out_dir").is_ok()
+            && m.value_source("out_dir") == Some(ValueSource::CommandLine)
+    });
     let pool = rayon::ThreadPoolBuilder::new()
         .build()
         .context("could not start the worker pool")?;
     let started = Instant::now();
     let verbose = cli.verbose;
-    let result = pool.install(|| run(cli));
+    let result = pool.install(|| run(cli, out_given));
     match result {
         Ok(()) => {
             if verbose > 0 {
@@ -559,27 +583,110 @@ fn main() -> Result<()> {
     }
 }
 
-fn run(cli: Cli) -> Result<()> {
+/// A `--stdout TABLE` run: where the tables land, and which one to print afterwards.
+struct StdoutPlan {
+    table: String,
+    dir: PathBuf,
+    _scratch: Option<outmode::Scratch>,
+}
+
+/// Validate `--stdout` for a command and point its output at a scratch directory when no `-o` was given.
+/// `problem` is a reason the input set is not a single one (checked before any work starts).
+fn stdout_plan(
+    table: &Option<String>,
+    command: &str,
+    problem: Option<&str>,
+    out_dir: &mut PathBuf,
+    out_given: bool,
+) -> Result<Option<StdoutPlan>> {
+    let Some(name) = table else {
+        return Ok(None);
+    };
+    outmode::check_table_name(command, name)?;
+    if let Some(why) = problem {
+        bail!("--stdout {name}: {why}; write to `-o DIR` and read the table from there");
+    }
+    let scratch = if out_given {
+        outmode::progress_to_stderr();
+        None
+    } else {
+        let s = outmode::Scratch::new()?;
+        *out_dir = s.0.clone();
+        outmode::progress_silent();
+        Some(s)
+    };
+    Ok(Some(StdoutPlan {
+        table: name.clone(),
+        dir: out_dir.clone(),
+        _scratch: scratch,
+    }))
+}
+
+/// After the command finished (and any `-o` directory is complete), print the chosen table.
+fn stdout_finish(plan: Option<StdoutPlan>) -> Result<()> {
+    if let Some(p) = plan {
+        outmode::emit_file(&outmode::find_table(&p.dir, &p.table)?)?;
+    }
+    Ok(())
+}
+
+fn run(cli: Cli, out_given: bool) -> Result<()> {
     let verbose = cli.verbose;
+    let table = cli.stdout;
     match cli.command {
         Command::Project(mut a) => {
             a.ann.resolve_inputs()?;
-            cmd_project(&a, verbose)
+            let plan = stdout_plan(&table, "project", None, &mut a.out_dir, out_given)?;
+            cmd_project(&a, verbose)?;
+            stdout_finish(plan)
         }
         Command::Matrix(mut a) => {
             a.resolve_inputs()?;
-            cmd_matrix(&a, verbose)
+            let plan = stdout_plan(
+                &table,
+                "matrix",
+                single_alignment_problem(&a),
+                &mut a.out_dir,
+                out_given,
+            )?;
+            cmd_matrix(&a, verbose)?;
+            stdout_finish(plan)
         }
         Command::Analyze(mut a) => {
             a.matrix.resolve_inputs()?;
-            cmd_analyze(&a, verbose)
+            let plan = stdout_plan(
+                &table,
+                "analyze",
+                single_alignment_problem(&a.matrix),
+                &mut a.matrix.out_dir,
+                out_given,
+            )?;
+            cmd_analyze(&a, verbose)?;
+            stdout_finish(plan)
         }
         Command::Score(mut a) => {
             a.resolve_inputs()?;
-            cmd_score(&a, verbose)
+            let problem = if a.matrix.len() != 1 {
+                Some("it needs exactly one matrix")
+            } else if a.combine {
+                Some("combined output cannot be selected")
+            } else {
+                None
+            };
+            let plan = stdout_plan(&table, "score", problem, &mut a.out_dir, out_given)?;
+            cmd_score(&a, verbose)?;
+            stdout_finish(plan)
         }
-        Command::Demo(a) => cmd_demo(&a, verbose),
+        Command::Demo(a) => {
+            if table.is_some() {
+                bail!("--stdout applies to project, matrix, score and analyze");
+            }
+            cmd_demo(&a, verbose)
+        }
         Command::Convert(mut a) => {
+            if table.is_some() {
+                bail!("--stdout applies to project, matrix, score and analyze; for convert use `--to-malin ... -o -`");
+            }
             a.to_malin = expand_inputs(
                 "matrix",
                 (&a.to_malin, &a.matrix_list, &a.matrix_dir),
@@ -589,6 +696,17 @@ fn run(cli: Cli) -> Result<()> {
             )?;
             cmd_convert(&a)
         }
+    }
+}
+
+/// Why a matrix/analyze run is not a single alignment (`--stdout` needs one set of tables).
+fn single_alignment_problem(a: &MatrixArgs) -> Option<&'static str> {
+    if a.msa.len() != 1 {
+        Some("it needs exactly one alignment")
+    } else if a.combine {
+        Some("combined output cannot be selected")
+    } else {
+        None
     }
 }
 
@@ -919,7 +1037,7 @@ fn cmd_project(a: &ProjectArgs, verbose: u8) -> Result<()> {
     .write(a.out_dir.join("summary_project.tsv"))?;
     report_diagnostics(&d, &a.out_dir, verbose)?;
 
-    println!(
+    say!(
         "wrote {} intron positions for {} protein(s) to {}/introns.tsv",
         n,
         proj.joined_proteins,
@@ -1131,7 +1249,7 @@ fn cmd_matrix(a: &MatrixArgs, verbose: u8) -> Result<()> {
     let mut parts: Vec<SiteMatrix> = Vec::new();
     build_matrices(a, verbose, |stem, m, _| {
         if !a.combined_only {
-            println!(
+            say!(
                 "{stem}: {} sites x {} taxa -> {}/{stem}/matrix.tsv",
                 m.n_sites(),
                 m.n_taxa(),
@@ -1145,7 +1263,7 @@ fn cmd_matrix(a: &MatrixArgs, verbose: u8) -> Result<()> {
     })?;
     if a.combine {
         let c = write_combined(&parts, &a.out_dir.join("combined"), a.tolerance)?;
-        println!(
+        say!(
             "combined: {} sites from {} alignments x {} taxa -> {}/combined/matrix.tsv",
             c.n_sites(),
             parts.len(),
@@ -1179,6 +1297,9 @@ fn write_combined(parts: &[SiteMatrix], dir: &Path, tolerance: u32) -> Result<Si
 
 fn cmd_convert(a: &ConvertArgs) -> Result<()> {
     if let Some(table) = &a.from_malin {
+        if a.out.as_os_str() == "-" {
+            bail!("--from-malin writes a directory of matrices, so `-o -` (standard output) is not possible");
+        }
         let text = intronfate_core::util::read_text(table)
             .with_context(|| format!("could not read MALIN table {}", table.display()))?;
         let stem = if intronfate_core::util::is_stdin(table) {
@@ -1197,7 +1318,7 @@ fn cmd_convert(a: &ConvertArgs) -> Result<()> {
             let dir = a.out.join(claim_stem(&mut used, &m.alignment)?);
             tables::matrix_table(m).write(dir.join("matrix.tsv"))?;
         }
-        println!(
+        say!(
             "{} taxa, {} alignment(s), {} sites -> {}",
             matrices[0].n_taxa(),
             matrices.len(),
@@ -1219,8 +1340,14 @@ fn cmd_convert(a: &ConvertArgs) -> Result<()> {
         .collect::<Result<Vec<_>>>()?;
     let refs: Vec<&SiteMatrix> = matrices.iter().collect();
     let text = intronfate_core::malin::to_malin(&refs)?;
-    intronfate_core::util::write_atomic(&a.out, text.as_bytes())?;
-    println!(
+    if a.out.as_os_str() == "-" {
+        // The alignment is the output: the summary line below goes to stderr.
+        outmode::progress_to_stderr();
+        outmode::emit_bytes(text.as_bytes())?;
+    } else {
+        intronfate_core::util::write_atomic(&a.out, text.as_bytes())?;
+    }
+    say!(
         "{} alignment(s), {} sites -> {}",
         matrices.len(),
         matrices.iter().map(|m| m.n_sites()).sum::<usize>(),
@@ -1277,7 +1404,7 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
         )
         .with_context(|| format!("scoring alignment {stem}"))?;
         if let Some(line) = summary {
-            println!("{stem}: {line}");
+            say!("{stem}: {line}");
         }
         Ok(())
     })?;
@@ -1321,9 +1448,9 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
         )
         .context("scoring the combined matrix")?;
         if let Some(line) = summary {
-            println!("combined: {line}");
+            say!("combined: {line}");
         }
-        println!(
+        say!(
             "combined: {} sites from {} alignments x {} taxa -> {}",
             c.n_sites(),
             parts.len(),
@@ -1384,9 +1511,9 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
             verbose,
         )?;
         if let Some(line) = summary {
-            println!("{line}");
+            say!("{line}");
         }
-        println!(
+        say!(
             "combined {} matrices: {} sites x {} taxa -> {}",
             parts.len(),
             c.n_sites(),
@@ -1402,10 +1529,10 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
     for path in &a.matrix {
         let stem = claim_stem(&mut used, &matrix_stem(path))?;
         let out = a.out_dir.join(&stem);
-        println!("{stem}:");
+        say!("{stem}:");
         score_one(a, path, &out, verbose).with_context(|| format!("scoring {}", path.display()))?;
     }
-    println!(
+    say!(
         "scored {} matrices into {}",
         a.matrix.len(),
         a.out_dir.display()
@@ -1459,9 +1586,9 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
         verbose,
     )?;
     if let Some(line) = summary {
-        println!("{}", line);
+        say!("{}", line);
     }
-    println!(
+    say!(
         "scored {} sites x {} taxa from {}",
         m.n_sites(),
         m.n_taxa(),
@@ -2228,15 +2355,15 @@ fn cmd_demo(a: &DemoArgs, verbose: u8) -> Result<()> {
     .write(dir.join("summary.tsv"))?;
 
     print!("{}", tables::matrix_table(&m).to_tsv());
-    println!();
+    say!();
     print!("{}", tables::dollo_table(&d).to_tsv());
-    println!();
+    say!();
     print!("{}", tables::mp_table(&mp).to_tsv());
     if verbose > 0 {
         eprintln!("rooted on the outgroup: {}", data.tree.to_newick());
     }
-    println!("\ndemo inputs and tables written to {}", dir.display());
-    println!(
+    say!("\ndemo inputs and tables written to {}", dir.display());
+    say!(
         "expect 3 sites, 3 Dollo gains, 2 Dollo losses, 3 mp steps: got {} sites, {} gains, {} losses, {} steps",
         m.n_sites(),
         d.total_gains,
