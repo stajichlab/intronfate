@@ -94,8 +94,8 @@ def main():
                 row = rows.get(taxa[i])
                 if row is None:
                     continue
-                # alignment columns are 0-based here; `column` in the matrix is 1-based
-                k = col - 1
+                # the matrix `column` is 0-based, like the row index
+                k = col
                 if c == "1" and phase != 0:
                     check[0] += 1
                     bad = k >= len(row) or row[k] == "-"

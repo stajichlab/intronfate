@@ -95,7 +95,7 @@ def main():
                 if row is None:
                     kinds["no_row"] += 1
                     continue
-                kind, run = classify(row, col - 1, phase, a.flank, a.short)
+                kind, run = classify(row, col, phase, a.flank, a.short)
                 kinds[kind] += 1
                 if kind in ("short", "long"):
                     runs[min(run, 30)] += 1

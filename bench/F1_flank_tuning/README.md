@@ -12,7 +12,7 @@ Purgeable on the HPCC: `results/` is small and kept. Run: `mkdir -p logs results
 | `summarize.py` | masked presences and Dollo totals per flank |
 | `results/` | `summary.txt`, `absence_by_gap_distance.tsv` (+ `.by_taxon`), per-flank `dollo_branches` and matrix headers |
 
-## Result (jobs 32196757, 32196811)
+## Result (jobs 32196757 for the sweep, 32217541 for the gap-distance table)
 
 | flank | sites kept | presences masked | Dollo losses |
 |---|---|---|---|
@@ -25,17 +25,16 @@ Purgeable on the HPCC: `results/` is small and kept. Run: `mkdir -p logs results
 
 Each step of flank discards sites and turns annotated introns into `?`. The question is whether what it removes is unreliable. If gaps near an
 intron produced false losses, the absence rate of conserved introns would be raised close to a gap. **It is not**: within every taxon the rate
-is flat from distance 0 to 8 or more (for example *N. crassa* 0.86 / 0.85 / 0.83 / 0.84 / 0.87, *C. cinerea* 0.39 / 0.40 / 0.36 / 0.39 / 0.35;
+is flat from distance 0 to 8 or more (for example *N. crassa* 0.85 / 0.82 / 0.86 / 0.83 / 0.87, *C. cinerea* 0.35 / 0.40 / 0.34 / 0.40 / 0.35;
 `absence_by_gap_distance.tsv.by_taxon`). Pooled over taxa it is 0.70–0.72 at every distance, which is dominated by the taxa that have lost most
 introns and is why the table is also given per taxon.
 
 **Conclusion: keep 1.** Nothing in these data supports a larger flank (it only discards data), and flank 1 is what MALIN's rule needs for a
-site inside a residue. Flank 0 would keep 1,475 more presences, but the rule would no longer need a residue on both sides of a boundary intron
-beyond the one-column minimum the code already applies, so it is the least conservative choice rather than a better one.
+site inside a residue. Flank 0 would keep 1,475 more presences (584 against 2,059 masked), but a boundary intron would still need residues on both sides, and nothing here shows the extra cells are better. The default stays at MALIN's rule with one flank column.
 
 ## Caveats
 
-- 353 of 8,377 present phase-1/2 cells (4%) fall on a gap at the column read from `family_column` (clustered: the same site in 2–3 taxa, e.g.
-  OG0001922 column 2219). At flank 0 a phase-1/2 carrier needs a residue there, so the cause is not understood; the distances for those sites
-  are therefore uncertain. It does not change the flat trend (the 96% that index correctly show it) but should be traced.
 - One data set, nine genomes, strict single-copy families; the result may differ for sparser or more divergent alignments.
+- Per taxon the rate varies between bins by a few points (e.g. *S. pombe* 0.82 at distance 0, 0.86 to 0.87 beyond; *N. crassa* 0.82 to 0.87) with 200–400 cells per near bin. If anything the rate is slightly *lower* right at a gap, the opposite of false losses.
+- The first run of `gap_distance.py` read the matrix `column` as 1-based (it is 0-based), which showed up as 353 present cells "on a gap".
+  Corrected in job 32217541: 0 of 8,377, and the trend above is from the corrected run.
