@@ -50,6 +50,7 @@ impl std::str::FromStr for Format {
 #[derive(Clone, Debug, Default)]
 pub struct JunctionReads {
     reads: HashMap<(String, u64, u64, i8), u64>,
+    seqs: std::collections::HashSet<String>,
 }
 
 impl JunctionReads {
@@ -117,7 +118,35 @@ impl JunctionReads {
                 .entry((seq.to_string(), start, end, strand))
                 .or_insert(0) += n_reads;
         }
-        Ok(JunctionReads { reads })
+        let seqs = reads.keys().map(|k| k.0.clone()).collect();
+        Ok(JunctionReads { reads, seqs })
+    }
+
+    /// Does the table mention this sequence name at all?
+    pub fn has_seq(&self, seq: &str) -> bool {
+        self.seqs.contains(seq)
+    }
+
+    /// Up to a few sequence names of the table, sorted, for messages.
+    pub fn sample_seqs(&self) -> Vec<&str> {
+        let mut v: Vec<&str> = self.seqs.iter().map(String::as_str).collect();
+        v.sort_unstable();
+        v.truncate(3);
+        v
+    }
+
+    /// Reads at coordinates one base off the intron's (either end, or both together): the signature of a 0/1-based or
+    /// end-exclusive convention mismatch rather than of absent support.
+    pub fn shifted_reads(&self, seq: &str, start: u64, end: u64, plus: bool) -> u64 {
+        let mut total = 0;
+        for (ds, de) in [(-1i64, 0i64), (1, 0), (0, -1), (0, 1), (1, 1), (-1, -1)] {
+            let (Some(s2), Some(e2)) = (start.checked_add_signed(ds), end.checked_add_signed(de))
+            else {
+                continue;
+            };
+            total += self.reads_for(seq, s2, e2, plus);
+        }
+        total
     }
 
     pub fn len(&self) -> usize {
@@ -185,7 +214,49 @@ pub struct Summary {
     pub no_intron_record: usize,
     /// Present cells of taxa without a junction table (left hard).
     pub taxa_without_junctions: usize,
+    /// How well each taxon's table lines up with its introns, in the order of `junctions`.
+    pub checks: Vec<TaxonCheck>,
 }
+
+/// Do a taxon's junctions and introns speak about the same coordinates?
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TaxonCheck {
+    pub taxon: String,
+    /// Distinct introns behind this taxon's present cells.
+    pub introns: usize,
+    /// Of those, introns on a sequence the junction table mentions.
+    pub seqid_hits: usize,
+    /// Introns with reads at exactly their coordinates.
+    pub exact: usize,
+    /// Introns with no exact reads but reads one base off.
+    pub shifted: usize,
+}
+
+impl TaxonCheck {
+    /// A message when the table looks mis-specified, `None` when it lines up.
+    pub fn warning(&self, sample_seqs: &[&str]) -> Option<String> {
+        if self.shifted >= 5 && self.shifted > 2 * self.exact {
+            return Some(format!(
+                "taxon {}: {} introns have reads one base off their coordinates but only {} match exactly; the junction table looks 0/1-based or end-exclusive differently from `--junction-format`",
+                self.taxon, self.shifted, self.exact
+            ));
+        }
+        if self.introns >= 20 && self.exact * 100 < self.introns {
+            return Some(format!(
+                "taxon {}: only {} of {} introns have any exact junction support ({}%); check the genome build and the table's origin (sequence names in the table, e.g. {})",
+                self.taxon,
+                self.exact,
+                self.introns,
+                100 * self.exact / self.introns,
+                sample_seqs.join(", ")
+            ));
+        }
+        None
+    }
+}
+
+/// Introns already counted for a taxon (by protein and offset), and its running check.
+type Checking<'a> = (std::collections::HashSet<(&'a str, &'a str)>, TaxonCheck);
 
 /// One intron record behind a cell: `(seqid, first base, last base, on + strand)`.
 type IntronRecord<'a> = (&'a str, u64, u64, bool);
@@ -287,6 +358,7 @@ pub fn soft_evidence(
         junctions.iter().map(|(t, j)| (t.as_str(), j)).collect();
 
     let mut summary = Summary::default();
+    let mut checks: HashMap<&str, Checking> = HashMap::new();
     let mut cells: Vec<SoftCell> = Vec::new();
     let mut at: HashMap<(String, String), usize> = HashMap::new();
     for r in &st.rows {
@@ -309,6 +381,29 @@ pub fn soft_evidence(
             .map(|&(seq, s, e, plus)| jr.reads_for(seq, s, e, plus))
             .max()
             .unwrap_or(0);
+        let (seen, chk) = checks.entry(taxon).or_insert_with(|| {
+            (
+                Default::default(),
+                TaxonCheck {
+                    taxon: taxon.to_string(),
+                    ..Default::default()
+                },
+            )
+        });
+        if seen.insert((get(sp)?, get(sc)?)) {
+            chk.introns += 1;
+            if recs.iter().any(|&(seq, ..)| jr.has_seq(seq)) {
+                chk.seqid_hits += 1;
+            }
+            if best > 0 {
+                chk.exact += 1;
+            } else if recs
+                .iter()
+                .any(|&(seq, s, e, plus)| jr.shifted_reads(seq, s, e, plus) > 0)
+            {
+                chk.shifted += 1;
+            }
+        }
         let p = p_present(best, opts.p0, opts.k);
         let key = (get(sl)?.to_string(), taxon.to_string());
         match at.get(&key) {
@@ -332,10 +427,45 @@ pub fn soft_evidence(
             }
         }
     }
+    for (taxon, jr) in junctions {
+        if let Some((_, chk)) = checks.remove(taxon.as_str()) {
+            if chk.introns > 0 && chk.seqid_hits == 0 {
+                return Err(Error::parse(format!(
+                    "taxon {taxon}: none of its {} introns lies on a sequence named in the junction table (table has e.g. {}; introns are on e.g. {}); the junctions come from a different genome build or use other sequence names",
+                    chk.introns,
+                    jr.sample_seqs().join(", "),
+                    seqs_of(&by_site, &st, taxon, sx, sp, sc).join(", ")
+                )));
+            }
+            summary.checks.push(chk);
+        }
+    }
     summary.cells = cells.len();
     summary.supported = cells.iter().filter(|c| c.reads > 0).count();
     summary.unsupported = summary.cells - summary.supported;
     Ok((cells, summary))
+}
+
+/// A few sequence names the taxon's introns lie on, for the error message.
+fn seqs_of<'a>(
+    by_site: &HashMap<(&'a str, &'a str), Vec<IntronRecord<'a>>>,
+    st: &Table<'a>,
+    taxon: &str,
+    sx: usize,
+    sp: usize,
+    sc: usize,
+) -> Vec<&'a str> {
+    let mut v: Vec<&str> = st
+        .rows
+        .iter()
+        .filter(|r| r.get(sx).copied() == Some(taxon))
+        .filter_map(|r| by_site.get(&(*r.get(sp)?, *r.get(sc)?)))
+        .flat_map(|recs| recs.iter().map(|x| x.0))
+        .collect();
+    v.sort_unstable();
+    v.dedup();
+    v.truncate(3);
+    v
 }
 
 /// The table `--ml-soft-evidence` reads, with the parameters in a `#` line.
@@ -459,7 +589,8 @@ mod tests {
                 supported: 1,
                 unsupported: 1,
                 no_intron_record: 0,
-                taxa_without_junctions: 1
+                taxa_without_junctions: 1,
+                checks: s.checks.clone()
             }
         );
     }
@@ -522,5 +653,124 @@ mod tests {
             "site\ttaxon\tp_present\treads\tintrons"
         );
         assert_eq!(lines.next().unwrap(), "4:0\tA\t0.900000\t3\t1");
+    }
+
+    /// `n` introns of one taxon on `chrA`, 100 bases each, all in cells `0:0`, `1:0`, ...
+    fn many(n: usize) -> (String, String) {
+        let mut introns =
+            String::from("protein_id\tseqid\tstrand\tgenomic_start\tgenomic_end\tcds_offset\n");
+        let mut sites = String::from("alignment\ttaxon\tprotein_id\tcds_offset\tsite_label\n");
+        for i in 0..n {
+            let st = 1000 * (i as u64 + 1);
+            introns += &format!("p{i}\tchrA\t+\t{st}\t{}\t{}\n", st + 99, 30 + 3 * i);
+            sites += &format!("fam\tA\tp{i}\t{}\t{i}:0\n", 30 + 3 * i);
+        }
+        (introns, sites)
+    }
+
+    #[test]
+    fn a_table_on_other_sequence_names_is_an_error_that_names_both_sides() {
+        let (introns, sites) = many(30);
+        let j = JunctionReads::parse("1\t1000\t1099\t1\t1\t1\t9\t0\t30\n", Format::Star, false)
+            .unwrap();
+        let e = soft_evidence(&introns, &sites, &[("A".into(), j)], &Options::default())
+            .unwrap_err()
+            .to_string();
+        assert!(e.contains("chrA") && e.contains("e.g. 1;"), "{e}");
+        assert!(e.contains("sequence"), "{e}");
+    }
+
+    #[test]
+    fn coordinates_one_base_off_everywhere_are_flagged_not_silently_unsupported() {
+        let (introns, sites) = many(30);
+        // every intron has 10 reads, but the table is end-exclusive (end one short)
+        let t: String = (0..30)
+            .map(|i| {
+                format!(
+                    "chrA\t{}\t{}\t1\t1\t1\t10\t0\t30\n",
+                    1000 * (i + 1),
+                    1000 * (i + 1) + 98
+                )
+            })
+            .collect();
+        let j = JunctionReads::parse(&t, Format::Star, false).unwrap();
+        let (_, s) = soft_evidence(
+            &introns,
+            &sites,
+            &[("A".into(), j.clone())],
+            &Options::default(),
+        )
+        .unwrap();
+        let c = &s.checks[0];
+        assert_eq!(
+            (c.introns, c.seqid_hits, c.exact, c.shifted),
+            (30, 30, 0, 30)
+        );
+        let w = c
+            .warning(&j.sample_seqs())
+            .expect("a shifted table must warn");
+        assert!(w.contains("one base off"), "{w}");
+        // the same table with the right ends is clean
+        let t: String = (0..30)
+            .map(|i| {
+                format!(
+                    "chrA\t{}\t{}\t1\t1\t1\t10\t0\t30\n",
+                    1000 * (i + 1),
+                    1000 * (i + 1) + 99
+                )
+            })
+            .collect();
+        let j = JunctionReads::parse(&t, Format::Star, false).unwrap();
+        let (_, s) = soft_evidence(
+            &introns,
+            &sites,
+            &[("A".into(), j.clone())],
+            &Options::default(),
+        )
+        .unwrap();
+        assert_eq!((s.checks[0].exact, s.checks[0].shifted), (30, 0));
+        assert!(s.checks[0].warning(&j.sample_seqs()).is_none());
+    }
+
+    #[test]
+    fn very_low_exact_support_warns_but_a_handful_of_introns_does_not() {
+        let (introns, sites) = many(40);
+        // 39 introns unsupported, one supported
+        let j = JunctionReads::parse("chrA\t1000\t1099\t1\t1\t1\t9\t0\t30\n", Format::Star, false)
+            .unwrap();
+        let (_, s) = soft_evidence(
+            &introns,
+            &sites,
+            &[("A".into(), j.clone())],
+            &Options::default(),
+        )
+        .unwrap();
+        // 1 of 40 is 2.5%, above the 1% floor: no warning; 0 of 40 is below it
+        assert!(s.checks[0].warning(&j.sample_seqs()).is_none());
+        let j0 =
+            JunctionReads::parse("chrA\t5\t6\t1\t1\t1\t9\t0\t30\n", Format::Star, false).unwrap();
+        let (_, s) = soft_evidence(
+            &introns,
+            &sites,
+            &[("A".into(), j0.clone())],
+            &Options::default(),
+        )
+        .unwrap();
+        assert!(s.checks[0]
+            .warning(&j0.sample_seqs())
+            .unwrap()
+            .contains("0 of 40"));
+        let (introns, sites) = many(5);
+        let (_, s) = soft_evidence(
+            &introns,
+            &sites,
+            &[("A".into(), j0.clone())],
+            &Options::default(),
+        )
+        .unwrap();
+        assert!(
+            s.checks[0].warning(&j0.sample_seqs()).is_none(),
+            "too few introns to judge"
+        );
     }
 }

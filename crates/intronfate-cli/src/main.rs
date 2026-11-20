@@ -1076,6 +1076,16 @@ fn cmd_junctions(a: &JunctionsArgs) -> Result<()> {
         k: a.half_reads,
     };
     let (cells, s) = jn::soft_evidence(&introns, &sites, &tables, &opts)?;
+    for chk in &s.checks {
+        let seqs = tables
+            .iter()
+            .find(|(t, _)| *t == chk.taxon)
+            .map(|(_, j)| j.sample_seqs())
+            .unwrap_or_default();
+        if let Some(w) = chk.warning(&seqs) {
+            eprintln!("warn: {w}");
+        }
+    }
     for (t, _) in &tables {
         if !cells.iter().any(|c| &c.taxon == t) {
             eprintln!("warn: taxon {t} has no cell in {}", a.sites.display());

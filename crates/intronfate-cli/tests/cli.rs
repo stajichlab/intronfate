@@ -2545,3 +2545,160 @@ fn junctions_turns_read_support_into_soft_evidence_the_likelihood_accepts() {
     ]);
     assert_eq!(bad.status.code(), Some(1));
 }
+
+#[test]
+fn site_labels_in_sites_tsv_are_the_matrix_labels_whatever_the_phase_mode() {
+    // example 02 has introns in phases 0 and 1, so --ignore-phase (grouping phase 0) differs from the intron's own phase
+    let w = scratch("site_labels");
+    let e = example("02_missing_data");
+    let s = |p: PathBuf| p.to_str().unwrap().to_string();
+    for (name, extra) in [("strict", None), ("ignore", Some("--ignore-phase"))] {
+        let out = w.join(name);
+        let mut a = vec![
+            "analyze".to_string(),
+            "--gff".into(),
+            s(e.join("d.full.gff3")),
+            "--gff".into(),
+            s(e.join("abc.gff3")),
+            "-p".into(),
+            s(e.join("proteins.full.faa")),
+            "--msa".into(),
+            s(e.join("family.full.aln.fasta")),
+            "-t".into(),
+            s(e.join("family.nwk")),
+            "-m".into(),
+            "counts".into(),
+            "-o".into(),
+            s(out.clone()),
+        ];
+        a.extend(extra.map(String::from));
+        let refs: Vec<&str> = a.iter().map(String::as_str).collect();
+        let o = run(&refs);
+        assert!(
+            o.status.success(),
+            "{name}: {}",
+            String::from_utf8_lossy(&o.stderr)
+        );
+        let dir = out.join("family.full.aln");
+        let sites = fs::read_to_string(dir.join("sites.tsv")).unwrap();
+        let matrix = fs::read_to_string(dir.join("matrix.tsv")).unwrap();
+        let labels: std::collections::HashSet<String> = matrix
+            .lines()
+            .filter(|l| !l.starts_with('#') && !l.starts_with("site\t"))
+            .map(|l| {
+                let f: Vec<&str> = l.split('\t').collect();
+                format!("{}:{}", f[1], f[2])
+            })
+            .collect();
+        let used: Vec<&str> = sites
+            .lines()
+            .skip(1)
+            .map(|l| l.split('\t').nth(9).unwrap())
+            .collect();
+        assert!(!used.is_empty());
+        for l in &used {
+            assert!(
+                labels.contains(*l),
+                "{name}: sites.tsv label {l} is not a matrix site {labels:?}"
+            );
+        }
+        if extra.is_some() {
+            assert!(
+                used.iter().all(|l| l.ends_with(":0")),
+                "grouping phase is 0 under --ignore-phase: {used:?}"
+            );
+            // and the column `phase` still carries the intron's own phase
+            assert!(sites
+                .lines()
+                .skip(1)
+                .any(|l| l.split('\t').nth(4) == Some("1")));
+        }
+    }
+}
+
+#[test]
+fn soft_evidence_on_a_combined_run_fails_with_a_message_that_says_why() {
+    let w = scratch("soft_combined");
+    let q = example("01_quickstart");
+    let soft = w.join("soft.tsv");
+    fs::write(&soft, "site\ttaxon\tp_present\n4:0\tA\t0.9\n").unwrap();
+    let o = run(&[
+        "analyze",
+        "--gff",
+        q.join("family.gff3").to_str().unwrap(),
+        "-p",
+        q.join("proteins.faa").to_str().unwrap(),
+        "--msa",
+        q.join("family.aln.fasta").to_str().unwrap(),
+        "-t",
+        q.join("family.nwk").to_str().unwrap(),
+        "-m",
+        "likelihood",
+        "--ml-max-iter",
+        "20",
+        "--combine",
+        "--ml-soft-evidence",
+        soft.to_str().unwrap(),
+        "-o",
+        w.join("out").to_str().unwrap(),
+    ]);
+    assert_eq!(o.status.code(), Some(1));
+    let e = String::from_utf8_lossy(&o.stderr);
+    assert!(
+        e.contains("combined matrix") && e.contains("<alignment>:<column>:<phase>"),
+        "{e}"
+    );
+}
+
+#[test]
+fn junctions_refuses_tables_from_another_genome_build_and_warns_on_shifted_coordinates() {
+    let w = scratch("junctions_guards");
+    let q = example("01_quickstart");
+    let s = |p: &Path| p.to_str().unwrap().to_string();
+    let out = w.join("o");
+    let o = run(&[
+        "analyze",
+        "--gff",
+        &s(&q.join("family.gff3")),
+        "-p",
+        &s(&q.join("proteins.faa")),
+        "--msa",
+        &s(&q.join("family.aln.fasta")),
+        "-t",
+        &s(&q.join("family.nwk")),
+        "-m",
+        "counts",
+        "-o",
+        &s(&out),
+    ]);
+    assert!(o.status.success());
+    let (introns, sites) = (
+        out.join("introns.tsv"),
+        out.join("family.aln").join("sites.tsv"),
+    );
+    let junc = |name: &str, body: &str| -> Output {
+        let f = w.join(name);
+        fs::write(&f, body).unwrap();
+        run(&[
+            "junctions",
+            "--introns",
+            &s(&introns),
+            "--sites",
+            &s(&sites),
+            "--junctions",
+            &format!("A={}", s(&f)),
+            "-o",
+            &s(&w.join("soft.tsv")),
+        ])
+    };
+    // other sequence names (NCBI-style `1` against `chrA`): an error naming both sides, nothing written
+    let o = junc("other_names.tab", "1\t113\t200\t1\t1\t1\t9\t0\t30\n");
+    assert_eq!(o.status.code(), Some(1));
+    let e = String::from_utf8_lossy(&o.stderr);
+    assert!(e.contains("chrA") && e.contains("sequence"), "{e}");
+    assert!(!w.join("soft.tsv").exists());
+    // the quickstart has too few introns (2 per taxon) to judge shifts, so a shifted table is accepted quietly here;
+    // the shifted-coordinate warning itself is covered by the core tests on 30 introns
+    let o = junc("shifted.tab", "chrA\t113\t199\t1\t1\t1\t9\t0\t30\n");
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+}

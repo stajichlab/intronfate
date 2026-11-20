@@ -75,9 +75,19 @@ pub fn apply_soft_evidence(
                 "soft evidence for {site} / {taxon}: probability {p} is not in [0, 1]"
             ));
         }
-        let ci = *by_site
-            .get(site.as_str())
-            .ok_or_else(|| format!("soft evidence: no site {site}"))?;
+        let ci = *by_site.get(site.as_str()).ok_or_else(|| {
+            let combined = data
+                .characters
+                .first()
+                .is_some_and(|c| c.label.matches(':').count() > site.matches(':').count());
+            if combined {
+                format!(
+                    "soft evidence: no site {site}; this is a combined matrix, whose sites are labelled <alignment>:<column>:<phase> (a per-alignment soft table has <column>:<phase>); score one alignment's matrix with its own table"
+                )
+            } else {
+                format!("soft evidence: no site {site}")
+            }
+        })?;
         let ti = data
             .tip_names
             .iter()
