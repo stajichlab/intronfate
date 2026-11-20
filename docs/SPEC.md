@@ -461,14 +461,24 @@ likelihood between the two hard versions, errors for unknown sites, taxa and out
 Other sources of the probabilities: **column ambiguity** (an intron beside an indel could sit in any column of the gap run) was measured in
 [F2](../bench/F2_column_ambiguity/README.md) and set aside: short gaps are about 2% of cells, and long gaps (most missing data) are
 regions with no homologous sequence. **Annotation boundary uncertainty** needs a per-intron confidence from the annotation source, which
-most GFFs lack.
+most GFFs lack (the nine fungal GFFs of V6 have no score column and no evidence attributes at all). The source that exists is
+RNA-seq: `intronfate junctions` turns splice-junction read counts into the table above.
+
+For an annotated intron with `n` reads spanning exactly its coordinates (same chromosome, first and last intron base, and strand, or
+an undefined strand), `p(n) = 1 − (1 − p0)·k/(n + k)`: `p0` (default 0.8) is the probability of an intron no read supports, `k`
+(default 3) is the read count that halves the remaining doubt, and `p` rises monotonically to 1. Zero reads gives `p0`, not 0: an
+intron nobody sequenced is unconfirmed, not refuted, so reads can only raise confidence. A cell with several introns behind it
+(paralogs, isoforms) takes the best-supported one. Only cells the annotation already calls present are softened; junctions at
+coordinates the annotation lacks are not projected into the alignment. `p0` and `k` are not fitted: they are the user's statement of
+how far to trust an unsupported model, and the default is a prior, not a measurement.
 
 ### 5.6c Planned
 
 - ~~**Free class probabilities and multipliers**~~ — done (§5.5d).
 - ~~**Ancient versus convergent introns**~~ — done (`--ml-origins`, §5.6).
 - **Probabilistic projection**: the likelihood takes soft cell evidence (§5.6b). Remaining: produce the probabilities from the projection
-  (annotation boundary confidence; column ambiguity was measured and set aside, F2) and carry them through `matrix.tsv`.
+  (done for RNA-seq junction support, `intronfate junctions`; column ambiguity was measured and set aside, F2). Open: validate the
+  read-support map on real RNA-seq, and carry the probabilities through `matrix.tsv`.
 
 Done and removed from this list: the bias correction for gappy, poorly aligned columns (per-cell observability with the flank rule, §2).
 

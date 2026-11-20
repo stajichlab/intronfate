@@ -2389,3 +2389,159 @@ fn a_reader_that_closes_early_is_a_quiet_success() {
         String::from_utf8_lossy(&o.stderr)
     );
 }
+
+#[test]
+fn junctions_turns_read_support_into_soft_evidence_the_likelihood_accepts() {
+    let w = scratch("junctions");
+    let q = example("01_quickstart");
+    let s = |p: &Path| p.to_str().unwrap().to_string();
+    let analyze = |out: &Path, extra: &[&str]| {
+        let mut a: Vec<String> = [
+            "analyze",
+            "--gff",
+            &s(&q.join("family.gff3")),
+            "-p",
+            &s(&q.join("proteins.faa")),
+            "--msa",
+            &s(&q.join("family.aln.fasta")),
+            "-t",
+            &s(&q.join("family.nwk")),
+            "-m",
+            "likelihood",
+            "--ml-max-iter",
+            "300",
+            "-o",
+            &s(out),
+        ]
+        .iter()
+        .map(|x| x.to_string())
+        .collect();
+        a.extend(extra.iter().map(|x| x.to_string()));
+        let refs: Vec<&str> = a.iter().map(String::as_str).collect();
+        let o = run(&refs);
+        assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    };
+    let lnl = |d: &Path| -> f64 {
+        fs::read_to_string(d.join("family.aln").join("summary_score.tsv"))
+            .unwrap()
+            .lines()
+            .find(|l| l.starts_with("ml_log_likelihood"))
+            .unwrap()
+            .split('\t')
+            .nth(1)
+            .unwrap()
+            .parse()
+            .unwrap()
+    };
+    let plain = w.join("plain");
+    analyze(&plain, &[]);
+    let (introns, sites) = (
+        plain.join("introns.tsv"),
+        plain.join("family.aln").join("sites.tsv"),
+    );
+    // taxon A: its first intron (113-200) has 12 reads, its second (210-300) none; taxon B's table has only a shifted junction
+    let a_sj = w.join("A.SJ.out.tab");
+    fs::write(&a_sj, "chrA\t113\t200\t1\t1\t1\t12\t0\t30\n").unwrap();
+    let b_sj = w.join("B.SJ.out.tab");
+    fs::write(&b_sj, "chrB\t114\t200\t1\t1\t1\t40\t0\t30\n").unwrap();
+    let soft = w.join("soft.tsv");
+    let o = run(&[
+        "junctions",
+        "--introns",
+        &s(&introns),
+        "--sites",
+        &s(&sites),
+        "--junctions",
+        &format!("A={}", s(&a_sj)),
+        "--junctions",
+        &format!("B={}", s(&b_sj)),
+        "-o",
+        &s(&soft),
+    ]);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let table = fs::read_to_string(&soft).unwrap();
+    let rows: Vec<Vec<&str>> = table
+        .lines()
+        .filter(|l| !l.starts_with('#'))
+        .map(|l| l.split('\t').collect())
+        .collect();
+    assert_eq!(rows[0], ["site", "taxon", "p_present", "reads", "introns"]);
+    let cell = |site: &str, taxon: &str| -> (f64, String) {
+        let r = rows
+            .iter()
+            .find(|r| r[0] == site && r[1] == taxon)
+            .unwrap_or_else(|| panic!("no cell {site}/{taxon} in\n{table}"));
+        (r[2].parse().unwrap(), r[3].to_string())
+    };
+    // p = 1 - 0.2 * 3 / (reads + 3): 12 reads -> 0.96; no reads -> 0.8
+    let (p, n) = cell("4:0", "A");
+    assert!((p - 0.96).abs() < 1e-6 && n == "12", "{p} {n}");
+    let (p, n) = cell("7:0", "A");
+    assert!((p - 0.8).abs() < 1e-6 && n == "0", "{p} {n}");
+    let (p, n) = cell("4:0", "B");
+    assert!(
+        (p - 0.8).abs() < 1e-6 && n == "0",
+        "a shifted junction is no support: {p} {n}"
+    );
+    assert!(
+        rows.iter().skip(1).all(|r| r[1] == "A" || r[1] == "B"),
+        "C and D have no junction table and stay hard:\n{table}"
+    );
+
+    // the likelihood run takes the table, and softer cells change the fit
+    let with = w.join("with_soft");
+    analyze(&with, &["--ml-soft-evidence", &s(&soft)]);
+    assert!(
+        (lnl(&with) - lnl(&plain)).abs() > 1e-6,
+        "soft cells should move the likelihood: {} vs {}",
+        lnl(&with),
+        lnl(&plain)
+    );
+
+    // standard output: the same bytes, summary line on stderr
+    let o = run(&[
+        "junctions",
+        "--introns",
+        &s(&introns),
+        "--sites",
+        &s(&sites),
+        "--junctions",
+        &format!("A={}", s(&a_sj)),
+        "--junctions",
+        &format!("B={}", s(&b_sj)),
+        "-o",
+        "-",
+    ]);
+    assert!(o.status.success());
+    assert_eq!(o.stdout, fs::read(&soft).unwrap());
+    assert!(String::from_utf8_lossy(&o.stderr).contains("soft cell(s)"));
+
+    // refusals
+    let bad = run(&[
+        "junctions",
+        "--introns",
+        &s(&introns),
+        "--sites",
+        &s(&sites),
+        "--junctions",
+        "nofile",
+        "-o",
+        &s(&soft),
+    ]);
+    assert_eq!(bad.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&bad.stderr).contains("TAXON=FILE"));
+    let bad = run(&[
+        "junctions",
+        "--introns",
+        &s(&introns),
+        "--sites",
+        &s(&sites),
+        "--junctions",
+        &format!("A={}", s(&a_sj)),
+        "--junction-format",
+        "gtf",
+        "-o",
+        &s(&soft),
+    ]);
+    assert_eq!(bad.status.code(), Some(1));
+}
