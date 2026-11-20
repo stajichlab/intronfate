@@ -199,6 +199,48 @@ impl Default for Options {
     }
 }
 
+/// The `(site label, taxon)` cells a matrix calls present (`1`). Soft evidence is only ever given to these: an intron that `sites.tsv`
+/// lists but the matrix masked as unobservable is a missing cell (`?`), and a soft cell would turn it into an observation.
+#[derive(Clone, Debug, Default)]
+pub struct PresentCells(std::collections::HashSet<(String, String)>);
+
+impl PresentCells {
+    /// Read the present cells of one or more `matrix.tsv` texts (per-alignment or combined).
+    pub fn from_matrices<'a>(texts: impl IntoIterator<Item = &'a str>) -> Result<Self> {
+        let mut set = std::collections::HashSet::new();
+        for text in texts {
+            let t = Table::parse(text, "matrix")?;
+            let first = t.col("pattern", "matrix")? + 1;
+            for r in &t.rows {
+                let site = r
+                    .first()
+                    .ok_or_else(|| Error::parse("matrix: a row is empty"))?;
+                for (i, taxon) in t.head.iter().enumerate().skip(first) {
+                    if r.get(i).copied() == Some("1") {
+                        set.insert((site.to_string(), taxon.to_string()));
+                    }
+                }
+            }
+        }
+        if set.is_empty() {
+            return Err(Error::parse("the matrix has no present cell"));
+        }
+        Ok(PresentCells(set))
+    }
+
+    pub fn contains(&self, site: &str, taxon: &str) -> bool {
+        self.0.contains(&(site.to_string(), taxon.to_string()))
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
 /// One soft cell.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SoftCell {
@@ -221,6 +263,8 @@ pub struct Summary {
     pub no_intron_record: usize,
     /// Present cells of taxa without a junction table (left hard).
     pub taxa_without_junctions: usize,
+    /// Cells of `sites.tsv` the matrix does not call present (masked as unobservable): not softened.
+    pub not_present_in_matrix: usize,
     /// How well each taxon's table lines up with its introns, in the order of `junctions`.
     pub checks: Vec<TaxonCheck>,
 }
@@ -301,10 +345,12 @@ impl<'a> Table<'a> {
 /// Soft cells for one alignment.
 ///
 /// `introns` is the run's `introns.tsv` (genomic coordinates), `sites` the alignment's `sites.tsv` (which cell each intron fills),
-/// and `junctions` maps a taxon name to its junction reads. Cells of taxa not in `junctions` are left out, and stay hard.
+/// `present` the cells the matrix calls present, and `junctions` maps a taxon name to its junction reads. Cells of taxa not in
+/// `junctions` are left out, and stay hard; so are cells the matrix does not call present.
 pub fn soft_evidence(
     introns: &str,
     sites: &str,
+    present: &PresentCells,
     junctions: &[(String, JunctionReads)],
     opts: &Options,
 ) -> Result<(Vec<SoftCell>, Summary)> {
@@ -417,6 +463,10 @@ pub fn soft_evidence(
         } else {
             get(sl)?.to_string()
         };
+        if !present.contains(&label, taxon) {
+            summary.not_present_in_matrix += 1;
+            continue;
+        }
         let key = (label, taxon.to_string());
         match at.get(&key) {
             Some(&i) => {
@@ -503,6 +553,64 @@ pub fn soft_table(cells: &[SoftCell], opts: &Options, source: &str) -> String {
 mod tests {
     use super::*;
 
+    /// Every cell of the sites table counts as present (what `sites.tsv` alone used to mean).
+    fn all_present(sites: &str, combined: bool) -> PresentCells {
+        let t = Table::parse(sites, "sites").unwrap();
+        let (a, x, l) = (
+            t.col("alignment", "").unwrap(),
+            t.col("taxon", "").unwrap(),
+            t.col("site_label", "").unwrap(),
+        );
+        let mut m = String::from("site\tcolumn\tphase\tpattern");
+        let mut cells: Vec<(String, String)> = Vec::new();
+        for r in &t.rows {
+            let label = if combined {
+                format!("{}:{}", r[a], r[l])
+            } else {
+                r[l].to_string()
+            };
+            cells.push((label, r[x].to_string()));
+        }
+        let mut taxa: Vec<String> = cells.iter().map(|c| c.1.clone()).collect();
+        taxa.sort();
+        taxa.dedup();
+        for tx in &taxa {
+            m.push('\t');
+            m.push_str(tx);
+        }
+        m.push('\n');
+        let mut labels: Vec<String> = cells.iter().map(|c| c.0.clone()).collect();
+        labels.sort();
+        labels.dedup();
+        for lab in labels {
+            m.push_str(&format!("{lab}\t0\t0\t-"));
+            for tx in &taxa {
+                m.push_str(if cells.contains(&(lab.clone(), tx.clone())) {
+                    "\t1"
+                } else {
+                    "\t0"
+                });
+            }
+            m.push('\n');
+        }
+        PresentCells::from_matrices([m.as_str()]).unwrap()
+    }
+
+    fn se(
+        introns: &str,
+        sites: &str,
+        j: &[(String, JunctionReads)],
+        opts: &Options,
+    ) -> Result<(Vec<SoftCell>, Summary)> {
+        soft_evidence(
+            introns,
+            sites,
+            &all_present(sites, opts.combined_labels),
+            j,
+            opts,
+        )
+    }
+
     const INTRONS: &str = "protein_id\tgene_id\ttranscript_id\tseqid\tstrand\tintron_rank\tcoding_rank\tgenomic_start\tgenomic_end\tintron_len\tcds_offset\tphase\tcodon\n\
         pA\tg\tt\tchrA\t+\t0\t0\t113\t200\t88\t12\t0\t4\n\
         pA\tg\tt\tchrA\t+\t1\t1\t210\t300\t91\t21\t0\t7\n\
@@ -578,8 +686,7 @@ mod tests {
     #[test]
     fn supported_and_unsupported_introns_get_their_probabilities() {
         let a = star(&[("chrA", 113, 200, 1, 9, 0)]); // first intron has 9 reads, second none
-        let (cells, s) =
-            soft_evidence(INTRONS, SITES, &[("A".into(), a)], &Options::default()).unwrap();
+        let (cells, s) = se(INTRONS, SITES, &[("A".into(), a)], &Options::default()).unwrap();
         assert_eq!(
             cells.len(),
             2,
@@ -602,6 +709,7 @@ mod tests {
                 unsupported: 1,
                 no_intron_record: 0,
                 taxa_without_junctions: 1,
+                not_present_in_matrix: 0,
                 checks: s.checks.clone()
             }
         );
@@ -611,13 +719,11 @@ mod tests {
     fn a_wrong_strand_or_shifted_coordinate_is_not_support() {
         // B's intron is on `-`; reads on `+` at the same coordinates do not support it, a one-base shift neither
         let b = star(&[("chrB", 500, 600, 1, 50, 0), ("chrB", 501, 600, 2, 50, 0)]);
-        let (cells, _) =
-            soft_evidence(INTRONS, SITES, &[("B".into(), b)], &Options::default()).unwrap();
+        let (cells, _) = se(INTRONS, SITES, &[("B".into(), b)], &Options::default()).unwrap();
         assert_eq!(cells.len(), 1);
         assert_eq!(cells[0].reads, 0);
         let b = star(&[("chrB", 500, 600, 2, 6, 0)]);
-        let (cells, _) =
-            soft_evidence(INTRONS, SITES, &[("B".into(), b)], &Options::default()).unwrap();
+        let (cells, _) = se(INTRONS, SITES, &[("B".into(), b)], &Options::default()).unwrap();
         assert_eq!(cells[0].reads, 6);
     }
 
@@ -625,8 +731,7 @@ mod tests {
     fn several_introns_behind_one_cell_take_the_best_supported() {
         let introns = format!("{INTRONS}pA\tg\tt2\tchrA\t+\t0\t0\t113\t199\t87\t12\t0\t4\n");
         let a = star(&[("chrA", 113, 199, 1, 20, 0), ("chrA", 113, 200, 1, 2, 0)]);
-        let (cells, _) =
-            soft_evidence(&introns, SITES, &[("A".into(), a)], &Options::default()).unwrap();
+        let (cells, _) = se(&introns, SITES, &[("A".into(), a)], &Options::default()).unwrap();
         let c = cells.iter().find(|c| c.site == "4:0").unwrap();
         assert_eq!((c.reads, c.introns), (20, 2));
     }
@@ -635,7 +740,7 @@ mod tests {
     fn malformed_inputs_and_settings_are_refused() {
         let j = star(&[]);
         let two = SITES.replace("fam\tB", "other\tB");
-        let e = soft_evidence(
+        let e = se(
             INTRONS,
             &two,
             &[("A".into(), j.clone())],
@@ -643,8 +748,8 @@ mod tests {
         )
         .unwrap_err();
         assert!(e.to_string().contains("alignments"), "{e}");
-        assert!(soft_evidence("a\tb\n1\t2\n", SITES, &[], &Options::default()).is_err());
-        assert!(soft_evidence(
+        assert!(se("a\tb\n1\t2\n", SITES, &[], &Options::default()).is_err());
+        assert!(se(
             INTRONS,
             SITES,
             &[],
@@ -654,7 +759,7 @@ mod tests {
             }
         )
         .is_err());
-        assert!(soft_evidence(
+        assert!(se(
             INTRONS,
             SITES,
             &[],
@@ -703,7 +808,7 @@ mod tests {
         let (introns, sites) = many(30);
         let j = JunctionReads::parse("1\t1000\t1099\t1\t1\t1\t9\t0\t30\n", Format::Star, false)
             .unwrap();
-        let e = soft_evidence(&introns, &sites, &[("A".into(), j)], &Options::default())
+        let e = se(&introns, &sites, &[("A".into(), j)], &Options::default())
             .unwrap_err()
             .to_string();
         assert!(e.contains("chrA") && e.contains("e.g. 1;"), "{e}");
@@ -724,7 +829,7 @@ mod tests {
             })
             .collect();
         let j = JunctionReads::parse(&t, Format::Star, false).unwrap();
-        let (_, s) = soft_evidence(
+        let (_, s) = se(
             &introns,
             &sites,
             &[("A".into(), j.clone())],
@@ -751,7 +856,7 @@ mod tests {
             })
             .collect();
         let j = JunctionReads::parse(&t, Format::Star, false).unwrap();
-        let (_, s) = soft_evidence(
+        let (_, s) = se(
             &introns,
             &sites,
             &[("A".into(), j.clone())],
@@ -768,7 +873,7 @@ mod tests {
         // 39 introns unsupported, one supported
         let j = JunctionReads::parse("chrA\t1000\t1099\t1\t1\t1\t9\t0\t30\n", Format::Star, false)
             .unwrap();
-        let (_, s) = soft_evidence(
+        let (_, s) = se(
             &introns,
             &sites,
             &[("A".into(), j.clone())],
@@ -779,7 +884,7 @@ mod tests {
         assert!(s.checks[0].warning(&j.sample_seqs()).is_none());
         let j0 =
             JunctionReads::parse("chrA\t5\t6\t1\t1\t1\t9\t0\t30\n", Format::Star, false).unwrap();
-        let (_, s) = soft_evidence(
+        let (_, s) = se(
             &introns,
             &sites,
             &[("A".into(), j0.clone())],
@@ -791,7 +896,7 @@ mod tests {
             .unwrap()
             .contains("0 of 40"));
         let (introns, sites) = many(5);
-        let (_, s) = soft_evidence(
+        let (_, s) = se(
             &introns,
             &sites,
             &[("A".into(), j0.clone())],
@@ -811,22 +916,53 @@ mod tests {
         let both = format!("{SITES}{}", other.split_once('\n').unwrap().1);
         let a = star(&[("chrA", 113, 200, 1, 9, 0)]);
         let one = Options::default();
-        assert!(
-            soft_evidence(&introns, &both, &[("A".into(), a.clone())], &one)
-                .unwrap_err()
-                .to_string()
-                .contains("--combined-labels")
-        );
+        assert!(se(&introns, &both, &[("A".into(), a.clone())], &one)
+            .unwrap_err()
+            .to_string()
+            .contains("--combined-labels"));
         let opts = Options {
             combined_labels: true,
             ..Options::default()
         };
-        let (cells, s) = soft_evidence(&introns, &both, &[("A".into(), a)], &opts).unwrap();
+        let (cells, s) = se(&introns, &both, &[("A".into(), a)], &opts).unwrap();
         let labels: Vec<&str> = cells.iter().map(|c| c.site.as_str()).collect();
         assert_eq!(labels, ["fam:4:0", "fam:7:0", "other:4:0", "other:7:0"]);
         assert_eq!(s.cells, 4);
         // the same intron in two alignments is two cells, each with its own label and the same support
         assert_eq!(cells[0].reads, 9);
         assert_eq!(cells[2].reads, 9);
+    }
+
+    #[test]
+    fn cells_the_matrix_masked_or_lacks_are_never_softened() {
+        // A's 7:0 is `?` in the matrix (present but unobservable); B has no site 7:0 at all
+        let matrix = "# format=2\nsite\tcolumn\tphase\tn_taxa\tpattern\tA\tB\n4:0\t4\t0\t2\t11\t1\t1\n7:0\t7\t0\t1\t?0\t?\t0\n";
+        let present = PresentCells::from_matrices([matrix]).unwrap();
+        assert_eq!(present.len(), 2);
+        assert!(present.contains("4:0", "A") && present.contains("4:0", "B"));
+        assert!(!present.contains("7:0", "A"), "`?` is not present");
+        let a = star(&[("chrA", 113, 200, 1, 9, 0), ("chrA", 210, 300, 1, 9, 0)]);
+        let (cells, s) = soft_evidence(
+            INTRONS,
+            SITES,
+            &present,
+            &[("A".into(), a)],
+            &Options::default(),
+        )
+        .unwrap();
+        assert_eq!(cells.len(), 1);
+        assert_eq!(cells[0].site, "4:0");
+        assert_eq!(
+            s.not_present_in_matrix, 1,
+            "A's 7:0 is dropped, and counted"
+        );
+        assert!(
+            PresentCells::from_matrices(["site\tpattern\tA\n4:0\t?\t?\n"]).is_err(),
+            "a matrix with no present cell is refused"
+        );
+        assert!(
+            PresentCells::from_matrices(["site\tcolumn\nx\t1\n"]).is_err(),
+            "no pattern column"
+        );
     }
 }

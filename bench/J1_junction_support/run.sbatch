@@ -45,7 +45,7 @@ SC=(--matrix "$W/run/combined/matrix.tsv" -t species.nwk -m likelihood --ml-orig
 "$BIN" score "${SC[@]}" -o "$W/score_hard" > "$W/score_hard.stdout"
 for pk in "0.8 3" "0.5 3" "0.95 3" "0.8 1" "0.8 10"; do
   set -- $pk; p=$1; k=$2
-  "$BIN" junctions --introns "$W/run/introns.tsv" --sites-dir "$W/run" --combined-labels --junction-format bed \
+  "$BIN" junctions --introns "$W/run/introns.tsv" --sites-dir "$W/run" --matrix "$W/run/combined/matrix.tsv" --combined-labels --junction-format bed \
      "${jargs[@]}" --unsupported-p "$p" --half-reads "$k" -o "$W/soft_${p}_${k}.tsv" 2> "$W/junctions_${p}_${k}.stderr"
   "$BIN" score "${SC[@]}" --ml-soft-evidence "$W/soft_${p}_${k}.tsv" -o "$W/score_${p}_${k}" > "$W/score_${p}_${k}.stdout"
 done

@@ -568,6 +568,12 @@ struct JunctionsArgs {
     #[arg(long)]
     combined_labels: bool,
 
+    /// The `matrix.tsv` the soft table is for (`<out-dir>/<alignment>/matrix.tsv`, or `<out-dir>/combined/matrix.tsv` with
+    /// `--combined-labels`). Soft evidence goes only to cells the matrix calls present: an intron the matrix masked as
+    /// unobservable is a missing cell and would otherwise become an observation. Repeatable.
+    #[arg(long, value_name = "FILE", required = true)]
+    matrix: Vec<PathBuf>,
+
     /// `TAXON=FILE`: junction read counts for that taxon's genome. Repeatable. Taxa without one keep their hard cells.
     #[arg(long, value_name = "TAXON=FILE", required = true)]
     junctions: Vec<String>,
@@ -1125,7 +1131,15 @@ fn cmd_junctions(a: &JunctionsArgs) -> Result<()> {
         k: a.half_reads,
         combined_labels: a.combined_labels,
     };
-    let (cells, s) = jn::soft_evidence(&introns, &sites, &tables, &opts)?;
+    let mut matrix_texts = Vec::new();
+    for m in &a.matrix {
+        matrix_texts.push(
+            intronfate_core::util::read_text(m)
+                .with_context(|| format!("could not read matrix {}", m.display()))?,
+        );
+    }
+    let present = jn::PresentCells::from_matrices(matrix_texts.iter().map(String::as_str))?;
+    let (cells, s) = jn::soft_evidence(&introns, &sites, &present, &tables, &opts)?;
     for chk in &s.checks {
         let seqs = tables
             .iter()
@@ -1155,13 +1169,14 @@ fn cmd_junctions(a: &JunctionsArgs) -> Result<()> {
         intronfate_core::util::write_atomic(&a.out, text.as_bytes())?;
     }
     say!(
-        "{} soft cell(s): {} backed by reads, {} without (p = {}); {} cell(s) of taxa without a junction table left hard; {} without an intron record -> {}",
+        "{} soft cell(s): {} backed by reads, {} without (p = {}); {} cell(s) of taxa without a junction table left hard; {} without an intron record; {} masked or absent in the matrix, not softened -> {}",
         s.cells,
         s.supported,
         s.unsupported,
         a.unsupported_p,
         s.taxa_without_junctions,
         s.no_intron_record,
+        s.not_present_in_matrix,
         a.out.display()
     );
     Ok(())

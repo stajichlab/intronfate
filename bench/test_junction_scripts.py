@@ -69,7 +69,7 @@ class EndToEnd(unittest.TestCase):
             with open(bedfile, "w") as fh:
                 fh.write(bed)
             r = subprocess.run([BIN, "junctions", "--introns", f"{out}/introns.tsv", "--sites", f"{out}/family.aln/sites.tsv",
-                                "--junctions", f"A={bedfile}", "--junction-format", "bed", "-o", "-"], capture_output=True, text=True, check=True)
+                                "--matrix", f"{out}/family.aln/matrix.tsv", "--junctions", f"A={bedfile}", "--junction-format", "bed", "-o", "-"], capture_output=True, text=True, check=True)
             rows = {tuple(l.split("\t")[:2]): l.split("\t") for l in r.stdout.splitlines() if not l.startswith("#")}
             first = rows[("4:0", "A")]
             self.assertEqual(first[3], "12", r.stdout)            # exactly the 12 reads at 113..200

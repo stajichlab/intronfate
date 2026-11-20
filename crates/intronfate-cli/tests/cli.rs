@@ -2447,6 +2447,8 @@ fn junctions_turns_read_support_into_soft_evidence_the_likelihood_accepts() {
     let soft = w.join("soft.tsv");
     let o = run(&[
         "junctions",
+        "--matrix",
+        &s(&plain.join("family.aln").join("matrix.tsv")),
         "--introns",
         &s(&introns),
         "--sites",
@@ -2501,6 +2503,8 @@ fn junctions_turns_read_support_into_soft_evidence_the_likelihood_accepts() {
     // standard output: the same bytes, summary line on stderr
     let o = run(&[
         "junctions",
+        "--matrix",
+        &s(&plain.join("family.aln").join("matrix.tsv")),
         "--introns",
         &s(&introns),
         "--sites",
@@ -2519,6 +2523,8 @@ fn junctions_turns_read_support_into_soft_evidence_the_likelihood_accepts() {
     // refusals
     let bad = run(&[
         "junctions",
+        "--matrix",
+        &s(&plain.join("family.aln").join("matrix.tsv")),
         "--introns",
         &s(&introns),
         "--sites",
@@ -2532,6 +2538,8 @@ fn junctions_turns_read_support_into_soft_evidence_the_likelihood_accepts() {
     assert!(String::from_utf8_lossy(&bad.stderr).contains("TAXON=FILE"));
     let bad = run(&[
         "junctions",
+        "--matrix",
+        &s(&plain.join("family.aln").join("matrix.tsv")),
         "--introns",
         &s(&introns),
         "--sites",
@@ -2681,6 +2689,8 @@ fn junctions_refuses_tables_from_another_genome_build_and_warns_on_shifted_coord
         fs::write(&f, body).unwrap();
         run(&[
             "junctions",
+            "--matrix",
+            &s(&out.join("family.aln").join("matrix.tsv")),
             "--introns",
             &s(&introns),
             "--sites",
@@ -2732,6 +2742,8 @@ fn junctions_with_combined_labels_feeds_the_combined_matrix() {
     // without --combined-labels a combined run's per-alignment sites are refused by name
     let o = run(&[
         "junctions",
+        "--matrix",
+        &s(&out.join("combined").join("matrix.tsv")),
         "--introns",
         &s(&out.join("introns.tsv")),
         "--sites-dir",
@@ -2748,6 +2760,8 @@ fn junctions_with_combined_labels_feeds_the_combined_matrix() {
     );
     let o = run(&[
         "junctions",
+        "--matrix",
+        &s(&out.join("combined").join("matrix.tsv")),
         "--introns",
         &s(&out.join("introns.tsv")),
         "--sites-dir",
@@ -2783,4 +2797,67 @@ fn junctions_with_combined_labels_feeds_the_combined_matrix() {
         "{}",
         String::from_utf8_lossy(&o.stdout)
     );
+}
+
+#[test]
+fn junctions_never_softens_a_cell_the_matrix_masked() {
+    let w = scratch("junctions_masked");
+    let q = example("01_quickstart");
+    let s = |p: &Path| p.to_str().unwrap().to_string();
+    let out = w.join("o");
+    let o = run(&[
+        "analyze",
+        "--gff",
+        &s(&q.join("family.gff3")),
+        "-p",
+        &s(&q.join("proteins.faa")),
+        "--msa",
+        &s(&q.join("family.aln.fasta")),
+        "-t",
+        &s(&q.join("family.nwk")),
+        "-m",
+        "counts",
+        "-o",
+        &s(&out),
+    ]);
+    assert!(o.status.success());
+    // mask taxon A's cell at 4:0 (`1` -> `?`), as the flank rule does for an intron beside a gap
+    let m = fs::read_to_string(out.join("family.aln").join("matrix.tsv")).unwrap();
+    let head = m.lines().find(|l| l.starts_with("site\t")).unwrap();
+    let a_col = head.split('\t').position(|c| c == "A").unwrap();
+    let edited: String = m
+        .lines()
+        .map(|l| {
+            let mut f: Vec<String> = l.split('\t').map(String::from).collect();
+            if f[0] == "4:0" {
+                f[a_col] = "?".into();
+            }
+            f.join("\t") + "\n"
+        })
+        .collect();
+    let masked = w.join("masked.matrix.tsv");
+    fs::write(&masked, edited).unwrap();
+    let sj = w.join("A.SJ.out.tab");
+    fs::write(&sj, "chrA\t113\t200\t1\t1\t1\t12\t0\t30\n").unwrap();
+    let o = run(&[
+        "junctions",
+        "--introns",
+        &s(&out.join("introns.tsv")),
+        "--sites",
+        &s(&out.join("family.aln").join("sites.tsv")),
+        "--matrix",
+        &s(&masked),
+        "--junctions",
+        &format!("A={}", s(&sj)),
+        "-o",
+        "-",
+    ]);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let t = String::from_utf8_lossy(&o.stdout);
+    assert!(
+        !t.contains("4:0\tA"),
+        "the masked cell must stay missing:\n{t}"
+    );
+    assert!(t.contains("7:0\tA"), "{t}");
+    assert!(String::from_utf8_lossy(&o.stderr).contains("1 masked or absent in the matrix"));
 }

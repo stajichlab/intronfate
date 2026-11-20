@@ -468,7 +468,7 @@ For an annotated intron with `n` reads spanning exactly its coordinates (same ch
 an undefined strand), `p(n) = 1 − (1 − p0)·k/(n + k)`: `p0` (default 0.8) is the probability of an intron no read supports, `k`
 (default 3) is the read count that halves the remaining doubt, and `p` rises monotonically to 1. Zero reads gives `p0`, not 0: an
 intron nobody sequenced is unconfirmed, not refuted, so reads can only raise confidence. A cell with several introns behind it
-(paralogs, isoforms) takes the best-supported one. Only cells the annotation already calls present are softened; junctions at
+(paralogs, isoforms) takes the best-supported one. Only cells the annotation already calls present **and** the matrix calls present (`1`, not `?`) are softened: an intron masked by the flank rule is a missing cell, and a soft cell would turn it into an observation; junctions at
 coordinates the annotation lacks are not projected into the alignment. `p0` and `k` are not fitted: they are the user's statement of
 how far to trust an unsupported model, and the default is a prior, not a measurement.
 
