@@ -2702,3 +2702,85 @@ fn junctions_refuses_tables_from_another_genome_build_and_warns_on_shifted_coord
     let o = junc("shifted.tab", "chrA\t113\t199\t1\t1\t1\t9\t0\t30\n");
     assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
 }
+
+#[test]
+fn junctions_with_combined_labels_feeds_the_combined_matrix() {
+    let w = scratch("junctions_combined");
+    let q = example("01_quickstart");
+    let s = |p: &Path| p.to_str().unwrap().to_string();
+    let out = w.join("o");
+    let o = run(&[
+        "analyze",
+        "--gff",
+        &s(&q.join("family.gff3")),
+        "-p",
+        &s(&q.join("proteins.faa")),
+        "--msa",
+        &s(&q.join("family.aln.fasta")),
+        "-t",
+        &s(&q.join("family.nwk")),
+        "-m",
+        "counts",
+        "--combine",
+        "-o",
+        &s(&out),
+    ]);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let sj = w.join("A.SJ.out.tab");
+    fs::write(&sj, "chrA\t113\t200\t1\t1\t1\t12\t0\t30\n").unwrap();
+    let soft = w.join("soft.tsv");
+    // without --combined-labels a combined run's per-alignment sites are refused by name
+    let o = run(&[
+        "junctions",
+        "--introns",
+        &s(&out.join("introns.tsv")),
+        "--sites-dir",
+        &s(&out),
+        "--junctions",
+        &format!("A={}", s(&sj)),
+        "-o",
+        &s(&soft),
+    ]);
+    assert_eq!(
+        o.status.code(),
+        Some(2),
+        "--sites-dir requires --combined-labels (a usage error)"
+    );
+    let o = run(&[
+        "junctions",
+        "--introns",
+        &s(&out.join("introns.tsv")),
+        "--sites-dir",
+        &s(&out),
+        "--combined-labels",
+        "--junctions",
+        &format!("A={}", s(&sj)),
+        "-o",
+        &s(&soft),
+    ]);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let t = fs::read_to_string(&soft).unwrap();
+    assert!(t.contains("family.aln:4:0\tA\t0.96"), "{t}");
+    // the combined matrix takes it; a plain per-alignment label would have been refused
+    let o = run(&[
+        "score",
+        "--matrix",
+        &s(&out.join("combined").join("matrix.tsv")),
+        "-t",
+        &s(&q.join("family.nwk")),
+        "-m",
+        "likelihood",
+        "--ml-max-iter",
+        "50",
+        "--ml-soft-evidence",
+        &s(&soft),
+        "-o",
+        &s(&w.join("scored")),
+    ]);
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert!(
+        String::from_utf8_lossy(&o.stdout).contains("soft evidence on 2 cell"),
+        "{}",
+        String::from_utf8_lossy(&o.stdout)
+    );
+}

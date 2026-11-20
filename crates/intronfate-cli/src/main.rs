@@ -554,9 +554,19 @@ struct JunctionsArgs {
     #[arg(long, value_name = "FILE")]
     introns: PathBuf,
 
-    /// `sites.tsv` of ONE alignment (`<out-dir>/<alignment>/sites.tsv`): which cell each intron fills.
-    #[arg(long, value_name = "FILE")]
-    sites: PathBuf,
+    /// `sites.tsv` of ONE alignment (`<out-dir>/<alignment>/sites.tsv`): which cell each intron fills. With `--combined-labels`
+    /// it can be repeated, one per alignment.
+    #[arg(long, value_name = "FILE", required_unless_present = "sites_dir")]
+    sites: Vec<PathBuf>,
+
+    /// A run's output folder: every `<alignment>/sites.tsv` in it (the `combined/` folder is skipped). Needs `--combined-labels`.
+    #[arg(long, value_name = "DIR", requires = "combined_labels")]
+    sites_dir: Vec<PathBuf>,
+
+    /// Label sites `<alignment>:<column>:<phase>`, as in a combined matrix (`--combine`), so one table covers every alignment.
+    /// Use it with `score --matrix <out-dir>/combined/matrix.tsv --ml-soft-evidence`.
+    #[arg(long)]
+    combined_labels: bool,
 
     /// `TAXON=FILE`: junction read counts for that taxon's genome. Repeatable. Taxa without one keep their hard cells.
     #[arg(long, value_name = "TAXON=FILE", required = true)]
@@ -1069,11 +1079,51 @@ fn cmd_junctions(a: &JunctionsArgs) -> Result<()> {
     }
     let introns = intronfate_core::util::read_text(&a.introns)
         .with_context(|| format!("could not read {}", a.introns.display()))?;
-    let sites = intronfate_core::util::read_text(&a.sites)
-        .with_context(|| format!("could not read {}", a.sites.display()))?;
+    let mut site_files: Vec<PathBuf> = a.sites.clone();
+    for dir in &a.sites_dir {
+        let mut found = Vec::new();
+        for e in std::fs::read_dir(dir)
+            .with_context(|| format!("could not read folder {}", dir.display()))?
+        {
+            let p = e?.path();
+            if p.file_name().is_some_and(|n| n == "combined") {
+                continue;
+            }
+            if p.join("sites.tsv").is_file() {
+                found.push(p.join("sites.tsv"));
+            }
+        }
+        found.sort();
+        if found.is_empty() {
+            bail!(
+                "--sites-dir {}: no <alignment>/sites.tsv inside",
+                dir.display()
+            );
+        }
+        site_files.extend(found);
+    }
+    // concatenate the per-alignment tables under one header
+    let mut sites = String::new();
+    for (i, f) in site_files.iter().enumerate() {
+        let text = intronfate_core::util::read_text(f)
+            .with_context(|| format!("could not read {}", f.display()))?;
+        let mut lines = text.lines().filter(|l| !l.starts_with('#'));
+        let head = lines.next();
+        if i == 0 {
+            if let Some(h) = head {
+                sites.push_str(h);
+                sites.push('\n');
+            }
+        }
+        for l in lines.filter(|l| !l.trim().is_empty()) {
+            sites.push_str(l);
+            sites.push('\n');
+        }
+    }
     let opts = jn::Options {
         p0: a.unsupported_p,
         k: a.half_reads,
+        combined_labels: a.combined_labels,
     };
     let (cells, s) = jn::soft_evidence(&introns, &sites, &tables, &opts)?;
     for chk in &s.checks {
@@ -1088,7 +1138,13 @@ fn cmd_junctions(a: &JunctionsArgs) -> Result<()> {
     }
     for (t, _) in &tables {
         if !cells.iter().any(|c| &c.taxon == t) {
-            eprintln!("warn: taxon {t} has no cell in {}", a.sites.display());
+            eprintln!(
+                "warn: taxon {t} has no cell in {}",
+                site_files
+                    .first()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_default()
+            );
         }
     }
     let text = jn::soft_table(&cells, &opts, &format!("{} taxa", tables.len()));

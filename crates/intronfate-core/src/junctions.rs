@@ -184,11 +184,18 @@ pub struct Options {
     pub p0: f64,
     /// Reads that halve the doubt.
     pub k: f64,
+    /// Label sites as `<alignment>:<column>:<phase>`, the labels of a combined matrix, so that one table covers many alignments.
+    /// Without it the sites table must hold a single alignment, whose labels are `<column>:<phase>`.
+    pub combined_labels: bool,
 }
 
 impl Default for Options {
     fn default() -> Self {
-        Options { p0: 0.8, k: 3.0 }
+        Options {
+            p0: 0.8,
+            k: 3.0,
+            combined_labels: false,
+        }
     }
 }
 
@@ -347,9 +354,9 @@ pub fn soft_evidence(
     );
     let alignments: std::collections::BTreeSet<&str> =
         st.rows.iter().filter_map(|r| r.get(sa).copied()).collect();
-    if alignments.len() > 1 {
+    if alignments.len() > 1 && !opts.combined_labels {
         return Err(Error::parse(format!(
-            "the sites table covers {} alignments ({}); site labels are per alignment, so give one alignment's sites.tsv",
+            "the sites table covers {} alignments ({}); site labels are per alignment, so give one alignment's sites.tsv (or use --combined-labels to label sites <alignment>:<column>:<phase> for a combined matrix)",
             alignments.len(),
             alignments.iter().take(3).copied().collect::<Vec<_>>().join(", ")
         )));
@@ -405,7 +412,12 @@ pub fn soft_evidence(
             }
         }
         let p = p_present(best, opts.p0, opts.k);
-        let key = (get(sl)?.to_string(), taxon.to_string());
+        let label = if opts.combined_labels {
+            format!("{}:{}", get(sa)?, get(sl)?)
+        } else {
+            get(sl)?.to_string()
+        };
+        let key = (label, taxon.to_string());
         match at.get(&key) {
             Some(&i) => {
                 let c = &mut cells[i];
@@ -632,8 +644,26 @@ mod tests {
         .unwrap_err();
         assert!(e.to_string().contains("alignments"), "{e}");
         assert!(soft_evidence("a\tb\n1\t2\n", SITES, &[], &Options::default()).is_err());
-        assert!(soft_evidence(INTRONS, SITES, &[], &Options { p0: 1.5, k: 3.0 }).is_err());
-        assert!(soft_evidence(INTRONS, SITES, &[], &Options { p0: 0.8, k: 0.0 }).is_err());
+        assert!(soft_evidence(
+            INTRONS,
+            SITES,
+            &[],
+            &Options {
+                p0: 1.5,
+                ..Options::default()
+            }
+        )
+        .is_err());
+        assert!(soft_evidence(
+            INTRONS,
+            SITES,
+            &[],
+            &Options {
+                k: 0.0,
+                ..Options::default()
+            }
+        )
+        .is_err());
     }
 
     #[test]
@@ -772,5 +802,31 @@ mod tests {
             s.checks[0].warning(&j0.sample_seqs()).is_none(),
             "too few introns to judge"
         );
+    }
+
+    #[test]
+    fn combined_labels_cover_many_alignments_and_match_a_combined_matrix() {
+        let introns = INTRONS.to_string();
+        let other = SITES.replace("fam\t", "other\t");
+        let both = format!("{SITES}{}", other.split_once('\n').unwrap().1);
+        let a = star(&[("chrA", 113, 200, 1, 9, 0)]);
+        let one = Options::default();
+        assert!(
+            soft_evidence(&introns, &both, &[("A".into(), a.clone())], &one)
+                .unwrap_err()
+                .to_string()
+                .contains("--combined-labels")
+        );
+        let opts = Options {
+            combined_labels: true,
+            ..Options::default()
+        };
+        let (cells, s) = soft_evidence(&introns, &both, &[("A".into(), a)], &opts).unwrap();
+        let labels: Vec<&str> = cells.iter().map(|c| c.site.as_str()).collect();
+        assert_eq!(labels, ["fam:4:0", "fam:7:0", "other:4:0", "other:7:0"]);
+        assert_eq!(s.cells, 4);
+        // the same intron in two alignments is two cells, each with its own label and the same support
+        assert_eq!(cells[0].reads, 9);
+        assert_eq!(cells[2].reads, 9);
     }
 }
