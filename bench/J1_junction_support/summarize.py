@@ -61,7 +61,7 @@ def main():
     hard_l = lnl(hard_dir)
     lines = [["setting", "ln_likelihood", "d_ln_lik_vs_hard", "sites_lnLR_gt2", "overlap_with_hard_jaccard", "sites"]]
     lines.append(["hard", hard_l, 0.0, len(hard_flag), 1.0, n_sites])
-    for d in sorted(glob.glob(os.path.join(work, "score_*"))):
+    for d in sorted(x for x in glob.glob(os.path.join(work, "score_*")) if os.path.isdir(x)):
         name = os.path.basename(d)[len("score_"):]
         if name == "hard":
             continue

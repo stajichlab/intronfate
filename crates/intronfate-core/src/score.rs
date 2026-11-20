@@ -41,7 +41,7 @@ pub fn soft_state(p: f64) -> u8 {
     } else if p >= 1.0 {
         PRESENT
     } else {
-        SOFT_MIN + (p * SOFT_STEPS).round() as u8
+        SOFT_MIN + ((p * SOFT_STEPS).round() as u8).max(1)
     }
 }
 

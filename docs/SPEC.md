@@ -451,12 +451,35 @@ mixture). Reported by `--ml-origins` in `likelihood_sites.tsv` ([`OUTPUTS.md`](O
 A cell can carry a probability `q` that the intron is present, instead of a hard present, absent or missing. The observation is then
 treated as "present" with probability `q` and "absent" with `1 − q`, so the tip's emission is
 `q · P(seen present | state) + (1 − q) · P(seen absent | state)` for each true state. The error model (sensitivity, false rate) applies on
-top; the expected missed and false counts used for the error rates are weighted by `q`. A cell with `q` of 0 or 1 is the ordinary absent or
+top; the expected missed and false counts used for the error rates are the exact joint posterior of the true state and the observation at the tip
+(which reduces to the usual counts for an ordinary cell). A cell with `q` of 0 or 1 is the ordinary absent or
 present cell, and a missing cell given `q` becomes an observation. Inside the engine a soft cell is one of 253 extra cell states
 (`q` rounded to 1/252), so the pattern compression and the rest of the model are unchanged; Dollo, parsimony and the counts never see
 them. `--ml-soft-evidence FILE` supplies them from a table; nothing in the tool yet *produces* the probabilities.
-Validated against the uncorrected likelihood written as the mixture of the hard cells (two soft cells, four terms), the range of the
-likelihood between the two hard versions, errors for unknown sites, taxa and out-of-range probabilities, and a CLI run.
+
+**Conditioning on the position having been seen.** A position is in the data because some genome showed an intron there, and the
+never-seen correction divides by the probability of that event. A soft cell shows one with probability `q`, so a position whose
+carriers are all soft would not have been seen with probability `a = Π(1 − q)`. The likelihood of such a position is therefore the
+average over the configurations in which it *was* seen: with `P_mix` the mixture above and `P_abs` the probability of the same data with every
+soft cell absent,
+
+```text
+L = (P_mix − a · P_abs) / ((1 − a) · (1 − Z))        (positions with an ordinary present cell, or a certain soft cell, keep L = P_mix / (1 − Z))
+```
+
+`Z` is the never-seen probability as before. `L` is a probability, equals the ordinary likelihood as every `q` approaches 1, and the
+E-step (expected transitions, class weights, error counts) and the origin posteriors use the same signed combination of the mixture
+pass and the all-absent pass. An earlier version divided only by `1 − Z`: the mixture then included the unseen configuration, the
+log-likelihood could exceed 0, and the fit sent the gain rate to zero with the log-likelihood rising without bound (found on the V6
+families, J1; a toy case gave ln L = +24). **Soft-evidence likelihoods computed before this correction are not valid.**
+A position with a single soft carrier and nothing else present is, under this model, as informative as an ordinary present cell:
+having been seen, that carrier must have been real, so `q` only matters where two or more cells are present.
+
+Validated against a brute-force enumeration of the configurations in which each column was seen (the likelihood and the origin
+posteriors, with error rates and missing cells), the log-likelihood being at most 0 and continuous as `q` approaches 1, a simulated fit
+with positions that have only soft carriers (it converges, is below 0 and is a stationary point, and beats the parameters of the
+ordinary version of the data), the raw mixture identity for two soft cells, the range of the likelihood between the two hard versions,
+errors for unknown sites, taxa and out-of-range probabilities, and CLI runs. Switching the correction off fails three of these.
 
 Other sources of the probabilities: **column ambiguity** (an intron beside an indel could sit in any column of the gap run) was measured in
 [F2](../bench/F2_column_ambiguity/README.md) and set aside: short gaps are about 2% of cells, and long gaps (most missing data) are
