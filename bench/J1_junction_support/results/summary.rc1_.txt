@@ -1,0 +1,24 @@
+== support of annotated introns by RNA-seq junction reads (cells of the combined matrix; settings 0.8/3)
+taxon	cells	frac_reads_ge1	frac_reads_ge3	frac_reads_ge10
+Anidulans	2442	0.932	0.0213	0.0004
+Ccinerea	6502	0.9076	0.3153	0.0112
+Cneoformans	6055	0.9422	0.472	0.005
+Ncrassa	1728	0.9583	0.1898	0.0
+Scerevisiae	40	0.825	0.0	0.0
+Spombe	1279	0.9648	0.3526	0.0055
+
+== likelihood and convergent-insertion calls (ln LR > 2) under each setting
+setting	ln_likelihood	sites_lnLR_gt2	spearman_lnLR_vs_hard	top100_lnLR_overlap	mean_p_multi	sites_p_multi_gt0.5	sites
+hard	-46709.986653	477	1.0	1.0	0.0453	125	15697
+0.5_3	-39680.055242	12841	-0.1189	0.0	0.028	0	15697
+0.8_1	-44672.528351	103	0.9045	0.05	0.0	0	15697
+0.8_10	-42772.051721	4	0.8346	0.02	0.0	0	15697
+0.8_3	-43656.642034	19	0.8516	0.03	0.0	0	15697
+0.95_3	-45707.288575	229	0.9775	0.1	0.0	0	15697
+
+== warnings from `junctions`
+junctions_0.5_3.stderr none
+junctions_0.8_1.stderr none
+junctions_0.8_10.stderr none
+junctions_0.8_3.stderr none
+junctions_0.95_3.stderr none

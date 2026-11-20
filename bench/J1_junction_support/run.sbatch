@@ -45,15 +45,17 @@ if [ ! -s "$W/run/combined/matrix.tsv" ]; then
      --taxon-map families/$tier/taxon_map.tsv -t species.nwk -m counts -o "$W/run" > /dev/null
 fi
 [ -z "${ONLY_PREP:-}" ] || { echo "prep done"; exit 0; }
-rm -rf "$W"/score_* "$W"/soft_* "$W"/junctions_*
+rm -rf "$W"/score_${TAG:-}* "$W"/soft_* "$W"/junctions_*
 # 3. hard fit, then soft fits over a grid of (p0, k)
-SC=(--matrix "$W/run/combined/matrix.tsv" -t species.nwk -m likelihood --ml-origins --ml-rate-categories 4 --ml-max-iter "${MAXITER:-50000}")
-"$BIN" score "${SC[@]}" -o "$W/score_hard" > "$W/score_hard.stdout"
+# RATECAT=1 gives constant rates (no gamma ridge, converges fast); TAG names the score folders: score_${TAG}hard, score_${TAG}<p0>_<k>
+TAG=${TAG:-}
+SC=(--matrix "$W/run/combined/matrix.tsv" -t species.nwk -m likelihood --ml-origins --ml-rate-categories "${RATECAT:-4}" --ml-max-iter "${MAXITER:-50000}")
+"$BIN" score "${SC[@]}" -o "$W/score_${TAG}hard" > "$W/score_${TAG}hard.stdout"
 for pk in "0.8 3" "0.5 3" "0.95 3" "0.8 1" "0.8 10"; do
   set -- $pk; p=$1; k=$2
   "$BIN" junctions --introns "$W/run/introns.tsv" --sites-dir "$W/run" --matrix "$W/run/combined/matrix.tsv" --combined-labels --junction-format bed \
      "${jargs[@]}" --unsupported-p "$p" --half-reads "$k" -o "$W/soft_${p}_${k}.tsv" 2> "$W/junctions_${p}_${k}.stderr"
-  "$BIN" score "${SC[@]}" --ml-soft-evidence "$W/soft_${p}_${k}.tsv" -o "$W/score_${p}_${k}" > "$W/score_${p}_${k}.stdout"
+  "$BIN" score "${SC[@]}" --ml-soft-evidence "$W/soft_${p}_${k}.tsv" -o "$W/score_${TAG}${p}_${k}" > "$W/score_${TAG}${p}_${k}.stdout"
 done
-python3 -I "$J1/summarize.py" "$W" | tee "$J1/results/summary.txt"
+python3 -I "$J1/summarize.py" "$W" "$TAG" | tee "$J1/results/summary${TAG:+.$TAG}.txt"
 cp "$W"/junctions_*.stderr "$J1/results/" 

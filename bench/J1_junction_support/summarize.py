@@ -46,33 +46,75 @@ def flagged(score_dir, thr=2.0):
     return {r["site"] for r in rows if float(r["ln_lr_multi"]) > thr}, len(rows)
 
 
+def scores(score_dir, col):
+    """site -> value of `col` (ln_lr_multi or p_multi_origin) in a score folder."""
+    _, rows = read_tsv(os.path.join(score_dir, "likelihood_sites.tsv"))
+    return {r["site"]: float(r[col]) for r in rows}
+
+
+def ranks(v):
+    order = sorted(range(len(v)), key=lambda i: v[i])
+    r = [0.0] * len(v)
+    i = 0
+    while i < len(order):          # average ranks over ties
+        j = i
+        while j + 1 < len(order) and v[order[j + 1]] == v[order[i]]:
+            j += 1
+        for k in range(i, j + 1):
+            r[order[k]] = (i + j) / 2
+        i = j + 1
+    return r
+
+
+def spearman(a, b):
+    ra, rb = ranks(a), ranks(b)
+    n = len(a)
+    ma, mb = sum(ra) / n, sum(rb) / n
+    num = sum((x - ma) * (y - mb) for x, y in zip(ra, rb))
+    den = (sum((x - ma) ** 2 for x in ra) * sum((y - mb) ** 2 for y in rb)) ** 0.5
+    return num / den if den else float("nan")
+
+
+def top_overlap(a, b, n=100):
+    ta = {s for s, _ in sorted(a.items(), key=lambda kv: -kv[1])[:n]}
+    tb = {s for s, _ in sorted(b.items(), key=lambda kv: -kv[1])[:n]}
+    return len(ta & tb) / n
+
+
 def main():
     work = sys.argv[1]
+    tag = sys.argv[2] if len(sys.argv) > 2 else ""
+    suffix = f".{tag}" if tag else ""
     base = os.path.join(work, "soft_0.8_3.tsv")
-    with open(os.path.join(RES, "support_by_taxon.tsv"), "w") as fh:
+    with open(os.path.join(RES, "support_by_taxon.tsv"), "w") as fh:  # the same for every tag (it only reads the junction tables)
         fh.write("taxon\tcells\tfrac_reads_ge1\tfrac_reads_ge3\tfrac_reads_ge10\n")
         for r in support_by_taxon(base):
             fh.write("\t".join(map(str, r)) + "\n")
     print("== support of annotated introns by RNA-seq junction reads (cells of the combined matrix; settings 0.8/3)")
     print(open(os.path.join(RES, "support_by_taxon.tsv")).read())
 
-    hard_dir = os.path.join(work, "score_hard")
+    hard_dir = os.path.join(work, f"score_{tag}hard")
     hard_flag, n_sites = flagged(hard_dir)
     hard_l = lnl(hard_dir)
-    lines = [["setting", "ln_likelihood", "d_ln_lik_vs_hard", "sites_lnLR_gt2", "overlap_with_hard_jaccard", "sites"]]
-    lines.append(["hard", hard_l, 0.0, len(hard_flag), 1.0, n_sites])
-    for d in sorted(x for x in glob.glob(os.path.join(work, "score_*")) if os.path.isdir(x)):
-        name = os.path.basename(d)[len("score_"):]
-        if name == "hard":
+    hard_lr = scores(hard_dir, "ln_lr_multi")
+    hard_pm = scores(hard_dir, "p_multi_origin")
+    sites = sorted(hard_lr)
+    lines = [["setting", "ln_likelihood", "sites_lnLR_gt2", "spearman_lnLR_vs_hard", "top100_lnLR_overlap", "mean_p_multi", "sites_p_multi_gt0.5", "sites"]]
+    lines.append(["hard", hard_l, len(hard_flag), 1.0, 1.0, round(sum(hard_pm.values()) / n_sites, 4), sum(1 for v in hard_pm.values() if v > 0.5), n_sites])
+    for d in sorted(x for x in glob.glob(os.path.join(work, f"score_{tag}*")) if os.path.isdir(x)):
+        name = os.path.basename(d)[len(f"score_{tag}"):]
+        if name == "hard" or (not tag and name.startswith("rc")):
             continue
         fl, n = flagged(d)
         union = len(fl | hard_flag) or 1
-        lines.append([name, lnl(d), round(lnl(d) - hard_l, 3), len(fl), round(len(fl & hard_flag) / union, 4), n])
-    with open(os.path.join(RES, "sensitivity.tsv"), "w") as fh:
+        lr, pm = scores(d, "ln_lr_multi"), scores(d, "p_multi_origin")
+        rho = spearman([hard_lr[s] for s in sites], [lr[s] for s in sites])
+        lines.append([name, lnl(d), len(fl), round(rho, 4), top_overlap(hard_lr, lr), round(sum(pm.values()) / n, 4), sum(1 for v in pm.values() if v > 0.5), n])
+    with open(os.path.join(RES, f"sensitivity{suffix}.tsv"), "w") as fh:
         for r in lines:
             fh.write("\t".join(map(str, r)) + "\n")
     print("== likelihood and convergent-insertion calls (ln LR > 2) under each setting")
-    print(open(os.path.join(RES, "sensitivity.tsv")).read())
+    print(open(os.path.join(RES, f"sensitivity{suffix}.tsv")).read())
     print("== warnings from `junctions`")
     for f in sorted(glob.glob(os.path.join(work, "junctions_*.stderr"))):
         w = [l for l in open(f) if l.startswith("warn")]
