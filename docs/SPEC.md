@@ -606,6 +606,46 @@ intron was scored as missing data — discarding exactly the negative evidence i
 4. Cross-check the projection: run this tool's GFF path over a species whose MALIN `.faa` headers
    carry known positions, and diff derived `cds_offset` against theirs.
 
+## 6c. MALIN FASTA reader (specified, not built)
+
+**Goal.** Run `matrix`/`analyze` directly on MALIN's own input, with no GFF, protein FASTA or taxon map, so the two tools
+can be compared on identical inputs (the open item in §6b.4).
+
+**Input.** One aligned FASTA per gene family. Each header carries `/organism=TAG` and `{i p1,p2,... i}`, in any order
+(MALIN guide §2.3.2–2.3.4). A position `p` is the number of coding bases 5' of the intron (1 = after the first
+nucleotide), which is this tool's `cds_offset`; phase = `p mod 3`. The row id is the first whitespace token of the header
+(as in `msa.rs`). An organism that is absent from an alignment is missing (`?`), as in MALIN's missing-ortholog tag.
+
+**CLI.** `--malin-fasta FILE` (repeatable; `-` for standard input; list and folder forms through the existing input
+expansion) for `matrix` and `analyze`. It conflicts with `--gff`, `-p`, `--msa` and `--taxon-map`. Everything downstream
+(matrix, sharing, scoring, likelihood, combined output) is unchanged. The alignment name is the file stem.
+
+**Module `malin_fasta.rs` (core).**
+1. Parse headers into rows `{id, organism, introns}`.
+2. Build an `Alignment` from the aligned rows, a `ProteinSet` from the ungapped residues, and one `TranscriptAnnotation`
+   per row (`cds_offset = p`, `phase = p mod 3`, protein length from the ungapped residues).
+3. Feed these to the existing projection and matrix code.
+
+**Decided behaviour.**
+- A row without `/organism=` is an error.
+- Two rows with the same organism in one alignment are refused with a clear message (as `two_rows_mapped_to_one_taxon`
+  already does). The MALIN guide does not say what it does here; the alternatives (first row, union of introns) would
+  silently change the data.
+- An intron position beyond the protein end is reported through the existing diagnostics.
+- Rows whose organism is not a tip of the tree are ignored, with a count printed (MALIN ignores unknown organisms).
+- `introns.tsv` has no genomic coordinates for this source; those columns are blank.
+
+**Tests.**
+- The guide's own two-row example as a fixture.
+- Header edge cases: empty `{i i}`, spaces after commas, tags in either order, Windows line endings.
+- **Equivalence:** a MALIN FASTA written from the quickstart example's GFF introns gives a byte-identical `matrix.tsv`
+  to the GFF route (the main correctness check).
+- Refusals: no organism, duplicate organism. Standard input.
+
+**Validation not possible alone.** A site-by-site comparison with MALIN's own Dollo output needs a MALIN run on FASTA
+input; only its tables (`Chromo23`) are available here. Until someone supplies a MALIN run, the reader is checked by the
+equivalence test only. Estimated effort: about a day with tests and docs.
+
 ## 7. Outputs
 
 Every file and column is listed in [`OUTPUTS.md`](OUTPUTS.md). The design points: all TSV, `# key=value` metadata first line where the format has nowhere else for it, one header row,
@@ -751,7 +791,7 @@ comparison the tool exists to make mechanically repeatable.
 
 1. ~~Per-cell missing data~~ — done (§2).
 2. **MALIN interop** — table import/export is done (`convert`, `malin.rs`, §6b). Still open: reading
-   `/organism=` + `{i … i}` FASTA headers as an `AnnotationSource`, which would make the two tools directly
+   `/organism=` + `{i … i}` FASTA headers as an `AnnotationSource` (specified in §6c, not built), which would make the two tools directly
    comparable on MALIN's own inputs, and running `Chromo23.table` as a regression fixture on the HPCC.
 3. **Synthetic generator and scaling benchmark** — scale taxa and sites independently. Timing the GFF path at genome scale is
    done ([V3](../bench/V3_gff_scale/README.md), §6).
