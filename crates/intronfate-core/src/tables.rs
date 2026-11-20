@@ -117,35 +117,42 @@ fn list(items: &[impl std::fmt::Display]) -> String {
 /// `introns_table(proj).write(path)`, without the one-`String`-per-cell table (a 5·10⁵-intron genome made
 /// ~9·10⁶ small strings and held the whole file twice).
 pub fn write_introns_tsv(proj: &Projection, path: impl AsRef<Path>) -> Result<usize> {
+    write_introns_tsv_of(&[proj], path)
+}
+
+/// One `introns.tsv` over several projections (the MALIN FASTA route builds one per alignment file).
+pub fn write_introns_tsv_of(projs: &[&Projection], path: impl AsRef<Path>) -> Result<usize> {
     crate::util::write_atomic_with(path.as_ref(), |w| {
         writeln!(w, "{}", INTRON_HEADER.join("\t"))?;
-        for r in &proj.rows {
-            writeln!(
-                w,
-                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-                proj.protein_id(r),
-                proj.gene_id(r).unwrap_or(""),
-                proj.transcript_id(r),
-                proj.seqid(r),
-                proj.strand(r),
-                r.intron_rank,
-                r.coding_rank,
-                r.genomic_start,
-                r.genomic_end,
-                r.intron_len,
-                r.site.cds_offset,
-                r.site.phase,
-                r.site.codon(),
-                r.site.residue_before(),
-                r.site.residue_after(),
-                r.site.cds_offset,
-                r.protein_len,
-                if r.in_range { "yes" } else { "no" },
-            )?;
+        for proj in projs {
+            for r in &proj.rows {
+                writeln!(
+                    w,
+                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    proj.protein_id(r),
+                    proj.gene_id(r).unwrap_or(""),
+                    proj.transcript_id(r),
+                    proj.seqid(r),
+                    proj.strand(r),
+                    r.intron_rank,
+                    r.coding_rank,
+                    r.genomic_start,
+                    r.genomic_end,
+                    r.intron_len,
+                    r.site.cds_offset,
+                    r.site.phase,
+                    r.site.codon(),
+                    r.site.residue_before(),
+                    r.site.residue_after(),
+                    r.site.cds_offset,
+                    r.protein_len,
+                    if r.in_range { "yes" } else { "no" },
+                )?;
+            }
         }
         Ok(())
     })?;
-    Ok(proj.rows.len())
+    Ok(projs.iter().map(|p| p.rows.len()).sum())
 }
 
 const INTRON_HEADER: [&str; 18] = [

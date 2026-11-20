@@ -37,8 +37,8 @@ In rough priority order. Items marked SPEC are described there.
 4. ~~`--flank` default~~ — examined ([F1](../bench/F1_flank_tuning/README.md)): MALIN's test data has no alignments, so it was done on nine fungal genomes; the absence rate of conserved introns does not depend on the distance to a gap, so a larger flank only discards data. Kept at 1.
 5. **SQL/Chado/Ensembl annotation sources** (`AnnotationSource` seam exists; needs a schema decision; SPEC §12 item 4).
 6. **HOWTO Docker route is untested** (the page says so; D1 used Apptainer/Singularity and conda is not run by the test either).
-7. **MALIN FASTA headers** (`/organism=` + `{i … i}`) as an `AnnotationSource`, and a site-by-site comparison with MALIN's own Dollo
-   output (SPEC §12 item 2).
+7. **MALIN FASTA input** is built (`--malin-fasta`, SPEC §6c; equivalent to the GFF route on the quickstart). Open: a site-by-site
+   comparison with a MALIN run on the same files, which needs a MALIN run supplied by the owner (SPEC §12 item 2).
 8. **Scaling**: a synthetic generator and `matrix`/`analyze` scaling in taxa and sites; remaining memory levers for `project` (one
    allocation per id, parallel parsing inside one file, `zlib-rs`) are in [V3](../bench/V3_gff_scale/README.md).
 9. Python bindings only if needed (stdin inputs and `--stdout TABLE` are done, USAGE §3) (SPEC §12 items 7–8).

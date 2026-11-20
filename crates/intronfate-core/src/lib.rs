@@ -70,6 +70,7 @@ pub mod inputs;
 pub mod junctions;
 pub mod likelihood;
 pub mod malin;
+pub mod malin_fasta;
 pub mod matrix;
 pub mod model;
 pub mod msa;

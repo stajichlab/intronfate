@@ -194,6 +194,23 @@ struct MatrixArgs {
     #[arg(long, value_delimiter = ',', value_name = "EXT")]
     msa_ext: Vec<String>,
 
+    /// MALIN's own input instead of `--gff`/`--proteins`/`--msa`: aligned protein FASTA whose headers carry `/organism=TAG` and
+    /// `{i p1,p2 i}` (coding bases before each intron). One file per gene family; `-` reads one from standard input. Repeatable.
+    #[arg(long, value_name = "FILE")]
+    malin_fasta: Vec<PathBuf>,
+
+    /// Text file listing MALIN FASTA alignments, one per line. Repeatable.
+    #[arg(long, value_name = "LIST")]
+    malin_fasta_list: Vec<PathBuf>,
+
+    /// Folder of MALIN FASTA alignments (matched by `--malin-fasta-ext`, default aln, aln.fasta, aln.fa, aln.faa, afa, fa, fasta; `.gz` allowed). Repeatable.
+    #[arg(long, value_name = "DIR")]
+    malin_fasta_dir: Vec<PathBuf>,
+
+    /// Extension(s) selecting files in `--malin-fasta-dir`.
+    #[arg(long, value_delimiter = ',', value_name = "EXT")]
+    malin_fasta_ext: Vec<String>,
+
     #[arg(long, short = 'o', default_value = "intron_out")]
     out_dir: PathBuf,
 
@@ -744,7 +761,7 @@ fn run(cli: Cli, out_given: bool) -> Result<()> {
 
 /// Why a matrix/analyze run is not a single alignment (`--stdout` needs one set of tables).
 fn single_alignment_problem(a: &MatrixArgs) -> Option<&'static str> {
-    if a.msa.len() != 1 {
+    if a.malin_fasta.len().max(a.msa.len()) != 1 {
         Some("it needs exactly one alignment")
     } else if a.combine {
         Some("combined output cannot be selected")
@@ -799,7 +816,51 @@ impl AnnotationArgs {
 }
 
 impl MatrixArgs {
+    fn uses_malin_fasta(&self) -> bool {
+        !(self.malin_fasta.is_empty()
+            && self.malin_fasta_list.is_empty()
+            && self.malin_fasta_dir.is_empty())
+    }
+
     fn resolve_inputs(&mut self) -> Result<()> {
+        if self.uses_malin_fasta() {
+            let other = [
+                (!self.ann.gff.is_empty()
+                    || !self.ann.gff_list.is_empty()
+                    || !self.ann.gff_dir.is_empty())
+                .then_some("--gff"),
+                (!self.ann.proteins.is_empty()
+                    || !self.ann.proteins_list.is_empty()
+                    || !self.ann.proteins_dir.is_empty())
+                .then_some("--proteins"),
+                (!self.msa.is_empty() || !self.msa_list.is_empty() || !self.msa_dir.is_empty())
+                    .then_some("--msa"),
+                self.taxon_map.is_some().then_some("--taxon-map"),
+            ];
+            if let Some(o) = other.into_iter().flatten().next() {
+                bail!("--malin-fasta already carries the annotation, sequences and taxon names; it cannot be combined with {o}");
+            }
+            self.malin_fasta = expand_inputs(
+                "MALIN FASTA alignment",
+                (
+                    &self.malin_fasta,
+                    &self.malin_fasta_list,
+                    &self.malin_fasta_dir,
+                ),
+                &self.malin_fasta_ext,
+                &[
+                    "aln",
+                    "aln.fasta",
+                    "aln.fa",
+                    "aln.faa",
+                    "afa",
+                    "fa",
+                    "fasta",
+                ],
+                (0, &[]),
+            )?;
+            return Ok(());
+        }
         self.ann.resolve_inputs()?;
         self.msa = expand_inputs(
             "alignment",
@@ -1165,27 +1226,40 @@ fn build_matrices(
     verbose: u8,
     mut per_alignment: impl FnMut(&str, &SiteMatrix, &AlignmentProjection) -> Result<()>,
 ) -> Result<usize> {
-    if a.msa.is_empty() {
-        bail!("--msa is required: give at least one protein alignment of orthologs");
+    let malin = a.uses_malin_fasta();
+    if !malin && a.msa.is_empty() {
+        bail!("--msa is required: give at least one protein alignment of orthologs (or --malin-fasta)");
+    }
+    if malin && a.malin_fasta.is_empty() {
+        bail!("--malin-fasta: no alignment files were found");
     }
     let opts = JoinOptions {
         length_slack: parse_slack(&a.length_slack)?,
         ..Default::default()
     };
-    let Loaded {
-        proj,
-        proteins,
-        annotation_diagnostics,
-        ..
-    } = a.ann.load_projection(verbose, true, &opts)?;
+    // GFF route: one projection for every alignment. MALIN FASTA route: each file brings its own, built below.
+    let (shared, annotation_diagnostics) = if malin {
+        (None, Diagnostics::new(500))
+    } else {
+        let Loaded {
+            proj,
+            proteins,
+            annotation_diagnostics,
+            ..
+        } = a.ann.load_projection(verbose, true, &opts)?;
+        (Some((proj, proteins)), annotation_diagnostics)
+    };
+    let mut malin_projections: Vec<Projection> = Vec::new();
 
     std::fs::create_dir_all(&a.out_dir)
         .with_context(|| format!("could not create output directory {}", a.out_dir.display()))?;
-    timed(verbose, "write_introns_and_unmatched", || -> Result<()> {
-        tables::write_introns_tsv(&proj, a.out_dir.join("introns.tsv"))?;
-        tables::unmatched_table(&proj).write(a.out_dir.join("unmatched.tsv"))?;
-        Ok(())
-    })?;
+    if let Some((proj, _)) = &shared {
+        timed(verbose, "write_introns_and_unmatched", || -> Result<()> {
+            tables::write_introns_tsv(proj, a.out_dir.join("introns.tsv"))?;
+            tables::unmatched_table(proj).write(a.out_dir.join("unmatched.tsv"))?;
+            Ok(())
+        })?;
+    }
 
     let mut popts = project_options(a.ignore_phase, a.clamp_tail, a.flank);
     if let Some(path) = &a.taxon_map {
@@ -1194,8 +1268,10 @@ fn build_matrices(
     }
     let mut n_done = 0usize;
     let mut diag = annotation_diagnostics;
-    diag.merge(&proj.diagnostics);
-    diag.merge(&proteins_diagnostics(&proteins));
+    if let Some((proj, proteins)) = &shared {
+        diag.merge(&proj.diagnostics);
+        diag.merge(&proteins_diagnostics(proteins));
+    }
     let mut used_stems = std::collections::HashSet::new();
     // Per-stage totals over all alignments, printed with -v.
     let (mut t_read, mut t_project, mut t_build, mut t_tables, mut t_callback) = (
@@ -1208,10 +1284,29 @@ fn build_matrices(
 
     // The diagnostics report is written even when an alignment fails part-way through.
     let outcome: Result<()> = (|| {
-        for path in &a.msa {
+        let paths = if malin { &a.malin_fasta } else { &a.msa };
+        for path in paths {
             let t0 = Instant::now();
-            let aln = Alignment::read(path)
-                .with_context(|| format!("could not read alignment {}", path.display()))?;
+            // MALIN FASTA: this file's own projection, proteins and taxon names.
+            let mut file_inputs: Option<(Projection, ProteinSet, ProjectOptions)> = None;
+            let aln = if malin {
+                let (aln, proj, proteins, fopts) = read_malin_fasta(path, &opts, &popts)
+                    .with_context(|| format!("could not read MALIN FASTA {}", path.display()))?;
+                file_inputs = Some((proj, proteins, fopts));
+                aln
+            } else {
+                Alignment::read(path)
+                    .with_context(|| format!("could not read alignment {}", path.display()))?
+            };
+            let (proj, proteins, popts) = match (&shared, &file_inputs) {
+                (Some((p, pr)), _) => (p, pr, &popts),
+                (None, Some((p, pr, po))) => (p, pr, po),
+                (None, None) => unreachable!("one projection source is always set"),
+            };
+            if malin {
+                diag.merge(&proj.diagnostics);
+                diag.merge(&proteins_diagnostics(proteins));
+            }
             t_read += t0.elapsed();
             if aln.n_rows() < 2 {
                 bail!(
@@ -1221,7 +1316,7 @@ fn build_matrices(
             );
             }
             let t0 = Instant::now();
-            let ap = project_into_alignment(&aln, &proj, &proteins, &popts);
+            let ap = project_into_alignment(&aln, proj, proteins, popts);
             t_project += t0.elapsed();
             {
                 let mut seen: std::collections::HashMap<&str, &str> =
@@ -1247,8 +1342,8 @@ fn build_matrices(
             let dir = a.out_dir.join(&stem);
             if !a.combined_only {
                 std::fs::create_dir_all(&dir)?;
-                tables::sites_table(&ap, &proteins).write(dir.join("sites.tsv"))?;
-                tables::taxa_table(&ap, &proteins, &m).write(dir.join("taxa.tsv"))?;
+                tables::sites_table(&ap, proteins).write(dir.join("sites.tsv"))?;
+                tables::taxa_table(&ap, proteins, &m).write(dir.join("taxa.tsv"))?;
                 tables::write_matrix_tsv(&m, dir.join("matrix.tsv"))?;
                 tables::presence_table(&m).write(dir.join("presence.tsv"))?;
                 let pairs = m.pairwise(a.tolerance, !a.ignore_phase);
@@ -1326,6 +1421,9 @@ fn build_matrices(
             per_alignment(&stem, &m, &ap)?;
             t_callback += t0.elapsed();
             n_done += 1;
+            if let Some((proj, _, _)) = file_inputs {
+                malin_projections.push(proj);
+            }
         }
         Ok(())
     })();
@@ -1341,9 +1439,54 @@ fn build_matrices(
         }
         eprintln!("[size] alignments\t{n_done}");
     }
+    if malin {
+        let parts: Vec<&Projection> = malin_projections.iter().collect();
+        tables::write_introns_tsv_of(&parts, a.out_dir.join("introns.tsv"))?;
+        if let Some(first) = parts.first() {
+            tables::unmatched_table(first).write(a.out_dir.join("unmatched.tsv"))?;
+        }
+    }
     report_diagnostics(&diag, &a.out_dir, verbose)?;
     outcome?;
     Ok(n_done)
+}
+
+/// Read one MALIN FASTA file and build what the GFF route gets from `--gff` and `--proteins`: the alignment, the
+/// annotation joined to the file's own proteins, and projection options that name each row's taxon by its organism.
+fn read_malin_fasta(
+    path: &Path,
+    opts: &JoinOptions,
+    base: &ProjectOptions,
+) -> Result<(Alignment, Projection, ProteinSet, ProjectOptions)> {
+    let name = if intronfate_core::util::is_stdin(path) {
+        "stdin".to_string()
+    } else {
+        path.file_name()
+            .and_then(|s| s.to_str())
+            .map(|s| s.strip_suffix(".gz").unwrap_or(s))
+            .and_then(|s| Path::new(s).file_stem().and_then(|x| x.to_str()))
+            .unwrap_or("malin")
+            .to_string()
+    };
+    let text = intronfate_core::util::read_text(path)?;
+    let file = intronfate_core::malin_fasta::MalinFasta::parse(&text, name)?;
+    if file.rows.len() < 2 {
+        bail!(
+            "alignment {} has {} row(s); at least two sequences are needed to compare intron positions",
+            path.display(),
+            file.rows.len()
+        );
+    }
+    let aln = file.alignment()?;
+    let proteins = file.proteins()?;
+    let mut joiner = intronfate_core::project::Joiner::new(&proteins, opts);
+    for tx in file.transcripts() {
+        joiner.add(&tx);
+    }
+    let proj = joiner.finish()?;
+    let mut fopts = base.clone();
+    fopts.taxon_names = file.taxon_names();
+    Ok((aln, proj, proteins, fopts))
 }
 
 fn cmd_matrix(a: &MatrixArgs, verbose: u8) -> Result<()> {
@@ -2881,6 +3024,10 @@ mod tests {
                 msa_list: vec![],
                 msa_dir: vec![],
                 msa_ext: vec![],
+                malin_fasta: vec![],
+                malin_fasta_list: vec![],
+                malin_fasta_dir: vec![],
+                malin_fasta_ext: vec![],
                 combine: false,
                 combined_only: false,
                 out_dir: dir.join("out"),

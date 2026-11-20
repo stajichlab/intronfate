@@ -270,6 +270,28 @@ without `#MAP` lines produces a phase-less matrix (`phase_mode=ignore`). A 0/1 t
 and `3` alike): the phase then comes from `alipos`. A table that uses `2` or `3` is phase-coded, and a digit that contradicts its `alipos` is an error. See
 [`../examples/03_malin`](../examples/03_malin/README.md) for a lossless round trip.
 
+### MALIN's own FASTA input: `--malin-fasta`
+
+MALIN reads one aligned protein FASTA per gene family, with the organism and the intron positions in each header.
+`matrix` and `analyze` take that input directly, with no GFF, protein FASTA or taxon map, so both tools can run on the same files:
+
+```sh
+intronfate analyze --malin-fasta fam1.aln --malin-fasta fam2.aln -t tree.nwk -o out
+intronfate matrix  --malin-fasta-dir families/ -o out          # folder, list and `-` (one file from a pipe) work as for --msa
+```
+
+```
+>gene1 /organism=Hs {i 23,48 i}
+MKV-LLA...
+```
+
+* `{i p1,p2 i}` lists, for each intron, the number of coding bases before it (1 = after the first nucleotide). That is this tool's `cds_offset`, so phase is `p mod 3`. The two tags may come in either order and the identifier is the first word of the header. Write `{i i}` for a gene with no introns.
+* The organism becomes the taxon name (match it to the tree's tips). An organism with no row in an alignment is missing data (`?`).
+* Refused with a message naming the row: no `/organism=`, no `{i … i}`, a position that is 0 or not a whole number, and two rows of one organism in one alignment. Repeated positions in one row are counted once.
+* Not allowed together with `--gff`, `--proteins`, `--msa` or `--taxon-map`.
+* There are no genomic coordinates: `introns.tsv` shows start and end as 0 and the sequence name as `.`.
+* Each file is joined only to its own rows, so identifiers may repeat across families. The alignment name is the file name without its last extension (and `.gz`).
+
 ## 8. Troubleshooting
 
 `diagnostics.tsv` counts every kind of problem; `diagnostics_detail.tsv` lists examples (`-v` prints up to 25). Annotation-reader
