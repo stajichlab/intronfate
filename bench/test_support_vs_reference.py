@@ -23,6 +23,12 @@ class SelfTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("selftest ok", r.stdout)
 
+    def test_creep_selftest_passes(self):
+        script = os.path.join(os.path.dirname(SCRIPT), "..", "J3b_creeping_parameters", "analyse.py")
+        r = subprocess.run([sys.executable, "-I", script, "--selftest"], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("selftest ok", r.stdout)
+
     def test_simulation_selftests_pass(self):
         for name in ("simulate.py", "evaluate.py"):
             script = os.path.join(os.path.dirname(SCRIPT), "..", "S1_soft_evidence_simulation", name)
