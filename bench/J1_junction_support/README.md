@@ -58,8 +58,7 @@ What can and cannot be said:
   preserved. The model can now explain a scattered presence as an annotation error instead of an independent insertion, so the convergent-insertion
   signal depends on how far the annotation is trusted. In this data set it is not robust to that. This does not show which model is right; it
   shows that the hard-model calls rest entirely on the annotation being correct.
-- With four rate classes the fits sit on a flat ridge in the gamma shape and reach the iteration cap (the log-likelihood is bounded and climbs
-  0.006 per iteration; the hard fit behaves the same way); their rankings are less stable (Spearman 0.03–0.80). Prefer the constant-rate table.
+- With four rate classes the fits are slow to converge and reach the iteration cap (the log-likelihood is bounded and climbs 0.006 per iteration; the hard fit behaves the same way); their rankings are less stable (Spearman 0.03–0.80). [J3](../J3_shape_ridge/README.md) shows the gamma shape itself is well determined (the profile is peaked, 95% interval about 3–6 for the soft fit) and that what is slow is the EM, with about 2 log-likelihood units unfinished. Prefer the constant-rate table for rankings, or the converged free-shape fit.
 - `p0 = 0.5` is pathological (negative rank correlation, 12,841 flagged sites); disregard it.
 
 ## Bugs this run found
@@ -70,6 +69,6 @@ What can and cannot be said:
 
 ## Not done
 
-- Whether read support predicts annotation errors: needs ground truth ([V4](../V4_annotation_accuracy/README.md), [P1f](../P1f_adjudication)) and non-normalised RNA-seq.
+- Whether read support predicts annotation errors: [J2](../J2_support_vs_reference/README.md) compares reads with the RefSeq annotation (one read is the signal; RefSeq is a weak label in two genomes). Whether the likelihood's calls move towards the truth, and non-normalised RNA-seq, are open.
 - Junctions at coordinates the annotation lacks are not projected into the alignment.
 - *S. punctatus*, *M. mucedo* and *M. maydis* are not covered.
