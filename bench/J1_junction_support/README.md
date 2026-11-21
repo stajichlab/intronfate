@@ -44,10 +44,16 @@ Likelihood and convergent-insertion calls, constant rates (converged; `results/s
 |---|---|---|---|---|
 | hard | −46,710 | 125 | 1 | 100 |
 | p0 0.95, k 3 | −45,707 | 0 | 0.98 | 10 |
+| p0 0.8, k 0.2 | −45,868 | 0 | 0.98 | 15 |
+| p0 0.8, k 0.5 | −45,245 | 0 | 0.95 | 8 |
 | p0 0.8, k 1 | −44,673 | 0 | 0.90 | 5 |
 | p0 0.8, k 3 | −43,657 | 0 | 0.85 | 3 |
 | p0 0.8, k 10 | −42,772 | 0 | 0.83 | 2 |
 | p0 0.5, k 3 | −39,680 | 0 | −0.12 | 0 |
+
+Added after the J2 review (`run_extra.sbatch`, same cache): k = 0.2, the value the one-read agreement in [J2](../J2_support_vs_reference/README.md) points to, behaves
+like a smaller k should. It stays closest to the hard model (rank agreement 0.98, 15 of the hard top 100 kept), but still no site keeps a posterior above 0.5 for two or
+more origins. So the finding below does not depend on k within 0.2–10: trusting presence cells less than fully removes the convergent-insertion calls.
 
 What can and cannot be said:
 
