@@ -3140,3 +3140,133 @@ fn malin_fasta_reads_gzip_files_and_folders() {
     let introns = fs::read_to_string(out.join("introns.tsv")).unwrap();
     assert_eq!(introns.lines().count(), 1 + 12, "{introns}");
 }
+
+fn gzip_file(from: &Path, to: &Path) {
+    use flate2::{write::GzEncoder, Compression};
+    let mut enc = GzEncoder::new(fs::File::create(to).unwrap(), Compression::default());
+    enc.write_all(&fs::read(from).unwrap()).unwrap();
+    enc.finish().unwrap();
+}
+
+#[test]
+fn every_table_and_list_input_reads_gzip_like_plain_text() {
+    let w = scratch("gz_tables");
+    let q = example("01_quickstart");
+    let s = |p: &Path| p.to_str().unwrap().to_string();
+    let plain = w.join("plain");
+    ok(&[
+        "analyze",
+        "--gff",
+        &s(&q.join("family.gff3")),
+        "-p",
+        &s(&q.join("proteins.faa")),
+        "--msa",
+        &s(&q.join("family.aln.fasta")),
+        "-t",
+        &s(&q.join("family.nwk")),
+        "-m",
+        "dollo,mp,counts",
+        "-o",
+        &s(&plain),
+    ]);
+    let fam = plain.join("family.aln");
+
+    // matrix.tsv: `score --matrix` on a gzip copy (named plainly, so the magic number is what decides)
+    let gz_matrix = w.join("matrix_gz.tsv");
+    gzip_file(&fam.join("matrix.tsv"), &gz_matrix);
+    let (o1, o2) = (w.join("score_plain"), w.join("score_gz"));
+    for (m, o) in [(fam.join("matrix.tsv"), &o1), (gz_matrix.clone(), &o2)] {
+        ok(&[
+            "score",
+            "--matrix",
+            &s(&m),
+            "-t",
+            &s(&q.join("family.nwk")),
+            "-m",
+            "dollo",
+            "-o",
+            &s(o),
+        ]);
+    }
+    let dollo = |d: &Path| fs::read_to_string(find(d, "dollo_sites.tsv")).unwrap();
+    assert_eq!(dollo(&o1), dollo(&o2));
+
+    // a gzip list file and a gzip MALIN table
+    let list = w.join("alignments.txt");
+    fs::write(&list, format!("{}\n", s(&q.join("family.aln.fasta")))).unwrap();
+    let gz_list = w.join("alignments.txt.gz");
+    gzip_file(&list, &gz_list);
+    let out = w.join("from_list");
+    ok(&[
+        "matrix",
+        "--gff",
+        &s(&q.join("family.gff3")),
+        "-p",
+        &s(&q.join("proteins.faa")),
+        "--msa-list",
+        &s(&gz_list),
+        "-o",
+        &s(&out),
+    ]);
+    assert_eq!(
+        fs::read_to_string(out.join("family.aln/matrix.tsv")).unwrap(),
+        fs::read_to_string(fam.join("matrix.tsv")).unwrap()
+    );
+    let table = w.join("ours.table");
+    ok(&[
+        "convert",
+        "--to-malin",
+        &s(&fam.join("matrix.tsv")),
+        "-o",
+        &s(&table),
+    ]);
+    let gz_table = w.join("ours.table.gz");
+    gzip_file(&table, &gz_table);
+    let (m1, m2) = (w.join("m1"), w.join("m2"));
+    ok(&["convert", "--from-malin", &s(&table), "-o", &s(&m1)]);
+    ok(&["convert", "--from-malin", &s(&gz_table), "-o", &s(&m2)]);
+    let first = |d: &Path| fs::read_to_string(find(d, "matrix.tsv")).unwrap();
+    assert_eq!(first(&m1), first(&m2));
+
+    // junction tables: STAR table, introns.tsv and sites.tsv, all gzip
+    let sj = w.join("A.SJ.out.tab");
+    fs::write(&sj, "chrA\t113\t200\t1\t1\t1\t12\t0\t30\n").unwrap();
+    let sj_gz = w.join("A.sj.gz");
+    let (introns_gz, sites_gz) = (w.join("introns.tsv.gz"), w.join("sites.tsv.gz"));
+    gzip_file(&sj, &sj_gz);
+    gzip_file(&plain.join("introns.tsv"), &introns_gz);
+    gzip_file(&fam.join("sites.tsv"), &sites_gz);
+    let junctions = |introns: &Path, sites: &Path, sj: &Path, out: &Path| {
+        ok(&[
+            "junctions",
+            "--matrix",
+            &s(&fam.join("matrix.tsv")),
+            "--introns",
+            &s(introns),
+            "--sites",
+            &s(sites),
+            "--junctions",
+            &format!("A={}", s(sj)),
+            "-o",
+            &s(out),
+        ]);
+        fs::read_to_string(out).unwrap()
+    };
+    let (j1, j2) = (w.join("j1.tsv"), w.join("j2.tsv"));
+    let a = junctions(&plain.join("introns.tsv"), &fam.join("sites.tsv"), &sj, &j1);
+    let b = junctions(&introns_gz, &sites_gz, &sj_gz, &j2);
+    assert_eq!(a, b);
+    assert!(
+        a.lines().count() > 1,
+        "the junction run produced no rows: {a}"
+    );
+}
+
+/// First file called `name` under `dir`.
+fn find(dir: &Path, name: &str) -> PathBuf {
+    files_under(dir)
+        .into_iter()
+        .find(|p| p.file_name().is_some_and(|n| n == name))
+        .map(|p| dir.join(p))
+        .unwrap_or_else(|| panic!("no {name} under {}", dir.display()))
+}

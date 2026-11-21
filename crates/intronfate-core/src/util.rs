@@ -89,16 +89,16 @@ fn stdin_reader(
     })
 }
 
-/// The whole text of a file, or of standard input when `path` is `-`.
+/// The whole text of a file, or of standard input when `path` is `-`. Gzip is undone by name (`.gz`, `.bgz`) or by its
+/// magic number, as in [`open_buffered`].
 pub fn read_text(path: &Path) -> std::io::Result<String> {
-    if is_stdin(path) {
-        claim(&STDIN_TAKEN)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string()))?;
-        let mut s = String::new();
-        std::io::stdin().lock().read_to_string(&mut s)?;
-        return Ok(s);
-    }
-    std::fs::read_to_string(path)
+    let mut reader = open_buffered(path, 1 << 16).map_err(|e| match e {
+        Error::Io(e) => e,
+        other => std::io::Error::other(other.to_string()),
+    })?;
+    let mut s = String::new();
+    reader.read_to_string(&mut s)?;
+    Ok(s)
 }
 
 /// Open a plain or gzip-compressed text file (`.gz`, `.bgz`) as a buffered byte reader. `-` is standard input (gzip is
@@ -380,6 +380,12 @@ mod tests {
     fn read_text_reads_a_file_and_reports_a_missing_one() {
         let p = std::env::temp_dir().join(format!("intronfate_util_text_{}", std::process::id()));
         std::fs::write(&p, "a\tb\n").unwrap();
+        assert_eq!(read_text(&p).unwrap(), "a\tb\n");
+        // gzip is undone whatever the file is called
+        use std::io::Write;
+        let mut enc = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        enc.write_all(b"a\tb\n").unwrap();
+        std::fs::write(&p, enc.finish().unwrap()).unwrap();
         assert_eq!(read_text(&p).unwrap(), "a\tb\n");
         std::fs::remove_file(&p).unwrap();
         assert!(read_text(&p).is_err());

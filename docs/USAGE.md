@@ -67,6 +67,11 @@ Three requirements that cause most problems:
    `--taxon-map` names) and tree tips. Nothing is fuzzily matched, because a wrong match would place introns on the
    wrong species.
 
+### Compressed input
+
+Every input file may be gzip-compressed: GFF, proteins, alignments, MALIN FASTA, `matrix.tsv`, `sites.tsv`, `introns.tsv`, junction tables,
+MALIN tables, and the `--*-list` files themselves. Gzip is recognised by the name (`.gz`, `.bgz`) or, failing that, by the first two bytes.
+
 ### Reading from a pipe
 
 Any single-file input can be `-`, meaning standard input: `--gff`, `-p`, `--msa`, `-t`, `score --matrix`, `convert --from-malin`,
