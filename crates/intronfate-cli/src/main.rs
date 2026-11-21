@@ -1549,7 +1549,13 @@ fn read_malin_fasta(
             .unwrap_or("malin")
             .to_string()
     };
-    let text = intronfate_core::util::read_text(path)?;
+    // `open_buffered` unzips by name or magic number (also on stdin); `read_text` would not.
+    let mut text = String::new();
+    std::io::Read::read_to_string(
+        &mut intronfate_core::util::open_buffered(path, 1 << 18)?,
+        &mut text,
+    )
+    .with_context(|| format!("could not read {}", path.display()))?;
     let file = intronfate_core::malin_fasta::MalinFasta::parse(&text, name)?;
     if file.rows.len() < 2 {
         bail!(

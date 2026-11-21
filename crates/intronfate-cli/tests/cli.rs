@@ -2862,12 +2862,11 @@ fn junctions_never_softens_a_cell_the_matrix_masked() {
     assert!(String::from_utf8_lossy(&o.stderr).contains("1 masked or absent in the matrix"));
 }
 
-/// A MALIN FASTA written from the quickstart: each alignment row gets its organism and the `cds_offset` of every intron
-/// the GFF route found in `expected/introns.tsv`.
-fn quickstart_as_malin_fasta(organism: impl Fn(&str) -> String) -> String {
-    let q = example("01_quickstart");
-    let introns = fs::read_to_string(q.join("expected/introns.tsv")).unwrap();
-    let aln = fs::read_to_string(q.join("family.aln.fasta")).unwrap();
+/// A MALIN FASTA written from a GFF-route run: each alignment row gets its organism and the `cds_offset` of every
+/// intron the GFF route found for it in `introns_tsv`.
+fn malin_fasta_from(introns_tsv: &Path, aln: &Path, organism: impl Fn(&str) -> String) -> String {
+    let introns = fs::read_to_string(introns_tsv).unwrap();
+    let aln = fs::read_to_string(aln).unwrap();
     let mut out = String::new();
     let mut lines = aln.lines();
     while let Some(h) = lines.next() {
@@ -2887,6 +2886,15 @@ fn quickstart_as_malin_fasta(organism: impl Fn(&str) -> String) -> String {
         ));
     }
     out
+}
+
+fn quickstart_as_malin_fasta(organism: impl Fn(&str) -> String) -> String {
+    let q = example("01_quickstart");
+    malin_fasta_from(
+        &q.join("expected/introns.tsv"),
+        &q.join("family.aln.fasta"),
+        organism,
+    )
 }
 
 #[test]
@@ -3034,4 +3042,101 @@ fn malin_fasta_refusals_are_clear() {
         o.to_str().unwrap(),
     ]);
     assert!(e.contains("cannot be combined with --gff"), "{e}");
+}
+
+#[test]
+fn malin_fasta_matches_the_gff_route_with_gaps_and_missing_cells() {
+    // `02_missing_data`: in the gapped variant taxon D has no residues around one site, so its cell is `?`, not `0`.
+    let q = example("02_missing_data");
+    for variant in ["gapped", "full"] {
+        let w = scratch(&format!("malin_fasta_equiv_{variant}"));
+        let aln = q.join(format!("family.{variant}.aln.fasta"));
+        let gff = w.join("family.gff3");
+        fs::write(
+            &gff,
+            fs::read_to_string(q.join("abc.gff3")).unwrap()
+                + &fs::read_to_string(q.join(format!("d.{variant}.gff3"))).unwrap(),
+        )
+        .unwrap();
+        let (gff_out, malin_out) = (w.join("gff"), w.join("malin"));
+        ok(&[
+            "matrix",
+            "--gff",
+            gff.to_str().unwrap(),
+            "-p",
+            q.join(format!("proteins.{variant}.faa")).to_str().unwrap(),
+            "--msa",
+            aln.to_str().unwrap(),
+            "-o",
+            gff_out.to_str().unwrap(),
+        ]);
+        // The GFF route's own introns.tsv says which introns each row has.
+        let fasta = w.join(format!("family.{variant}.aln.fasta"));
+        fs::write(
+            &fasta,
+            malin_fasta_from(&gff_out.join("introns.tsv"), &aln, |id| id.to_string()),
+        )
+        .unwrap();
+        ok(&[
+            "matrix",
+            "--malin-fasta",
+            fasta.to_str().unwrap(),
+            "-o",
+            malin_out.to_str().unwrap(),
+        ]);
+        let stem = format!("family.{variant}.aln");
+        let gff_matrix = fs::read_to_string(gff_out.join(&stem).join("matrix.tsv")).unwrap();
+        if variant == "gapped" {
+            assert!(
+                gff_matrix.contains('?'),
+                "the fixture lost its missing cell"
+            );
+        }
+        for f in [
+            "matrix.tsv",
+            "presence.tsv",
+            "pairwise.tsv",
+            "counts_sites.tsv",
+        ] {
+            assert_eq!(
+                fs::read_to_string(gff_out.join(&stem).join(f)).unwrap(),
+                fs::read_to_string(malin_out.join(&stem).join(f)).unwrap(),
+                "{variant}: {f} differs between the GFF route and the MALIN FASTA route"
+            );
+        }
+    }
+}
+
+#[test]
+fn malin_fasta_reads_gzip_files_and_folders() {
+    use flate2::{write::GzEncoder, Compression};
+    let w = scratch("malin_fasta_gz");
+    let dir = w.join("fams");
+    fs::create_dir_all(&dir).unwrap();
+    let text = quickstart_as_malin_fasta(|id| id.to_string());
+    let mut enc = GzEncoder::new(
+        fs::File::create(dir.join("famA.aln.gz")).unwrap(),
+        Compression::default(),
+    );
+    enc.write_all(text.as_bytes()).unwrap();
+    enc.finish().unwrap();
+    // The same family, plain, under another name: identifiers repeat across families and that is fine.
+    fs::write(dir.join("famB.fasta"), &text).unwrap();
+    let out = w.join("o");
+    let s = ok(&[
+        "matrix",
+        "--malin-fasta-dir",
+        dir.to_str().unwrap(),
+        "-o",
+        out.to_str().unwrap(),
+    ]);
+    assert!(s.contains("famA: ") && s.contains("famB: "), "{s}");
+    let a = fs::read_to_string(out.join("famA/matrix.tsv")).unwrap();
+    let b = fs::read_to_string(out.join("famB/matrix.tsv")).unwrap();
+    assert_eq!(
+        a.lines().skip(1).collect::<Vec<_>>(),
+        b.lines().skip(1).collect::<Vec<_>>()
+    );
+    let introns = fs::read_to_string(out.join("introns.tsv")).unwrap();
+    assert_eq!(introns.lines().count(), 1 + 12, "{introns}");
 }
