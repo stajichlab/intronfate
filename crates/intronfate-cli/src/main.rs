@@ -293,13 +293,14 @@ struct AnalyzeArgs {
     ml_seed: u64,
 
     /// `-m likelihood` stops when an EM cycle gains less than this in log-likelihood and moves no parameter by more than
-    /// `--ml-param-tol`.
-    #[arg(long, default_value = "1e-6")]
-    ml_tol: f64,
+    /// `--ml-param-tol`. Default 1e-6, or 1e-5 when the fit has gamma rate classes (bench J3b: outputs are the same to three digits, in
+    /// less than half the iterations).
+    #[arg(long)]
+    ml_tol: Option<f64>,
 
-    /// See `--ml-tol`. Looser values (e.g. 1e-5) shorten fits with rate classes at a small cost in log-likelihood.
-    #[arg(long, default_value = "1e-7")]
-    ml_param_tol: f64,
+    /// See `--ml-tol`. Default 1e-7, or 1e-6 when the fit has gamma rate classes.
+    #[arg(long)]
+    ml_param_tol: Option<f64>,
 
     /// Rate classes across positions for `-m likelihood` (discrete gamma, mean rate 1; 1 = no rate variation, 4 is usual).
     #[arg(long, default_value = "1")]
@@ -440,13 +441,14 @@ struct ScoreArgs {
     ml_seed: u64,
 
     /// `-m likelihood` stops when an EM cycle gains less than this in log-likelihood and moves no parameter by more than
-    /// `--ml-param-tol`.
-    #[arg(long, default_value = "1e-6")]
-    ml_tol: f64,
+    /// `--ml-param-tol`. Default 1e-6, or 1e-5 when the fit has gamma rate classes (bench J3b: outputs are the same to three digits, in
+    /// less than half the iterations).
+    #[arg(long)]
+    ml_tol: Option<f64>,
 
-    /// See `--ml-tol`. Looser values (e.g. 1e-5) shorten fits with rate classes at a small cost in log-likelihood.
-    #[arg(long, default_value = "1e-7")]
-    ml_param_tol: f64,
+    /// See `--ml-tol`. Default 1e-7, or 1e-6 when the fit has gamma rate classes.
+    #[arg(long)]
+    ml_param_tol: Option<f64>,
 
     /// Rate classes across positions for `-m likelihood` (discrete gamma, mean rate 1; 1 = no rate variation, 4 is usual).
     #[arg(long, default_value = "1")]
@@ -1721,8 +1723,8 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     never_seen_global: a.ml_never_seen == "global",
                     origins: a.ml_origins,
                     soft_evidence: a.ml_soft_evidence.clone(),
-                    tol: a.ml_tol,
-                    param_tol: a.ml_param_tol,
+                    tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).0,
+                    param_tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).1,
                 },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
@@ -1765,8 +1767,8 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     never_seen_global: a.ml_never_seen == "global",
                     origins: a.ml_origins,
                     soft_evidence: a.ml_soft_evidence.clone(),
-                    tol: a.ml_tol,
-                    param_tol: a.ml_param_tol,
+                    tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).0,
+                    param_tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).1,
                 },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
@@ -1829,8 +1831,8 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     never_seen_global: a.ml_never_seen == "global",
                     origins: a.ml_origins,
                     soft_evidence: a.ml_soft_evidence.clone(),
-                    tol: a.ml_tol,
-                    param_tol: a.ml_param_tol,
+                    tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).0,
+                    param_tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).1,
                 },
                 matrix_label: format!("{} matrices combined", parts.len()),
             },
@@ -1904,8 +1906,8 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 never_seen_global: a.ml_never_seen == "global",
                 origins: a.ml_origins,
                 soft_evidence: a.ml_soft_evidence.clone(),
-                tol: a.ml_tol,
-                param_tol: a.ml_param_tol,
+                tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).0,
+                param_tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).1,
             },
             matrix_label: matrix.display().to_string(),
         },
@@ -2421,6 +2423,14 @@ fn resolve_methods(requested: &[String]) -> Result<Vec<Method>> {
 
 /// Per-tip annotation error for `-m likelihood` from a TSV (`taxon`, `sensitivity`, and `false_rate` or `precision`).
 /// Unlisted taxa are error-free. Precision is converted to a false-intron rate inside the fit (`fit_with_precision`).
+/// EM stopping tolerances: the user's values, else 1e-6 / 1e-7, or 1e-5 / 1e-6 when the fit has gamma rate classes. Classes make EM creep for
+/// tens of thousands of iterations along directions the data barely constrain (bench J3b); the looser pair gives the same outputs to three
+/// digits (ln L within 1e-4, gains and losses within 0.1 %, same top 100 origin sites) in less than half the iterations.
+fn resolve_tol(tol: Option<f64>, param_tol: Option<f64>, categories: [usize; 3]) -> (f64, f64) {
+    let (t, p) = if categories.iter().any(|&k| k > 1) { (1e-5, 1e-6) } else { (1e-6, 1e-7) };
+    (tol.unwrap_or(t), param_tol.unwrap_or(p))
+}
+
 /// Read `--ml-soft-evidence`: a TSV with the columns `site`, `taxon` and `p_present` (by header name; `#` lines are skipped).
 fn read_soft_evidence(path: &std::path::Path) -> anyhow::Result<Vec<(String, String, f64)>> {
     let text = intronfate_core::util::read_text(path)
@@ -2754,6 +2764,18 @@ fn demo_tree() -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn tolerances_loosen_only_with_rate_classes_and_never_override_the_user() {
+        use super::resolve_tol;
+        assert_eq!(resolve_tol(None, None, [1, 1, 1]), (1e-6, 1e-7));
+        assert_eq!(resolve_tol(None, None, [4, 1, 1]), (1e-5, 1e-6));
+        assert_eq!(resolve_tol(None, None, [1, 3, 1]), (1e-5, 1e-6));
+        assert_eq!(resolve_tol(None, None, [1, 1, 2]), (1e-5, 1e-6));
+        assert_eq!(resolve_tol(Some(1e-8), None, [4, 1, 1]), (1e-8, 1e-6));
+        assert_eq!(resolve_tol(None, Some(1e-9), [4, 1, 1]), (1e-5, 1e-9));
+        assert_eq!(resolve_tol(Some(1e-3), Some(1e-4), [1, 1, 1]), (1e-3, 1e-4));
+    }
+
     use super::*;
 
     #[test]
@@ -2956,8 +2978,8 @@ mod tests {
             ml_never_seen: "per-pattern".to_string(),
             ml_origins: false,
             ml_soft_evidence: None,
-            ml_tol: 1e-6,
-            ml_param_tol: 1e-7,
+            ml_tol: None,
+            ml_param_tol: None,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,
@@ -3007,8 +3029,8 @@ mod tests {
             ml_never_seen: "per-pattern".to_string(),
             ml_origins: false,
             ml_soft_evidence: None,
-            ml_tol: 1e-6,
-            ml_param_tol: 1e-7,
+            ml_tol: None,
+            ml_param_tol: None,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -3056,8 +3078,8 @@ mod tests {
             ml_never_seen: "per-pattern".to_string(),
             ml_origins: false,
             ml_soft_evidence: None,
-            ml_tol: 1e-6,
-            ml_param_tol: 1e-7,
+            ml_tol: None,
+            ml_param_tol: None,
             outgroups: vec![],
             min_taxa: 1,
             min_observed: 0,
@@ -3139,8 +3161,8 @@ mod tests {
             ml_never_seen: "per-pattern".to_string(),
             ml_origins: false,
             ml_soft_evidence: None,
-            ml_tol: 1e-6,
-            ml_param_tol: 1e-7,
+            ml_tol: None,
+            ml_param_tol: None,
             outgroups: vec!["outgroup".into()],
             min_taxa: 1,
             min_observed: 0,
