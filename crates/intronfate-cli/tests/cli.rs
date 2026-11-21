@@ -2554,44 +2554,6 @@ fn junctions_turns_read_support_into_soft_evidence_the_likelihood_accepts() {
     assert_eq!(bad.status.code(), Some(1));
 }
 
-<<<<<<< HEAD
-/// A MALIN FASTA written from the quickstart: each alignment row gets its organism and the `cds_offset` of every intron
-/// the GFF route found in `expected/introns.tsv`.
-fn quickstart_as_malin_fasta(organism: impl Fn(&str) -> String) -> String {
-    let q = example("01_quickstart");
-    let introns = fs::read_to_string(q.join("expected/introns.tsv")).unwrap();
-    let aln = fs::read_to_string(q.join("family.aln.fasta")).unwrap();
-    let mut out = String::new();
-    let mut lines = aln.lines();
-    while let Some(h) = lines.next() {
-        let id = h.trim_start_matches('>');
-        let seq = lines.next().unwrap();
-        let offs: Vec<&str> = introns
-            .lines()
-            .skip(1)
-            .map(|l| l.split('\t').collect::<Vec<_>>())
-            .filter(|f| f[0] == id)
-            .map(|f| f[10])
-            .collect();
-        out.push_str(&format!(
-            ">{id} /organism={} {{i {} i}}\n{seq}\n",
-            organism(id),
-            offs.join(",")
-        ));
-    }
-    out
-}
-
-#[test]
-fn malin_fasta_gives_the_same_matrix_as_the_gff_route() {
-    let w = scratch("malin_fasta_equiv");
-    let q = example("01_quickstart");
-    let fasta = w.join("family.aln.fasta");
-    fs::write(&fasta, quickstart_as_malin_fasta(|id| id.to_string())).unwrap();
-    let (gff_out, malin_out) = (w.join("gff"), w.join("malin"));
-    ok(&[
-        "matrix",
-=======
 #[test]
 fn site_labels_in_sites_tsv_are_the_matrix_labels_whatever_the_phase_mode() {
     // example 02 has introns in phases 0 and 1, so --ignore-phase (grouping phase 0) differs from the intron's own phase
@@ -2670,145 +2632,12 @@ fn soft_evidence_on_a_combined_run_fails_with_a_message_that_says_why() {
     fs::write(&soft, "site\ttaxon\tp_present\n4:0\tA\t0.9\n").unwrap();
     let o = run(&[
         "analyze",
->>>>>>> origin/main
         "--gff",
         q.join("family.gff3").to_str().unwrap(),
         "-p",
         q.join("proteins.faa").to_str().unwrap(),
         "--msa",
         q.join("family.aln.fasta").to_str().unwrap(),
-<<<<<<< HEAD
-        "-o",
-        gff_out.to_str().unwrap(),
-    ]);
-    let s = ok(&[
-        "matrix",
-        "--malin-fasta",
-        fasta.to_str().unwrap(),
-        "-o",
-        malin_out.to_str().unwrap(),
-    ]);
-    assert!(s.contains("family.aln: "), "{s}");
-    for f in [
-        "matrix.tsv",
-        "presence.tsv",
-        "pairwise.tsv",
-        "counts_sites.tsv",
-    ] {
-        assert_eq!(
-            fs::read_to_string(gff_out.join("family.aln").join(f)).unwrap(),
-            fs::read_to_string(malin_out.join("family.aln").join(f)).unwrap(),
-            "{f} differs between the GFF route and the MALIN FASTA route"
-        );
-    }
-    // introns.tsv has no genomic coordinates for this source.
-    let introns = fs::read_to_string(malin_out.join("introns.tsv")).unwrap();
-    assert_eq!(introns.lines().count(), 1 + 6, "{introns}");
-}
-
-#[test]
-fn malin_fasta_names_taxa_by_organism_and_feeds_analyze() {
-    let w = scratch("malin_fasta_org");
-    let q = example("01_quickstart");
-    let fasta = w.join("fam.fa");
-    fs::write(&fasta, quickstart_as_malin_fasta(|id| format!("sp{id}"))).unwrap();
-    let nwk = w.join("t.nwk");
-    let tree = fs::read_to_string(q.join("family.nwk")).unwrap();
-    let tree = ["A", "B", "C", "D"]
-        .iter()
-        .fold(tree, |t, n| t.replace(n, &format!("sp{n}")));
-    fs::write(&nwk, tree).unwrap();
-    let out = w.join("o");
-    let s = ok(&[
-        "analyze",
-        "--malin-fasta",
-        fasta.to_str().unwrap(),
-        "-t",
-        nwk.to_str().unwrap(),
-        "-m",
-        "dollo,mp,counts",
-        "-o",
-        out.to_str().unwrap(),
-    ]);
-    assert!(s.contains("dollo 2g/2l"), "{s}");
-    let m = fs::read_to_string(out.join("fam/matrix.tsv")).unwrap();
-    assert!(m.contains("spA") && !m.contains("\tA\t"), "{m}");
-}
-
-#[test]
-fn malin_fasta_reads_standard_input() {
-    let w = scratch("malin_fasta_stdin");
-    let mut child = Command::new(BIN)
-        .args([
-            "matrix",
-            "--malin-fasta",
-            "-",
-            "-o",
-            w.join("o").to_str().unwrap(),
-        ])
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(quickstart_as_malin_fasta(|id| id.to_string()).as_bytes())
-        .unwrap();
-    let o = child.wait_with_output().unwrap();
-    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
-    assert!(w.join("o/stdin/matrix.tsv").is_file());
-}
-
-#[test]
-fn malin_fasta_refusals_are_clear() {
-    let w = scratch("malin_fasta_refuse");
-    let q = example("01_quickstart");
-    let good = quickstart_as_malin_fasta(|id| id.to_string());
-    let o = w.join("o");
-    let fail = |args: &[&str]| -> String {
-        let r = run(args);
-        assert!(!r.status.success(), "{} should fail", args.join(" "));
-        String::from_utf8_lossy(&r.stderr).into_owned()
-    };
-    // Two rows of one organism in one alignment.
-    let dup = w.join("dup.fa");
-    fs::write(&dup, quickstart_as_malin_fasta(|_| "same".into())).unwrap();
-    let e = fail(&[
-        "matrix",
-        "--malin-fasta",
-        dup.to_str().unwrap(),
-        "-o",
-        o.to_str().unwrap(),
-    ]);
-    assert!(e.contains("both map to taxon \"same\""), "{e}");
-    // A row with no organism.
-    let noorg = w.join("noorg.fa");
-    fs::write(&noorg, good.replacen(" /organism=A", "", 1)).unwrap();
-    let e = fail(&[
-        "matrix",
-        "--malin-fasta",
-        noorg.to_str().unwrap(),
-        "-o",
-        o.to_str().unwrap(),
-    ]);
-    assert!(e.contains("/organism="), "{e}");
-    // Mixed with the GFF route.
-    let ok_fa = w.join("ok.fa");
-    fs::write(&ok_fa, &good).unwrap();
-    let e = fail(&[
-        "matrix",
-        "--malin-fasta",
-        ok_fa.to_str().unwrap(),
-        "--gff",
-        q.join("family.gff3").to_str().unwrap(),
-        "-o",
-        o.to_str().unwrap(),
-    ]);
-    assert!(e.contains("cannot be combined with --gff"), "{e}");
-=======
         "-t",
         q.join("family.nwk").to_str().unwrap(),
         "-m",
@@ -3031,5 +2860,178 @@ fn junctions_never_softens_a_cell_the_matrix_masked() {
     );
     assert!(t.contains("7:0\tA"), "{t}");
     assert!(String::from_utf8_lossy(&o.stderr).contains("1 masked or absent in the matrix"));
->>>>>>> origin/main
+}
+
+/// A MALIN FASTA written from the quickstart: each alignment row gets its organism and the `cds_offset` of every intron
+/// the GFF route found in `expected/introns.tsv`.
+fn quickstart_as_malin_fasta(organism: impl Fn(&str) -> String) -> String {
+    let q = example("01_quickstart");
+    let introns = fs::read_to_string(q.join("expected/introns.tsv")).unwrap();
+    let aln = fs::read_to_string(q.join("family.aln.fasta")).unwrap();
+    let mut out = String::new();
+    let mut lines = aln.lines();
+    while let Some(h) = lines.next() {
+        let id = h.trim_start_matches('>');
+        let seq = lines.next().unwrap();
+        let offs: Vec<&str> = introns
+            .lines()
+            .skip(1)
+            .map(|l| l.split('\t').collect::<Vec<_>>())
+            .filter(|f| f[0] == id)
+            .map(|f| f[10])
+            .collect();
+        out.push_str(&format!(
+            ">{id} /organism={} {{i {} i}}\n{seq}\n",
+            organism(id),
+            offs.join(",")
+        ));
+    }
+    out
+}
+
+#[test]
+fn malin_fasta_gives_the_same_matrix_as_the_gff_route() {
+    let w = scratch("malin_fasta_equiv");
+    let q = example("01_quickstart");
+    let fasta = w.join("family.aln.fasta");
+    fs::write(&fasta, quickstart_as_malin_fasta(|id| id.to_string())).unwrap();
+    let (gff_out, malin_out) = (w.join("gff"), w.join("malin"));
+    ok(&[
+        "matrix",
+        "--gff",
+        q.join("family.gff3").to_str().unwrap(),
+        "-p",
+        q.join("proteins.faa").to_str().unwrap(),
+        "--msa",
+        q.join("family.aln.fasta").to_str().unwrap(),
+        "-o",
+        gff_out.to_str().unwrap(),
+    ]);
+    let s = ok(&[
+        "matrix",
+        "--malin-fasta",
+        fasta.to_str().unwrap(),
+        "-o",
+        malin_out.to_str().unwrap(),
+    ]);
+    assert!(s.contains("family.aln: "), "{s}");
+    for f in [
+        "matrix.tsv",
+        "presence.tsv",
+        "pairwise.tsv",
+        "counts_sites.tsv",
+    ] {
+        assert_eq!(
+            fs::read_to_string(gff_out.join("family.aln").join(f)).unwrap(),
+            fs::read_to_string(malin_out.join("family.aln").join(f)).unwrap(),
+            "{f} differs between the GFF route and the MALIN FASTA route"
+        );
+    }
+    // introns.tsv has no genomic coordinates for this source.
+    let introns = fs::read_to_string(malin_out.join("introns.tsv")).unwrap();
+    assert_eq!(introns.lines().count(), 1 + 6, "{introns}");
+}
+
+#[test]
+fn malin_fasta_names_taxa_by_organism_and_feeds_analyze() {
+    let w = scratch("malin_fasta_org");
+    let q = example("01_quickstart");
+    let fasta = w.join("fam.fa");
+    fs::write(&fasta, quickstart_as_malin_fasta(|id| format!("sp{id}"))).unwrap();
+    let nwk = w.join("t.nwk");
+    let tree = fs::read_to_string(q.join("family.nwk")).unwrap();
+    let tree = ["A", "B", "C", "D"]
+        .iter()
+        .fold(tree, |t, n| t.replace(n, &format!("sp{n}")));
+    fs::write(&nwk, tree).unwrap();
+    let out = w.join("o");
+    let s = ok(&[
+        "analyze",
+        "--malin-fasta",
+        fasta.to_str().unwrap(),
+        "-t",
+        nwk.to_str().unwrap(),
+        "-m",
+        "dollo,mp,counts",
+        "-o",
+        out.to_str().unwrap(),
+    ]);
+    assert!(s.contains("dollo 2g/2l"), "{s}");
+    let m = fs::read_to_string(out.join("fam/matrix.tsv")).unwrap();
+    assert!(m.contains("spA") && !m.contains("\tA\t"), "{m}");
+}
+
+#[test]
+fn malin_fasta_reads_standard_input() {
+    let w = scratch("malin_fasta_stdin");
+    let mut child = Command::new(BIN)
+        .args([
+            "matrix",
+            "--malin-fasta",
+            "-",
+            "-o",
+            w.join("o").to_str().unwrap(),
+        ])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(quickstart_as_malin_fasta(|id| id.to_string()).as_bytes())
+        .unwrap();
+    let o = child.wait_with_output().unwrap();
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert!(w.join("o/stdin/matrix.tsv").is_file());
+}
+
+#[test]
+fn malin_fasta_refusals_are_clear() {
+    let w = scratch("malin_fasta_refuse");
+    let q = example("01_quickstart");
+    let good = quickstart_as_malin_fasta(|id| id.to_string());
+    let o = w.join("o");
+    let fail = |args: &[&str]| -> String {
+        let r = run(args);
+        assert!(!r.status.success(), "{} should fail", args.join(" "));
+        String::from_utf8_lossy(&r.stderr).into_owned()
+    };
+    // Two rows of one organism in one alignment.
+    let dup = w.join("dup.fa");
+    fs::write(&dup, quickstart_as_malin_fasta(|_| "same".into())).unwrap();
+    let e = fail(&[
+        "matrix",
+        "--malin-fasta",
+        dup.to_str().unwrap(),
+        "-o",
+        o.to_str().unwrap(),
+    ]);
+    assert!(e.contains("both map to taxon \"same\""), "{e}");
+    // A row with no organism.
+    let noorg = w.join("noorg.fa");
+    fs::write(&noorg, good.replacen(" /organism=A", "", 1)).unwrap();
+    let e = fail(&[
+        "matrix",
+        "--malin-fasta",
+        noorg.to_str().unwrap(),
+        "-o",
+        o.to_str().unwrap(),
+    ]);
+    assert!(e.contains("/organism="), "{e}");
+    // Mixed with the GFF route.
+    let ok_fa = w.join("ok.fa");
+    fs::write(&ok_fa, &good).unwrap();
+    let e = fail(&[
+        "matrix",
+        "--malin-fasta",
+        ok_fa.to_str().unwrap(),
+        "--gff",
+        q.join("family.gff3").to_str().unwrap(),
+        "-o",
+        o.to_str().unwrap(),
+    ]);
+    assert!(e.contains("cannot be combined with --gff"), "{e}");
 }
