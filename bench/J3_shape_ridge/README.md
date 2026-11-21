@@ -23,8 +23,10 @@ grid (`--ml-gamma-shape`), every other parameter is fitted, and the ln L profile
 | free | **−46,578.5** (shape 3.34, converged at 19,988) | yes | −43,625.8 (shape 4.33) | no |
 | constant rates | −46,710.0 | yes | −43,656.6 | yes |
 
-- **The profile is peaked, not flat.** Hard: ln L falls by 1.8 from shape 3.3 to 4, by 13.8 to 2, by 31 to 8, by 108 to 50. Soft: it falls by 3.3 from
-  shape 4 to 8 and by 12.6 to 2. Taking a drop of 1.92 (half of χ²₁ at 95%) as the interval, the shape is roughly 2.7–4.1 (hard) and 3.3–7 (soft). It is not
+- **The profile is peaked, not flat.** Hard: ln L falls by 1.8 from shape 3.3 to 4, by 13.8 to 2, by 31.7 to 8, by 108 to 50. Soft: it falls by 3.3 from
+  shape 4 to 8 and by 12.6 to 2. Taking a drop of 1.92 (half of χ²₁ at 95%) as the interval, the shape is roughly 2.7–4.1 (hard; the lower end is interpolated between two unconverged fits at 2 and 3) and about 3–8 with a peak at 4–5 (soft; no soft fit
+  converged, and the free fit, −43,625.76, scores below fixed shape 4, −43,625.43, and 5, −43,625.56, which cannot happen at convergence, so the soft interval is
+  only a rough one). It is not
   running off towards infinity (constant rates), and nothing in the profile says the shape is unidentified.
 - **Rate variation is overwhelmingly supported.** Free shape against constant rates: 131 ln L units (hard) and 31 (soft) for one extra parameter.
 - **The slow part is the EM, not the shape.** With the shape fixed at 3 or below, the hard fits still do not converge in 20,000 iterations, and at 4 and above they

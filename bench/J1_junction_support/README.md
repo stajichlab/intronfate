@@ -58,7 +58,7 @@ What can and cannot be said:
   preserved. The model can now explain a scattered presence as an annotation error instead of an independent insertion, so the convergent-insertion
   signal depends on how far the annotation is trusted. In this data set it is not robust to that. This does not show which model is right; it
   shows that the hard-model calls rest entirely on the annotation being correct.
-- With four rate classes the fits are slow to converge and reach the iteration cap (the log-likelihood is bounded and climbs 0.006 per iteration; the hard fit behaves the same way); their rankings are less stable (Spearman 0.03–0.80). [J3](../J3_shape_ridge/README.md) shows the gamma shape itself is well determined (the profile is peaked, 95% interval about 3.3–7 for the soft fit) and that what is slow is the EM, with about 2 log-likelihood units unfinished. Prefer the constant-rate table for rankings, or the converged free-shape fit.
+- With four rate classes the fits are slow to converge and reach the iteration cap (the log-likelihood is bounded and climbs 0.006 per iteration; the hard fit behaves the same way); their rankings are less stable (Spearman 0.03–0.80). [J3](../J3_shape_ridge/README.md) shows the gamma shape itself is well determined (the profile is peaked, interval roughly 3–8 for the unconverged soft fit, 2.7–4.1 for the hard one) and that what is slow is the EM, with about 2 log-likelihood units unfinished. Prefer the constant-rate table for rankings, or the converged free-shape fit.
 - `p0 = 0.5` is pathological (negative rank correlation, 12,841 flagged sites); disregard it.
 
 ## Bugs this run found
