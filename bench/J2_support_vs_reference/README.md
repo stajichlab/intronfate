@@ -64,3 +64,5 @@ AUC of the read count for agreement with RefSeq: *S. cerevisiae* 0.94, *S. pombe
   negatives), and say nothing about the value of `--half-reads`.
 - **Not shown:** whether soft evidence moves the likelihood's *inferences* (gains, losses, origins) towards the truth. That needs per-cell
   annotation-error calls compared with the RefSeq disagreements.
+- **Redone on the matrix cells:** [J2b](../J2b_matrix_cells/README.md) restricts to the introns the likelihood sees and relaxes the match. Only 4–9% of those cells
+  have no reads and their zero-read agreement is close to the default `p0`, so the `p0` concern above applies to the genome-wide set, not the model cells.
