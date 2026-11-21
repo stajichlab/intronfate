@@ -50,7 +50,8 @@ In rough priority order. Items marked SPEC are described there.
     an intron between the last residue and the stop codon is reported (`site_beyond_protein_end`, `tail_sites_dropped`) and set aside by
     design; `--clamp-tail` places it one codon early (documented as approximate); Stockholm `SF/SE` is this tool's own convention, now
     stated as such (SPEC §3, USAGE). Still unchecked: FlyBase `Derives_from` protein links (no FlyBase file at hand).
-12. **Junction support as soft evidence** (`intronfate junctions`, USAGE §4, SPEC §5.6b) is built and unit/CLI tested on the quickstart only.
+12. **Soft-evidence likelihood was wrong before the seen-conditioning fix (SPEC §5.6b)**: results from `--ml-soft-evidence` / `--ml-origins` with soft cells computed earlier are invalid (ln L could exceed 0 and gains collapsed). Fixed and checked against a brute force; the J1 benchmark is being rerun with it.
+13. **Junction support as soft evidence** (`intronfate junctions`, USAGE §4, SPEC §5.6b) is built and unit/CLI tested on the quickstart only.
     Open: run it on real RNA-seq (STAR `SJ.out.tab` for species of the nine-genome set) and check how the likelihood and the
     convergent-insertion scores move with `--unsupported-p` and `--half-reads`; the defaults (0.8, 3) are priors. Junctions at
     coordinates the annotation lacks are not projected into the alignment (would give soft evidence for absent cells).

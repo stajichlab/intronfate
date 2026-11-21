@@ -1,0 +1,7 @@
+label	bam	junctions	total_reads
+Ccinerea	/bigdata/stajichlab/shared/projects/BFD/Fungi_BFD_runs/genome_annotation/Coprinopsis_cinerea_okayama7-130/training/funannotate_train.coordSorted.bam	63258	175877
+Cneoformans	/bigdata/stajichlab/shared/projects/BFD/Fungi_BFD_runs/genome_annotation/Cryptococcus_neoformans_H99/training/funannotate_train.coordSorted.bam	42429	128597
+Spombe	/bigdata/stajichlab/shared/projects/BFD/Fungi_BFD_runs/genome_annotation/Schizosaccharomyces_pombe_972h/training/funannotate_train.coordSorted.bam	5756	14066
+Scerevisiae	/bigdata/stajichlab/shared/projects/BFD/Fungi_BFD_runs/genome_annotation/Saccharomyces_cerevisiae_S288C/training/funannotate_train.coordSorted.bam	411	481
+Ncrassa	/bigdata/stajichlab/shared/projects/BFD/Fungi_BFD_runs/genome_annotation/Neurospora_crassa_OR74A/training/funannotate_train.coordSorted.bam	14405	27672
+Anidulans	/bigdata/stajichlab/shared/projects/BFD/Fungi_BFD_runs/genome_annotation/Aspergillus_nidulans_FGSC_A4/training/funannotate_train.coordSorted.bam	18209	22682
