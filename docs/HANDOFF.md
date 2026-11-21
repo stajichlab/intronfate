@@ -59,7 +59,7 @@ In rough priority order. Items marked SPEC are described there.
     truth (needs per-cell error calls against the RefSeq disagreements), non-normalised RNA-seq, and junctions at coordinates the annotation lacks
     (not projected).
 14. **Four-class gamma fits** are slow to converge, not on a flat shape ridge ([J3](../bench/J3_shape_ridge/README.md): the profile is peaked; about 2 ln L
-    units remain at the 20,000-iteration cap). Open: which parameters creep, and whether a looser `--ml-tol` or a better acceleration should be the default.
+    units remain at the 20,000-iteration cap). [J3b](../bench/J3b_creeping_parameters/README.md): one loss probability creeps (the branch above *S. cerevisiae*+*N. crassa*+*A. nidulans* in the hard fit); totals and the origin ranking are stable from ~5,000 iterations; `--ml-tol 1e-5 --ml-param-tol 1e-6` halves the hard fit time with no visible cost (default unchanged, owner's decision).
 
 ## Settled (see SPEC; do not relitigate without a reason)
 
