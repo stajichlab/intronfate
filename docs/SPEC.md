@@ -629,7 +629,7 @@ intron was scored as missing data — discarding exactly the negative evidence i
 4. Cross-check the projection: run this tool's GFF path over a species whose MALIN `.faa` headers
    carry known positions, and diff derived `cds_offset` against theirs.
 
-## 6c. MALIN FASTA reader (specified, not built)
+## 6c. MALIN FASTA reader (built)
 
 **Goal.** Run `matrix`/`analyze` directly on MALIN's own input, with no GFF, protein FASTA or taxon map, so the two tools
 can be compared on identical inputs (the open item in §6b.4).
@@ -655,8 +655,10 @@ expansion) for `matrix` and `analyze`. It conflicts with `--gff`, `-p`, `--msa` 
   already does). The MALIN guide does not say what it does here; the alternatives (first row, union of introns) would
   silently change the data.
 - An intron position beyond the protein end is reported through the existing diagnostics.
-- Rows whose organism is not a tip of the tree are ignored, with a count printed (MALIN ignores unknown organisms).
-- `introns.tsv` has no genomic coordinates for this source; those columns are blank.
+- A row with no `{i … i}` tag is an error (`{i i}` means no introns); position 0 and non-numbers are errors; repeats in one row count once.
+- Rows whose organism is not a tip of the tree need no special handling: `analyze` already reports matrix taxa that are not tips and leaves them unscored.
+- Each file is joined to its own rows only (identifiers may repeat across families); `introns.tsv` is the concatenation.
+- `introns.tsv` has no genomic coordinates for this source: start and end are 0 and the sequence name is `.`.
 
 **Tests.**
 - The guide's own two-row example as a fixture.
@@ -667,7 +669,7 @@ expansion) for `matrix` and `analyze`. It conflicts with `--gff`, `-p`, `--msa` 
 
 **Validation not possible alone.** A site-by-site comparison with MALIN's own Dollo output needs a MALIN run on FASTA
 input; only its tables (`Chromo23`) are available here. Until someone supplies a MALIN run, the reader is checked by the
-equivalence test only. Estimated effort: about a day with tests and docs.
+equivalence test only.
 
 ## 7. Outputs
 
@@ -813,9 +815,9 @@ comparison the tool exists to make mechanically repeatable.
 ## 12. Roadmap
 
 1. ~~Per-cell missing data~~ — done (§2).
-2. **MALIN interop** — table import/export is done (`convert`, `malin.rs`, §6b). Still open: reading
-   `/organism=` + `{i … i}` FASTA headers as an `AnnotationSource` (specified in §6c, not built), which would make the two tools directly
-   comparable on MALIN's own inputs, and running `Chromo23.table` as a regression fixture on the HPCC.
+2. **MALIN interop** — table import/export is done (`convert`, `malin.rs`, §6b). Reading MALIN's own
+   FASTA input (`/organism=` + `{i … i}` headers, `--malin-fasta`) is done (§6c). Still open: a site-by-site comparison with a MALIN run on
+   the same files, and running `Chromo23.table` as a regression fixture on the HPCC.
 3. **Synthetic generator and scaling benchmark** — scale taxa and sites independently. Timing the GFF path at genome scale is
    done ([V3](../bench/V3_gff_scale/README.md), §6).
 4. **`AnnotationSource` for SQL/Chado/Ensembl** — the seam exists; needs a schema decision.
