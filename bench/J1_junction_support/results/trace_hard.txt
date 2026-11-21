@@ -1,0 +1,31 @@
+tree: 9 tips, rooted
+likelihood: E-steps    323  lnL -46578.681513  shape 3.3748  dlnL 9.917e-4  dx 4.384e-4  E 0.6s  M 0.5s
+likelihood: E-steps    651  lnL -46578.575167  shape 3.3622  dlnL 1.179e-4  dx 7.954e-4  E 1.2s  M 1.0s
+likelihood: E-steps    955  lnL -46578.539336  shape 3.3547  dlnL 8.207e-5  dx 1.122e-4  E 1.7s  M 1.4s
+likelihood: E-steps   1267  lnL -46578.525108  shape 3.3507  dlnL 3.085e-5  dx 4.500e-5  E 2.3s  M 1.9s
+likelihood: E-steps   1569  lnL -46578.516733  shape 3.3475  dlnL 3.717e-5  dx 2.405e-5  E 2.8s  M 2.3s
+likelihood: E-steps   1881  lnL -46578.511221  shape 3.3456  dlnL 3.071e-5  dx 9.309e-5  E 3.4s  M 2.8s
+likelihood: E-steps   2183  lnL -46578.508152  shape 3.3440  dlnL 1.398e-5  dx 4.740e-5  E 4.0s  M 3.2s
+likelihood: E-steps   2491  lnL -46578.505935  shape 3.3427  dlnL 3.230e-5  dx 1.442e-4  E 4.5s  M 3.7s
+likelihood: E-steps   2803  lnL -46578.504540  shape 3.3419  dlnL 1.890e-5  dx 9.426e-6  E 5.1s  M 4.1s
+...
+likelihood: E-steps   2976  lnL -46578.503923  shape 3.3415  dlnL 5.303e-6  dx 2.398e-5  E 5.4s  M 4.4s
+likelihood: E-steps   2979  lnL -46578.503919  shape 3.3415  dlnL 3.657e-6  dx 1.600e-5  E 5.4s  M 4.4s
+likelihood: E-steps   2982  lnL -46578.503911  shape 3.3414  dlnL 8.287e-6  dx 3.965e-5  E 5.4s  M 4.4s
+likelihood: E-steps   2985  lnL -46578.503908  shape 3.3414  dlnL 3.006e-6  dx 1.078e-5  E 5.4s  M 4.4s
+likelihood: E-steps   2988  lnL -46578.503887  shape 3.3415  dlnL 2.111e-5  dx 1.158e-4  E 5.4s  M 4.4s
+likelihood: E-steps   2989  lnL -46578.503882  shape 3.3415  dlnL 4.221e-6  dx 6.563e-6  (plain EM, iteration limit near)
+likelihood: E-steps   2990  lnL -46578.503882  shape 3.3415  dlnL 9.613e-7  dx 4.494e-6  (plain EM, iteration limit near)
+likelihood: E-steps   2991  lnL -46578.503881  shape 3.3415  dlnL 6.062e-7  dx 3.369e-6  (plain EM, iteration limit near)
+likelihood: E-steps   2992  lnL -46578.503880  shape 3.3415  dlnL 5.486e-7  dx 2.629e-6  (plain EM, iteration limit near)
+likelihood: E-steps   2993  lnL -46578.503880  shape 3.3415  dlnL 5.314e-7  dx 2.306e-6  (plain EM, iteration limit near)
+likelihood: E-steps   2994  lnL -46578.503879  shape 3.3415  dlnL 5.219e-7  dx 2.300e-6  (plain EM, iteration limit near)
+likelihood: E-steps   2995  lnL -46578.503879  shape 3.3415  dlnL 5.160e-7  dx 2.294e-6  (plain EM, iteration limit near)
+likelihood: E-steps   2996  lnL -46578.503878  shape 3.3415  dlnL 5.121e-7  dx 2.289e-6  (plain EM, iteration limit near)
+likelihood: E-steps   2997  lnL -46578.503878  shape 3.3415  dlnL 5.092e-7  dx 2.284e-6  (plain EM, iteration limit near)
+likelihood: E-steps   2998  lnL -46578.503877  shape 3.3415  dlnL 5.071e-7  dx 2.281e-6  (plain EM, iteration limit near)
+likelihood: E-steps   2999  lnL -46578.503877  shape 3.3415  dlnL 5.057e-7  dx 2.277e-6  (plain EM, iteration limit near)
+likelihood: E-steps   3000  lnL -46578.503876  shape 3.3414  dlnL 5.047e-7  dx 2.274e-6  (plain EM, iteration limit near)
+warn: likelihood: EM stopped after 3000 iterations without converging (raise --ml-max-iter)
+likelihood: lnL -46578.504 after 3000 iterations; 8363 gains, 36757 losses expected
+done in 9.93s

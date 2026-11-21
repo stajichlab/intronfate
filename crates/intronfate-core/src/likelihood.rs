@@ -734,6 +734,29 @@ impl<'a> Ctx<'a> {
         }
     }
 
+    /// For a column whose carriers are all soft (no ordinary present cell and no soft cell that is certain): the probability
+    /// `a = Π (1 − q)` that none of its soft cells is really present. `None` for every other column, whose retention is certain.
+    ///
+    /// A position is in the data because some genome showed an intron there. A soft cell shows one with probability `q`, so with
+    /// probability `a` a column of soft carriers would not have been seen at all. The likelihood of such a column is the
+    /// virtual-evidence average over the configurations in which it *was* seen: the mixture minus the all-absent configuration,
+    /// divided by `1 − a` (SPEC §5.6b). Without this the fit can send the gain rate to zero and the log-likelihood to +∞.
+    fn soft_none(&self, col: &[u8]) -> Option<f64> {
+        let mut a = 1.0;
+        let mut any = false;
+        for &c in col {
+            match c {
+                PRESENT => return None,
+                ABSENT | MISSING => {}
+                k => {
+                    any = true;
+                    a *= 1.0 - presence_probability(k).unwrap_or(0.0);
+                }
+            }
+        }
+        (any && a > 0.0).then_some(a)
+    }
+
     fn emit(&self, v: NodeId, col: &[u8]) -> [f64; 2] {
         match self.tip_of[v] {
             Some(i) => emission(col[i], self.err.sensitivity[i], self.err.false_rate[i]),
@@ -793,8 +816,16 @@ impl<'a> Ctx<'a> {
                 acc.present[v] += weight * post[1];
                 if let Some(i) = self.tip_of[v] {
                     if let Some(q) = presence_probability(col[i]) {
-                        acc.missed[i] += weight * post[1] * (1.0 - q);
-                        acc.false_[i] += weight * post[0] * q;
+                        // joint posterior of (true state, observation) at the tip; the observation is "present" with probability q
+                        // (1 or 0 for an ordinary cell, where this reduces to the usual counts)
+                        let (s, f) = (self.err.sensitivity[i], self.err.false_rate[i]);
+                        let e = emission(col[i], s, f);
+                        if e[1] > 0.0 {
+                            acc.missed[i] += weight * post[1] * (1.0 - q) * (1.0 - s) / e[1];
+                        }
+                        if e[0] > 0.0 {
+                            acc.false_[i] += weight * post[0] * q * f / e[0];
+                        }
                     }
                 }
             }
@@ -910,22 +941,43 @@ impl<'a> Ctx<'a> {
     /// The class mixture of [`Ctx::origin_pass`], normalised to `P(data, n origins)` shares (they sum to 1 unless the column is
     /// impossible) together with `ln P(data)`.
     fn origin_mixture(&self, cs: &[Cat], col: &[u8]) -> (f64, [f64; 3]) {
-        let parts: Vec<(f64, [f64; 3])> = cs.iter().map(|c| self.origin_pass(c, col)).collect();
-        let m = parts.iter().map(|p| p.0).fold(f64::NEG_INFINITY, f64::max);
+        let parts: Vec<OriginPass> = cs.iter().map(|c| self.origin_pass(c, col)).collect();
+        // a column of soft carriers keeps only the configurations in which it was seen (see `Ctx::soft_none`)
+        let sub: Option<(f64, Vec<OriginPass>)> = self.soft_none(col).map(|a| {
+            let pp = phantom(col);
+            (a, cs.iter().map(|c| self.origin_pass(c, &pp)).collect())
+        });
+        let mut m = parts.iter().map(|p| p.0).fold(f64::NEG_INFINITY, f64::max);
+        if let Some((_, sp)) = &sub {
+            m = sp.iter().map(|p| p.0).fold(m, f64::max);
+        }
         if !m.is_finite() {
             return (f64::NEG_INFINITY, [0.0; 3]);
         }
         let mut tot = [0.0; 3];
-        for (c, (ls, v)) in cs.iter().zip(&parts) {
+        for (k, (c, (ls, v))) in cs.iter().zip(&parts).enumerate() {
             let f = c.w * (ls - m).exp();
             for j in 0..3 {
                 tot[j] += f * v[j];
             }
+            if let Some((a, sp)) = &sub {
+                let (lsp, vp) = &sp[k];
+                let g = a * c.w * (lsp - m).exp();
+                for j in 0..3 {
+                    tot[j] -= g * vp[j];
+                }
+            }
+        }
+        for t in tot.iter_mut() {
+            *t = t.max(0.0);
         }
         let z: f64 = tot.iter().sum();
         (m + z.ln(), [tot[0] / z, tot[1] / z, tot[2] / z])
     }
 }
+
+/// `(log scale, [P(data, 0 origins), P(data, 1), P(data, 2+)] / scale)` of one rate class.
+type OriginPass = (f64, [f64; 3]);
 
 /// How many independent origins a position has: the posterior given the data, and the evidence for convergence (SPEC §5.6).
 #[derive(Clone, Copy, Debug)]
@@ -1064,6 +1116,14 @@ impl Acc {
     }
 }
 
+/// `ln(exp(a) − exp(b))` for `a ≥ b`; `−∞` when the difference is not positive.
+fn ln_diff_exp(a: f64, b: f64) -> f64 {
+    if a.is_nan() || b.is_nan() || a <= b {
+        return f64::NEG_INFINITY;
+    }
+    a + (-(b - a).exp()).ln_1p()
+}
+
 /// ln of `Σ w_k exp(x_k)`.
 fn ln_wsum_exp(x: &[f64], w: &[f64]) -> f64 {
     let m = x.iter().copied().fold(f64::NEG_INFINITY, f64::max);
@@ -1096,10 +1156,27 @@ fn column_terms(
         .sum::<f64>()
         .min(1.0 - 1e-9);
     let ws: Vec<f64> = cs.iter().map(|c| c.w).collect();
-    let ln_l = ln_wsum_exp(&lk, &ws);
+    let ln_mix = ln_wsum_exp(&lk, &ws);
+    // a column of soft carriers: keep only the configurations in which it was seen (see `Ctx::soft_none`)
+    let soft = ctx.soft_none(col).map(|a| {
+        let pp = phantom(col);
+        let lq: Vec<f64> = cs.iter().map(|c| ctx.upward(c, &pp, &mut w2)).collect();
+        (a, lq)
+    });
+    let (ln_num, ln_wr) = match &soft {
+        None => (ln_mix, 0.0),
+        Some((a, lq)) => (
+            ln_diff_exp(ln_mix, ln_wsum_exp(lq, &ws) + a.ln()),
+            (1.0 - a).ln(),
+        ),
+    };
+    let ln_l = ln_num - ln_wr;
     let (mut rg, mut rl) = (0.0, 0.0);
     for (k, (&a, &(g, l))) in lk.iter().zip(rates).enumerate() {
-        let post = (a - ln_l).exp() * cs[k].w;
+        let mut post = (a - ln_num).exp() * cs[k].w;
+        if let Some((sa, lq)) = &soft {
+            post -= sa * (lq[k] - ln_num).exp() * cs[k].w;
+        }
         rg += post * g;
         rl += post * l;
     }
@@ -1121,25 +1198,47 @@ fn e_step(ctx: &Ctx, pats: &Patterns, p: &Params) -> Acc {
             let mut acc = Acc::new(n, tips, kk);
             let mut w: Vec<Work> = (0..kk).map(|_| Work::new(n)).collect();
             let mut wp: Vec<Work> = (0..kk).map(|_| Work::new(n)).collect();
-            let (mut lk, mut zk) = (vec![0.0; kk], vec![0.0; kk]);
+            let mut wq: Vec<Work> = (0..kk).map(|_| Work::new(n)).collect();
+            let (mut lk, mut zk, mut lq) = (vec![0.0; kk], vec![0.0; kk], vec![0.0; kk]);
             for &k in chunk {
                 let col = &pats.columns[k];
                 let cnt = pats.counts[k];
                 let ph = ctx.phantom_of(col);
+                // a column of soft carriers keeps only the configurations in which it was seen: mixture minus the all-absent one
+                let soft = ctx.soft_none(col).map(|a| (a, phantom(col)));
                 for c in 0..kk {
                     lk[c] = ctx.upward(&cs[c], col, &mut w[c]);
                     zk[c] = ctx.upward(&cs[c], &ph, &mut wp[c]).exp();
+                    if let Some((_, pp)) = &soft {
+                        lq[c] = ctx.upward(&cs[c], pp, &mut wq[c]);
+                    }
                 }
-                let ln_l = ln_wsum_exp(&lk, &ws);
+                let ln_mix = ln_wsum_exp(&lk, &ws);
+                let (ln_num, ln_wr) = match &soft {
+                    None => (ln_mix, 0.0),
+                    Some((a, _)) => (
+                        ln_diff_exp(ln_mix, ln_wsum_exp(&lq, &ws) + a.ln()),
+                        (1.0 - a).ln(),
+                    ),
+                };
+                let ln_l = ln_num - ln_wr;
                 // Z is capped so that one nearly unobservable pattern cannot dominate the M-step (weight at most 1e9 per column)
                 let zbar = zk.iter().zip(&ws).map(|(z, w)| z * w).sum::<f64>();
                 let z = zbar.min(1.0 - 1e-9);
                 let scale = if zbar > z { z / zbar } else { 1.0 };
                 for c in 0..kk {
-                    let post = (lk[c] - ln_l).exp() * ws[c];
+                    let post = (lk[c] - ln_num).exp() * ws[c];
                     acc.class_w[c] += cnt * post;
                     if post > 0.0 {
                         ctx.accumulate(&cs[c], c, col, &mut w[c], cnt * post, true, &mut acc);
+                    }
+                    if let Some((a, pp)) = &soft {
+                        // the all-absent configuration comes off with a negative weight
+                        let neg = -a * (lq[c] - ln_num).exp() * ws[c];
+                        acc.class_w[c] += cnt * neg;
+                        if neg != 0.0 {
+                            ctx.accumulate(&cs[c], c, pp, &mut wq[c], cnt * neg, true, &mut acc);
+                        }
                     }
                     let wt = cnt * scale * zk[c] * ws[c] / (1.0 - z);
                     acc.class_w[c] += wt;
@@ -2546,10 +2645,11 @@ mod tests {
         // quantised to 252 steps
         assert!((r0 - q0).abs() < 0.003 && (r2 - q2).abs() < 0.003);
         // P(soft cell) = q P(cell seen present) + (1 - q) P(cell seen absent), for each soft cell (multilinear)
-        // compare the uncorrected likelihoods (the global correction's denominator is the same everywhere)
+        // compare the raw column probabilities (before any conditioning on the position having been seen)
         let un = |dd: &ScoringData| {
-            log_likelihood_with(dd, &err, &p, NeverSeen::Global)
-                + (1.0 - no_intron_probability(dd, &err, &p)).ln()
+            let ctx = Ctx::new(dd, &err);
+            let mut w = Work::new(dd.tree.len());
+            ctx.upward(&cats(&p)[0], &dd.characters[0].states, &mut w)
         };
         let got_un = un(&d).exp();
         let want_un = r0 * r2 * un(&data(NWK, &[&[1, 0, 1, 0, 0]])).exp()
@@ -2570,6 +2670,226 @@ mod tests {
         assert!(apply_soft_evidence(&mut d2, &[("9:9".into(), nm[0].clone(), 0.5)]).is_err());
         assert!(apply_soft_evidence(&mut d2, &[("0:0".into(), "nobody".into(), 0.5)]).is_err());
         assert!(apply_soft_evidence(&mut d2, &[("0:0".into(), nm[0].clone(), 1.5)]).is_err());
+    }
+
+    /// The probability that a column made of ordinary and soft cells is the one observed, and the position was seen, found by
+    /// enumerating every way the soft cells could really have been observed: `Σ w(Y) P(Y) over seen Y`, divided by `(1 − Z)` and by
+    /// the weight of the seen configurations. Also returns the same enumeration for the origin counts.
+    fn brute_soft(
+        d: &ScoringData,
+        err: &ErrorRates,
+        p: &Params,
+        col: &[u8],
+    ) -> (f64, [f64; 3], f64) {
+        let soft: Vec<usize> = (0..col.len())
+            .filter(|&i| col[i] > PRESENT && col[i] != MISSING)
+            .collect();
+        let (mut num, mut wsum, mut origins) = (0.0, 0.0, [0.0; 3]);
+        let mut z = 0.0;
+        for y in 0u32..(1 << soft.len()) {
+            let mut hard = col.to_vec();
+            let mut w = 1.0;
+            for (j, &i) in soft.iter().enumerate() {
+                let q = presence_probability(col[i]).unwrap();
+                let on = (y >> j) & 1 == 1;
+                hard[i] = if on { PRESENT } else { ABSENT };
+                w *= if on { q } else { 1.0 - q };
+            }
+            let seen = hard.contains(&PRESENT);
+            let (lik, z0, _, _) = brute(d, err, p, &hard);
+            z = z0;
+            if seen {
+                num += w * lik;
+                wsum += w;
+                let o = brute_origins(d, err, p, &hard);
+                for k in 0..3 {
+                    origins[k] += w * o[k];
+                }
+            }
+        }
+        (num / (wsum * (1.0 - z)), origins, wsum)
+    }
+
+    fn soft_cols() -> Vec<Vec<u8>> {
+        use crate::score::soft_state;
+        let s = soft_state;
+        vec![
+            // every carrier soft: the case the likelihood used to get wrong
+            vec![s(0.9), ABSENT, s(0.4), ABSENT, ABSENT],
+            vec![ABSENT, s(0.2), ABSENT, ABSENT, ABSENT],
+            vec![s(0.6), s(0.7), s(0.5), s(0.3), s(0.8)],
+            // soft cells next to an ordinary present cell: seen for certain
+            vec![s(0.5), PRESENT, ABSENT, ABSENT, s(0.5)],
+            // missing cells are not part of the event
+            vec![s(0.75), MISSING, ABSENT, MISSING, ABSENT],
+            vec![MISSING, MISSING, s(0.25), s(0.65), ABSENT],
+            // no soft cell at all
+            vec![PRESENT, ABSENT, ABSENT, PRESENT, PRESENT],
+        ]
+    }
+
+    #[test]
+    fn soft_columns_match_a_brute_force_over_the_configurations_in_which_they_were_seen() {
+        let t = tree(NWK);
+        let (p, err) = (some_params(&t), some_errors());
+        let cols = soft_cols();
+        let refs: Vec<&[u8]> = cols.iter().map(|c| c.as_slice()).collect();
+        let d = data(NWK, &refs);
+        let ctx = Ctx::new(&d, &err);
+        let cs = cats(&p);
+        let mut w = Work::new(t.len());
+        for col in &cols {
+            let (cond, z, _) = column_terms(&ctx, &cs, &[(1.0, 1.0)], col, &mut w);
+            let (want, _, _) = brute_soft(&d, &err, &p, col);
+            assert!(
+                (cond.exp() - want).abs() < 1e-11 * want.max(1e-12),
+                "{col:?}: {} vs {want} (Z {z})",
+                cond.exp()
+            );
+        }
+    }
+
+    #[test]
+    fn soft_likelihood_is_a_probability_and_continuous_where_the_cell_becomes_certain() {
+        use crate::score::soft_state;
+        let t = tree(NWK);
+        let (p, err) = (some_params(&t), some_errors());
+        let ll = |col: &[u8]| {
+            let d = data(NWK, &[col]);
+            log_likelihood(&d, &err, &p)
+        };
+        let hard = ll(&[PRESENT, ABSENT, ABSENT, ABSENT, ABSENT]);
+        // every carrier soft: never above 1, and approaching the ordinary present cell as q -> 1
+        let mut last = f64::NEG_INFINITY;
+        for q in [0.05, 0.3, 0.7, 0.9, 0.99] {
+            let l = ll(&[soft_state(q), ABSENT, ABSENT, ABSENT, ABSENT]);
+            assert!(l <= 1e-12, "q={q}: ln L = {l} is above 0");
+            assert!(l.is_finite());
+            last = l;
+        }
+        assert!((last - hard).abs() < 0.2, "{last} vs hard {hard}");
+        let near = ll(&[soft_state(0.998), ABSENT, ABSENT, ABSENT, ABSENT]);
+        assert!((near - hard).abs() < 0.02, "{near} vs hard {hard}");
+        // many soft cells, none of them certain: still a probability
+        for q in [0.02, 0.5, 0.95] {
+            let l = ll(&[soft_state(q); 5]);
+            assert!(l <= 1e-12 && l.is_finite(), "q={q}: {l}");
+        }
+    }
+
+    #[test]
+    fn soft_origin_posteriors_match_a_brute_force_over_the_seen_configurations() {
+        let t = tree(NWK);
+        let (p, err) = (some_params(&t), some_errors());
+        let cols = soft_cols();
+        let refs: Vec<&[u8]> = cols.iter().map(|c| c.as_slice()).collect();
+        let d = data(NWK, &refs);
+        let post = origin_posteriors(&d, &err, &p);
+        for (i, col) in cols.iter().enumerate() {
+            let (_, o, _) = brute_soft(&d, &err, &p, col);
+            let z: f64 = o.iter().sum();
+            let want = [o[0] / z, o[1] / z, o[2] / z];
+            let got = [post[i].p_none, post[i].p_one, post[i].p_multi];
+            for k in 0..3 {
+                assert!(
+                    (got[k] - want[k]).abs() < 1e-10,
+                    "{col:?} origin share {k}: {got:?} vs {want:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_fit_with_soft_carriers_is_bounded_converges_and_is_a_stationary_point() {
+        use crate::score::soft_state;
+        // simulate ordinary data, then make some cells soft, including positions whose only carriers are soft
+        let t = tree(NWK);
+        let err = ErrorRates::none(5);
+        let truth = truth_with_fixed_root(&t, 0.05, 0.15, 0.7);
+        let mut cols = simulate(&t, &truth, &err, 3_000, 11);
+        let mut rng = 12345u64;
+        let mut next = move || {
+            rng = rng
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            ((rng >> 33) as f64) / ((1u64 << 31) as f64)
+        };
+        for col in cols.iter_mut() {
+            // each taxon's carrier is reported with reliability q drawn from 0.4..0.95 (taxa 0, 1 and 4 have a table)
+            for &i in &[0usize, 1, 4] {
+                if col[i] == PRESENT {
+                    col[i] = soft_state(0.4 + 0.55 * next());
+                }
+            }
+        }
+        // the same positions with every soft cell made ordinary, for a reference fit
+        let hard_cols: Vec<Vec<u8>> = cols
+            .iter()
+            .map(|c| {
+                c.iter()
+                    .map(|&x| {
+                        if x > PRESENT && x != MISSING {
+                            PRESENT
+                        } else {
+                            x
+                        }
+                    })
+                    .collect()
+            })
+            .collect();
+        let rh = fit(&sim_data(NWK, hard_cols), &err, &FitOptions::default()).unwrap();
+        let d = sim_data(NWK, cols);
+        let n_all_soft = d
+            .characters
+            .iter()
+            .filter(|c| {
+                !c.states.contains(&PRESENT)
+                    && c.states.iter().any(|&s| s > PRESENT && s != MISSING)
+            })
+            .count();
+        assert!(
+            n_all_soft > 50,
+            "the test needs positions with only soft carriers: {n_all_soft}"
+        );
+        let r = fit(&d, &err, &FitOptions::default()).unwrap();
+        assert!(r.converged, "{} iterations", r.iterations);
+        assert!(
+            r.log_lik < 0.0,
+            "ln L = {} is not a log-probability",
+            r.log_lik
+        );
+        let base = log_likelihood(&d, &err, &r.params);
+        assert!((base - r.log_lik).abs() < 1e-6 * base.abs());
+        // the fit is the maximum of the soft likelihood: the parameters that fit the ordinary version of the data do worse on it
+        let at_hard = log_likelihood(&d, &err, &rh.params);
+        assert!(base > at_hard, "{base} vs {at_hard}");
+        // the E-step and the likelihood agree: no single parameter step improves the log-likelihood
+        let f = fixed_root_branch(&t).unwrap();
+        for v in 0..t.len() {
+            if t.parent(v).is_none() || v == f {
+                continue;
+            }
+            for (which, h) in [(0, 1e-4), (0, -1e-4), (1, 1e-4), (1, -1e-4)] {
+                let mut q = r.params.clone();
+                if which == 0 {
+                    q.gain[v] += h
+                } else {
+                    q.loss[v] += h
+                }
+                assert!(
+                    log_likelihood(&d, &err, &q) <= base + 1e-6,
+                    "moving node {v} ({which}) by {h} improves a soft fit"
+                );
+            }
+        }
+        for h in [1e-4, -1e-4] {
+            let mut q = r.params.clone();
+            q.root_present += h;
+            assert!(
+                log_likelihood(&d, &err, &q) <= base + 1e-6,
+                "root probability, soft fit"
+            );
+        }
     }
 
     #[test]

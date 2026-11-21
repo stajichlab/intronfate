@@ -1,0 +1,7 @@
+taxon	cells	frac_reads_ge1	frac_reads_ge3	frac_reads_ge10
+Anidulans	2442	0.932	0.0213	0.0004
+Ccinerea	6502	0.9076	0.3153	0.0112
+Cneoformans	6055	0.9422	0.472	0.005
+Ncrassa	1728	0.9583	0.1898	0.0
+Scerevisiae	40	0.825	0.0	0.0
+Spombe	1279	0.9648	0.3526	0.0055

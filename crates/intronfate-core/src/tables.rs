@@ -242,7 +242,8 @@ pub fn sites_table(ap: &AlignmentProjection, proteins: &ProteinSet) -> Table {
                 c.push(cell(s.site.codon()));
                 c.push(cell(s.site.residue_before()));
                 c.push(cell(s.site.residue_after()));
-                c.push(format!("{}:{}", s.col, s.site.phase));
+                // the matrix's own label: the grouping phase (0 under --ignore-phase), not the intron's true phase
+                c.push(format!("{}:{}", s.col, s.phase));
                 c.push(cell(plen));
                 c.push(cell(taxon.residues_aligned));
             });

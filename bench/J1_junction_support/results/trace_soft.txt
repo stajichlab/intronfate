@@ -1,0 +1,24 @@
+tree: 9 tips, rooted
+likelihood: E-steps    950  lnL -43666.224204  shape 2.1273  dlnL 1.013e-1  dx 6.920e-4  E 4.1s  M 0.9s
+likelihood: E-steps   2146  lnL -43639.079103  shape 3.7650  dlnL 3.005e-2  dx 4.841e-4  E 9.1s  M 2.1s
+...
+likelihood: E-steps   2917  lnL -43634.134757  shape 4.2579  dlnL 1.295e-2  dx 1.070e-4  E 12.4s  M 3.0s
+likelihood: E-steps   2931  lnL -43634.121836  shape 4.2581  dlnL 1.292e-2  dx 1.070e-4  E 12.4s  M 3.0s
+likelihood: E-steps   2934  lnL -43634.084956  shape 4.2762  dlnL 3.688e-2  dx 4.233e-3  E 12.5s  M 3.0s
+likelihood: E-steps   2948  lnL -43633.810533  shape 4.2775  dlnL 2.744e-1  dx 3.064e-4  E 12.5s  M 3.0s
+likelihood: E-steps   2962  lnL -43633.781415  shape 4.2765  dlnL 2.912e-2  dx 2.400e-4  E 12.6s  M 3.0s
+likelihood: E-steps   2976  lnL -43633.769215  shape 4.2758  dlnL 1.220e-2  dx 1.536e-4  E 12.6s  M 3.0s
+likelihood: E-steps   2990  lnL -43633.757072  shape 4.2755  dlnL 1.214e-2  dx 8.164e-5  E 12.7s  M 3.1s
+likelihood: E-steps   2991  lnL -43633.751016  shape 4.2754  dlnL 6.056e-3  dx 4.097e-5  (plain EM, iteration limit near)
+likelihood: E-steps   2992  lnL -43633.744968  shape 4.2753  dlnL 6.048e-3  dx 4.122e-5  (plain EM, iteration limit near)
+likelihood: E-steps   2993  lnL -43633.738927  shape 4.2753  dlnL 6.040e-3  dx 4.141e-5  (plain EM, iteration limit near)
+likelihood: E-steps   2994  lnL -43633.732894  shape 4.2753  dlnL 6.033e-3  dx 4.156e-5  (plain EM, iteration limit near)
+likelihood: E-steps   2995  lnL -43633.726868  shape 4.2753  dlnL 6.026e-3  dx 4.164e-5  (plain EM, iteration limit near)
+likelihood: E-steps   2996  lnL -43633.720848  shape 4.2753  dlnL 6.020e-3  dx 4.169e-5  (plain EM, iteration limit near)
+likelihood: E-steps   2997  lnL -43633.714835  shape 4.2754  dlnL 6.013e-3  dx 4.170e-5  (plain EM, iteration limit near)
+likelihood: E-steps   2998  lnL -43633.708829  shape 4.2754  dlnL 6.007e-3  dx 4.166e-5  (plain EM, iteration limit near)
+likelihood: E-steps   2999  lnL -43633.702829  shape 4.2755  dlnL 6.000e-3  dx 4.160e-5  (plain EM, iteration limit near)
+likelihood: E-steps   3000  lnL -43633.696835  shape 4.2756  dlnL 5.994e-3  dx 4.152e-5  (plain EM, iteration limit near)
+warn: likelihood: EM stopped after 3000 iterations without converging (raise --ml-max-iter)
+likelihood: lnL -43633.697 after 3000 iterations; 9210 gains, 18529 losses expected
+done in 15.98s
