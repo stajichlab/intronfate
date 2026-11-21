@@ -33,3 +33,31 @@ Cell introns, share with no reads, and agreement with RefSeq (exact / near12) by
   Exact matching was not the main cause of disagreement.
 - **Not changed:** the `junctions` defaults. The cell-level agreement is still a RefSeq agreement with reads that trained BFD (circularity), and it says nothing yet about
   whether soft evidence moves gain/loss/origin calls toward the truth (steps 3 and 4).
+
+## Step 3: is there enough to test the likelihood against RefSeq?
+
+`cell_power.py` (selftest in `bench/test_support_vs_reference.py`; `results/J2b_power.tsv`) counts matrix cells (one BFD intron in a site and taxon) by whether RefSeq has an
+intron within 12 nt (agree) or not (disagree), and whether they have reads. "Informative" sites are present in two or more of the six taxa. The candidates are the hard
+constant-rate fit's convergent-insertion sites (p(≥2 origins) > 0.5, 125 sites in J1; 212 cells fall in these six genomes).
+
+| genome | cells | disagree with RefSeq | disagree and have reads | informative-site cells | disagree there |
+|---|---|---|---|---|---|
+| *C. neoformans* | 6,470 | 54 (0.8%) | 12 | 3,983 | 8 |
+| *S. pombe* | 1,387 | 12 (0.9%) | 2 | 926 | 0 |
+| *N. crassa* | 1,841 | 29 (1.6%) | 14 | 1,388 | 8 |
+| *S. cerevisiae* | 46 | 8 | 2 | 25 | 1 |
+| *C. cinerea* | 6,941 | 682 (9.8%) | 576 | 4,150 | 365 |
+| *A. nidulans* | 2,594 | 336 (13%) | 271 | 1,848 | 214 |
+
+- **Where RefSeq is a reliable label there is almost nothing to test.** The four reliable genomes hold 103 disagreement cells in total, 30 with reads, and 17 in informative sites.
+  The test "does soft evidence move the calls towards RefSeq" would rest on a few dozen cells, and the two genomes with hundreds of disagreement cells (*C. cinerea*,
+  *A. nidulans*) are the ones where RefSeq is the weak side (J2).
+- **The convergent-insertion candidates are not RefSeq-detectable errors.** 202 of the 212 candidate cells (95.3%) agree with RefSeq, the same share as all other
+  informative cells (95.2%). In the four reliable genomes 2 of 84 candidate cells disagree (2.4%, both *N. crassa*) against 16 of 6,255 other informative cells (0.26%): about ten times
+  more, but two cells cannot support a claim. So the loss of the candidates under soft evidence (J1) does not come from RefSeq-confirmed annotation errors; the soft model can
+  explain scattered presence as error whether or not an error exists.
+- **Blind spot:** only BFD introns are cells. RefSeq introns that BFD lacks (15–37% of RefSeq's introns in four genomes, J2) are absent cells that the soft model leaves hard, so
+  they are not counted here.
+
+Consequence for step 4: a likelihood test of soft evidence against RefSeq has too little power in the reliable genomes and is circular-by-weak-label in the other two.
+A test that can speak to the calls needs a different truth: simulated annotation errors on this matrix (known truth, any rate), or a manually curated gene set.

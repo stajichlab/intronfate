@@ -10,3 +10,5 @@ mkdir -p logs results
 J1=../J1_junction_support/work
 python3 -I matrix_cells.py --selftest
 python3 -I matrix_cells.py $J1 $J1/run results/J2b
+python3 -I cell_power.py --selftest
+python3 -I cell_power.py $J1 $J1/run $J1/score_rc1_hard results/J2b

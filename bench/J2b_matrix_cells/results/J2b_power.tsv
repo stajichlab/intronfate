@@ -1,0 +1,36 @@
+set	label	cells	disagree	disagree_with_reads	zero_read	frac_disagree
+all cells	Anidulans	2594	336	271	180	0.1295
+all cells	Ccinerea	6941	682	576	645	0.0983
+all cells	Cneoformans	6470	54	12	377	0.0083
+all cells	Ncrassa	1841	29	14	79	0.0158
+all cells	Scerevisiae	46	8	2	7	0.1739
+all cells	Spombe	1387	12	2	52	0.0087
+all cells	ALL	19279	1121	877	1340	0.0581
+informative sites (>=2 taxa)	Anidulans	1848	214	179	116	0.1158
+informative sites (>=2 taxa)	Ccinerea	4150	365	333	354	0.0880
+informative sites (>=2 taxa)	Cneoformans	3983	8	3	189	0.0020
+informative sites (>=2 taxa)	Ncrassa	1388	8	4	52	0.0058
+informative sites (>=2 taxa)	Scerevisiae	25	1	1	1	0.0400
+informative sites (>=2 taxa)	Spombe	926	0	0	25	0.0000
+informative sites (>=2 taxa)	ALL	12320	596	520	737	0.0484
+hard candidates p(multi)>0.5	Anidulans	86	5	4	3	0.0581
+hard candidates p(multi)>0.5	Ccinerea	42	3	3	5	0.0714
+hard candidates p(multi)>0.5	Cneoformans	33	0	0	4	0.0000
+hard candidates p(multi)>0.5	Ncrassa	44	2	2	0	0.0455
+hard candidates p(multi)>0.5	Scerevisiae	1	0	0	0	0.0000
+hard candidates p(multi)>0.5	Spombe	6	0	0	0	0.0000
+hard candidates p(multi)>0.5	ALL	212	10	9	12	0.0472
+hard top 100 by ln LR	Anidulans	61	4	3	3	0.0656
+hard top 100 by ln LR	Ccinerea	42	3	3	5	0.0714
+hard top 100 by ln LR	Cneoformans	33	0	0	4	0.0000
+hard top 100 by ln LR	Ncrassa	44	2	2	0	0.0455
+hard top 100 by ln LR	Scerevisiae	1	0	0	0	0.0000
+hard top 100 by ln LR	Spombe	6	0	0	0	0.0000
+hard top 100 by ln LR	ALL	187	9	8	12	0.0481
+informative non-candidates	Anidulans	1796	211	177	113	0.1175
+informative non-candidates	Ccinerea	4108	362	330	349	0.0881
+informative non-candidates	Cneoformans	3950	8	3	185	0.0020
+informative non-candidates	Ncrassa	1361	7	3	52	0.0051
+informative non-candidates	Scerevisiae	24	1	1	1	0.0417
+informative non-candidates	Spombe	920	0	0	25	0.0000
+informative non-candidates	ALL	12159	589	514	725	0.0484

@@ -17,6 +17,12 @@ class SelfTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("selftest ok", r.stdout)
 
+    def test_cell_power_selftest_passes(self):
+        script = os.path.join(os.path.dirname(SCRIPT), "..", "J2b_matrix_cells", "cell_power.py")
+        r = subprocess.run([sys.executable, "-I", script, "--selftest"], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("selftest ok", r.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
