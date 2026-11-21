@@ -44,10 +44,16 @@ Likelihood and convergent-insertion calls, constant rates (converged; `results/s
 |---|---|---|---|---|
 | hard | −46,710 | 125 | 1 | 100 |
 | p0 0.95, k 3 | −45,707 | 0 | 0.98 | 10 |
+| p0 0.8, k 0.2 | −45,868 | 0 | 0.98 | 15 |
+| p0 0.8, k 0.5 | −45,245 | 0 | 0.95 | 8 |
 | p0 0.8, k 1 | −44,673 | 0 | 0.90 | 5 |
 | p0 0.8, k 3 | −43,657 | 0 | 0.85 | 3 |
 | p0 0.8, k 10 | −42,772 | 0 | 0.83 | 2 |
 | p0 0.5, k 3 | −39,680 | 0 | −0.12 | 0 |
+
+Added after the J2 review (`run_extra.sbatch`, same cache): k = 0.2, the value the one-read agreement in [J2](../J2_support_vs_reference/README.md) points to, behaves
+like a smaller k should. It stays closest to the hard model (rank agreement 0.98, 15 of the hard top 100 kept), but still no site keeps a posterior above 0.5 for two or
+more origins. So the finding below does not depend on k within 0.2–10: trusting presence cells less than fully removes the convergent-insertion calls.
 
 What can and cannot be said:
 
@@ -58,8 +64,7 @@ What can and cannot be said:
   preserved. The model can now explain a scattered presence as an annotation error instead of an independent insertion, so the convergent-insertion
   signal depends on how far the annotation is trusted. In this data set it is not robust to that. This does not show which model is right; it
   shows that the hard-model calls rest entirely on the annotation being correct.
-- With four rate classes the fits sit on a flat ridge in the gamma shape and reach the iteration cap (the log-likelihood is bounded and climbs
-  0.006 per iteration; the hard fit behaves the same way); their rankings are less stable (Spearman 0.03–0.80). Prefer the constant-rate table.
+- With four rate classes the fits are slow to converge and reach the iteration cap (the log-likelihood is bounded and climbs 0.006 per iteration; the hard fit behaves the same way); their rankings are less stable (Spearman 0.03–0.80). [J3](../J3_shape_ridge/README.md) shows the gamma shape itself is well determined (the profile is peaked, interval roughly 3–8 for the unconverged soft fit, 2.7–4.1 for the hard one) and that what is slow is the EM, with about 2 log-likelihood units unfinished. Prefer the constant-rate table for rankings, or the converged free-shape fit.
 - `p0 = 0.5` is pathological (negative rank correlation, 12,841 flagged sites); disregard it.
 
 ## Bugs this run found
@@ -70,6 +75,6 @@ What can and cannot be said:
 
 ## Not done
 
-- Whether read support predicts annotation errors: needs ground truth ([V4](../V4_annotation_accuracy/README.md), [P1f](../P1f_adjudication)) and non-normalised RNA-seq.
+- Whether read support predicts annotation errors: [J2](../J2_support_vs_reference/README.md) compares reads with the RefSeq annotation (one read is the signal; RefSeq is a weak label in two genomes). Whether the likelihood's calls move towards the truth, and non-normalised RNA-seq, are open.
 - Junctions at coordinates the annotation lacks are not projected into the alignment.
 - *S. punctatus*, *M. mucedo* and *M. maydis* are not covered.
