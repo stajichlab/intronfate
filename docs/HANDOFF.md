@@ -53,11 +53,13 @@ In rough priority order. Items marked SPEC are described there.
 12. **Soft-evidence likelihood was wrong before the seen-conditioning fix (SPEC §5.6b)**: results from `--ml-soft-evidence` / `--ml-origins` with soft cells computed earlier are invalid (ln L could exceed 0 and gains collapsed). Fixed and checked against a brute force; the J1 benchmark was rerun with it (`bench/J1_junction_support`).
 13. **Junction support as soft evidence** (`intronfate junctions`, USAGE §4, SPEC §5.6b) is built, unit/CLI tested, and run on real RNA-seq
     ([J1](../bench/J1_junction_support/README.md): six genomes, hisat2 BAMs, normalised shallow reads). [J2](../bench/J2_support_vs_reference/README.md)
-    compares read support with the RefSeq annotation: one read is the signal (agreement 67–81% with none, 97–99% with one in *C. neoformans*, *S. pombe*,
-    *N. crassa*; more reads add nothing), the default map (`p0` 0.8, `k` 3) gives only 0.85 at one read, and `k` near 0.2 would fit these data; RefSeq is a weak
-    label in *A. nidulans* and *C. cinerea*. Defaults not changed (owner's decision). Open: whether soft evidence moves the gain/loss/origin calls towards
-    truth (needs per-cell error calls against the RefSeq disagreements), non-normalised RNA-seq, and junctions at coordinates the annotation lacks
+    compares read support with the RefSeq annotation: one read is the biggest step (agreement 67–81% with none, 97–99% with one in *C. neoformans*, *S. pombe*,
+    *N. crassa*; disagreement still halves from one read to two). [J2b](../bench/J2b_matrix_cells/README.md) restricts to the matrix cells: only 4–9% lack reads, and their agreement is near the default `p0`, the default map (`p0` 0.8, `k` 3) gives only 0.85 at one read, and `k` near 0.2 would fit these data; RefSeq is a weak
+    label in *A. nidulans* and *C. cinerea*. Defaults not changed (owner's decision). RefSeq has too few disagreeing cells in the reliable genomes to test the calls (J2b step 3). Open: non-normalised RNA-seq, and junctions at coordinates the annotation lacks
     (not projected).
+    **Simulation ([S1](../bench/S1_soft_evidence_simulation/README.md)):** on the real matrix's sites with simulated truth and errors, soft junction evidence never improved the
+    convergent-insertion ranking (AUC lower than the hard fit in every seed; no calls at p > 0.5), and it cannot flag all-error sites; the hard fit with the true error rates
+    is the better remedy. Treat the soft likelihood as a sensitivity analysis, not an improvement.
 14. **Four-class gamma fits** are slow to converge, not on a flat shape ridge ([J3](../bench/J3_shape_ridge/README.md): the profile is peaked; about 2 ln L
     units remain at the 20,000-iteration cap). Open: which parameters creep, and whether a looser `--ml-tol` or a better acceleration should be the default.
 
