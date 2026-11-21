@@ -723,7 +723,7 @@ fn verbose_reports_resident_memory_per_stage_on_linux() {
     let err = String::from_utf8_lossy(&o.stderr);
     let line = err
         .lines()
-        .find(|l| l.starts_with("[mem] join_annotations\t"))
+        .find(|l| l.starts_with("[mem] gff_parse_and_join\t"))
         .unwrap_or_else(|| panic!("{err}"));
     let f: Vec<u64> = line
         .split('\t')
