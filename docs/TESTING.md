@@ -7,6 +7,7 @@ cargo fmt --check
 python3 -I scripts/test_malin_to_matrix.py  # the Python converter's fixture tests
 python3 -I scripts/test_howto_scripts.py    # the HOWTO helper scripts' fixture tests
 python3 -I scripts/test_doc_samples.py      # the prose pages still match the binary (needs a built binary)
+python3 -I scripts/mutate_doc_samples.py    # proof that those checks fail when a page is wrong (needs a built binary)
 ```
 
 This page is the one place that lists the test layers; other pages link here rather than quoting test counts. `cargo test --workspace`
@@ -40,6 +41,7 @@ is no CI workflow), so they are the pre-merge gate by convention: `cargo build -
 | How-to helpers | `scripts/test_howto_scripts.py` | `one_protein_per_gene.py` keeps the longest isoform per gene for NCBI- and Ensembl-style GFF3 (ties, CDS under a gene, internal stops, missing proteins); `make_families.py` builds the tiers from a tiny OrthoFinder layout with plain and gzip proteomes; `doc_blocks.py` extracts only ```` ```sh ```` blocks and refuses a `--sub` line it cannot find. |
 | How-to, end to end | `bench/D1_howto_public_genomes/run_howto.sbatch` (HPCC) | `docs/HOWTO.md` run as written, on both examples, from download to `dollo_branches.tsv`. |
 | Docs vs the binary | `scripts/test_doc_samples.py` | The pages still describe the tool: README's `demo` sample equals what `demo` prints, row by row (the stale `ambiguous` column, the dropped `# format=2` and self-check lines); every flag in `--help` is named on a page and every flag the USAGE §4 table claims exists; every file an all-methods run writes and every `summary_score.tsv` key has an OUTPUTS.md row; every code a messy run puts in `diagnostics.tsv` / `unmatched.tsv` has a §8 row. Skipped without a built binary; each fixture asserts its own breadth (which codes it reaches, how many files and keys it collected), so a check cannot pass by quietly testing nothing. |
+| The checks on the docs, checked | `scripts/mutate_doc_samples.py` | A green `test_doc_samples.py` only shows the page and the tool agree, not that the comparison would notice when they don't — the same weakness golden files have. So break one documented fact at a time in a throwaway copy of the tree (the pre-fix `ambiguous yes` in README's `demo` table, the dropped `# format=2` header and self-check lines, a deleted OUTPUTS row for a file the tool writes, a renamed `summary_score.tsv` key, a deleted §8 row, a mangled option name, a §4 row for a flag that has never existed) and require the intended check to fail, and that the unmutated copy passes. 8 mutations, exit 0 only when every one is attributed correctly. Verified from the other side too: delete the README row comparison from `test_doc_samples.py` and the harness reports `MISSED` and exits 1. Unlike `test_doc_samples.py` it **errors rather than skips** when there is no binary — a proof run with nothing proved must not look like a pass, so build before running it. |
 
 Golden files only catch *changes*. The numbers that make the examples trustworthy are the
 hand-calculated ones (`quickstart_numbers_match_the_hand_calculation` and the example READMEs).

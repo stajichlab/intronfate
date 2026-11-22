@@ -83,6 +83,7 @@ cargo test --workspace --release            # two tests are #[ignore]d: the real
 cargo clippy --workspace --all-targets --release && cargo fmt --check
 python3 -I scripts/test_malin_to_matrix.py && python3 -I scripts/test_howto_scripts.py
 python3 -I scripts/test_doc_samples.py      # the prose pages vs the binary; skipped if there is no built binary
+python3 -I scripts/mutate_doc_samples.py    # and that those checks still fail when a page is wrong
 target/release/intronfate demo -o intron_demo   # expect 3 sites, 3 gains, 2 losses, 3 MP steps
 ```
 
