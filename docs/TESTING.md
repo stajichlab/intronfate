@@ -6,14 +6,15 @@ cargo clippy --workspace --all-targets      # must stay warning-free
 cargo fmt --check
 python3 -I scripts/test_malin_to_matrix.py  # the Python converter's fixture tests
 python3 -I scripts/test_howto_scripts.py    # the HOWTO helper scripts' fixture tests
+python3 -I scripts/test_doc_samples.py      # the prose pages still match the binary (needs a built binary)
 ```
 
 This page is the one place that lists the test layers; other pages link here rather than quoting test counts. `cargo test --workspace`
 runs everything except the two tests marked `#[ignore]`: the real-data likelihood convergence check and the MALIN `*.rates` comparison
 (both below, both needing files from outside the repository). The CLI end-to-end tests are the slow part
-(about two minutes in a release build, longer in a debug build). Nothing in the repository runs these four checks automatically (there
+(about two minutes in a release build, longer in a debug build). Nothing in the repository runs these checks automatically (there
 is no CI workflow), so they are the pre-merge gate by convention: `cargo build --release && cargo test --workspace && cargo clippy
---workspace --all-targets && cargo fmt --check` plus the two Python scripts above.
+--workspace --all-targets && cargo fmt --check` plus the three Python scripts above.
 
 ## Layers
 
@@ -38,6 +39,7 @@ is no CI workflow), so they are the pre-merge gate by convention: `cargo build -
 | MALIN FASTA input | `malin_fasta.rs` tests, `cli.rs::malin_fasta_*` | Headers parse with the tags in either order, empty `{i i}`, spaces after commas, CRLF and repeated positions; no organism, no intron tag, position 0, a non-number, an unclosed tag and a header that starts with a tag are refused with the row named; a MALIN FASTA written from the quickstart gives the same `matrix.tsv`, `presence.tsv`, `pairwise.tsv` and `counts_sites.tsv` as the GFF route; organisms become the taxon names and feed `analyze` against a renamed tree; standard input works; two rows of one organism and `--gff` together with `--malin-fasta` are refused. Not yet compared with a MALIN run on the same files. |
 | How-to helpers | `scripts/test_howto_scripts.py` | `one_protein_per_gene.py` keeps the longest isoform per gene for NCBI- and Ensembl-style GFF3 (ties, CDS under a gene, internal stops, missing proteins); `make_families.py` builds the tiers from a tiny OrthoFinder layout with plain and gzip proteomes; `doc_blocks.py` extracts only ```` ```sh ```` blocks and refuses a `--sub` line it cannot find. |
 | How-to, end to end | `bench/D1_howto_public_genomes/run_howto.sbatch` (HPCC) | `docs/HOWTO.md` run as written, on both examples, from download to `dollo_branches.tsv`. |
+| Docs vs the binary | `scripts/test_doc_samples.py` | The pages still describe the tool: README's `demo` sample equals what `demo` prints, row by row (the stale `ambiguous` column, the dropped `# format=2` and self-check lines); every flag in `--help` is named on a page and every flag the USAGE §4 table claims exists; every file an all-methods run writes and every `summary_score.tsv` key has an OUTPUTS.md row; every code a messy run puts in `diagnostics.tsv` / `unmatched.tsv` has a §8 row. Skipped without a built binary; each fixture asserts its own breadth (which codes it reaches, how many files and keys it collected), so a check cannot pass by quietly testing nothing. |
 
 Golden files only catch *changes*. The numbers that make the examples trustworthy are the
 hand-calculated ones (`quickstart_numbers_match_the_hand_calculation` and the example READMEs).
