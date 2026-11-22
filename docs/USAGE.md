@@ -143,6 +143,11 @@ parallel. A transcript id that appears in two files is therefore two records —
 and is reported as `transcript_id_collision`; ids should be unique across species (funannotate's locus-tag prefix
 makes them so). Likewise each `-p` file is read in parallel and merged in the order given.
 
+**What the per-alignment folder is called.** `matrix` and `analyze` write each alignment into `<-o>/<alignment>/`, where
+`<alignment>` is the alignment file's name **without its last extension** and without a trailing `.gz`: `fam.aln.fasta` gives
+`fam.aln/`, `fam.aln` gives `fam/`, `fam.sto` gives `fam/`, and an alignment piped from standard input is named `stdin`. With one
+alignment, `score -o DIR` writes its tables straight into `DIR`; several matrices score into `<DIR>/<family>/` (§3).
+
 ### Scoring methods (`-m`)
 
 These names are used throughout the documentation. `-m` takes a comma-separated list; the default is `dollo,mp,counts`.
