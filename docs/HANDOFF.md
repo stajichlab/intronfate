@@ -1,11 +1,12 @@
-# Handoff: state on 2026-11-16
+# Handoff: state on 2026-11-21
 
 This page is state only: what the branch holds, what is open, and how to check it. Design and rationale are in [`SPEC.md`](SPEC.md),
 user documentation in [`USAGE.md`](USAGE.md), validation runs in [`../bench/README.md`](../bench/README.md).
 
 ## Branch
 
-`docs/howto-public-genomes` is **not yet merged into `main`**; merging is the owner's decision. It carries everything below.
+Everything below is on `main` (the `docs/howto-public-genomes` work, including [`HOWTO.md`](HOWTO.md) and D1, is merged in; that
+branch no longer exists on the remote).
 
 *Naming:* the project was formerly `intron-projector`. Working folders on the laptop and the HPCC are still named `intron_projector`
 (e.g. `~/projects/intron_projector/bench/...` in the bench READMEs); only the repository, crates, binary and environment variable
@@ -36,7 +37,9 @@ In rough priority order. Items marked SPEC are described there.
 3. ~~EM `--ml-max-iter` overshoot~~ — fixed: the limit is exact (plain EM steps near the limit; test `max_iter_is_an_exact_limit_on_e_steps`).
 4. ~~`--flank` default~~ — examined ([F1](../bench/F1_flank_tuning/README.md)): MALIN's test data has no alignments, so it was done on nine fungal genomes; the absence rate of conserved introns does not depend on the distance to a gap, so a larger flank only discards data. Kept at 1.
 5. **SQL/Chado/Ensembl annotation sources** (`AnnotationSource` seam exists; needs a schema decision; SPEC §12 item 4).
-6. **HOWTO Docker route is untested** (the page says so; D1 used Apptainer/Singularity and conda is not run by the test either).
+6. **HOWTO Docker route is untested** (the page says so; D1 used Apptainer/Singularity). The **conda route** was run end to end for
+   Example 1 on macOS/arm64 on 2026-11-21 (results within 0.2 % of D1, see step 8 of the page); it needed `brotli-python` in the
+   environment, now in the page's own command. Linux/x86 with the container is still the reference route.
 7. **MALIN FASTA input** is built (`--malin-fasta`, SPEC §6c; equivalent to the GFF route on the quickstart). Open: a site-by-site
    comparison with a MALIN run on the same files, which needs a MALIN run supplied by the owner (SPEC §12 item 2).
 8. **Scaling**: a synthetic generator and `matrix`/`analyze` scaling in taxa and sites; remaining memory levers for `project` (one
@@ -75,7 +78,7 @@ In rough priority order. Items marked SPEC are described there.
 
 ```sh
 cargo build --release
-cargo test --workspace --release            # one test is #[ignore]d: the real-data likelihood check (TESTING.md)
+cargo test --workspace --release            # two tests are #[ignore]d: the real-data likelihood check and the MALIN .rates comparison (TESTING.md)
 cargo clippy --workspace --all-targets --release && cargo fmt --check
 python3 -I scripts/test_malin_to_matrix.py && python3 -I scripts/test_howto_scripts.py
 target/release/intronfate demo -o intron_demo   # expect 3 sites, 3 gains, 2 losses, 3 MP steps
