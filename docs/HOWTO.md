@@ -9,7 +9,13 @@ downloaded in step 2. Two examples use the same steps:
 | **2. nine fungi** (`fungi9`) | the five above, plus *Spizellomyces punctatus* (outgroup), *Mucor mucedo*, *Mycosarcoma maydis*, *Coprinopsis cinerea* | 37 min (OrthoFinder 30) | 0.7 GB |
 
 Example 2 is the species set of [`bench/V6`](../bench/V6_orthology_nine_species/README.md) (which used funannotate annotation; here RefSeq
-is used, so the numbers differ a little, see step 8). Times and sizes are from the test run on a cluster node; the container adds 0.65 GB. The genome lists and trees are in [`examples/04_public_genomes/`](../examples/04_public_genomes/).
+is used, so the numbers differ a little, see step 8). Times and sizes are from the test run on a cluster node; the container adds 0.65 GB.
+The genome lists and trees are in [`examples/04_public_genomes/`](../examples/04_public_genomes/).
+
+The downloads are the small part (21 MB of gzip for Example 1's five genomes); most of that disk is OrthoFinder's output. The whole of
+Example 1 also completes on an 8-core laptop in about 20 minutes — 6 min OrthoFinder, 7 min MAFFT, 1 s `intronfate`, and the results
+match the cluster run within 0.2 % (step 8) — so the cluster advice is really about Example 2, about tiers B and C, and about running
+this more than once.
 
 What you get at the end: for every branch of the species tree, how many intron positions were gained and lost, with the table of positions
 behind it. For the reasoning behind each step, see [`TUTORIAL.md`](TUTORIAL.md). For every option, see [`USAGE.md`](USAGE.md).
@@ -40,8 +46,13 @@ to get OrthoFinder and MAFFT. Choose one in step 1:
 - **conda/mamba**: install both into one environment:
 
 ```bash
-mamba create -y -n orthofinder -c conda-forge -c bioconda orthofinder=3.2 mafft
+mamba create -y -n orthofinder -c conda-forge -c bioconda orthofinder=3.2 mafft brotli-python
 ```
+
+Keep `brotli-python`: bioconda's `orthofinder=3.2` does not pull in the Python `brotli` module that its `ete4` import needs, so
+without it even `orthofinder -h` stops with `ModuleNotFoundError: No module named 'brotli'`. Note that conda's `brotli` package is
+not the same thing (that is the C library; `import brotli` still fails). If `mamba` is not on your `PATH`, `conda create` with the
+same channels and packages does the job (or install it once with `conda install -n base -c conda-forge mamba`).
 
 ## 1. Pick an example, a folder and the tools
 
@@ -70,9 +81,14 @@ with `apptainer pull orthofinder_3.2.sif docker://quay.io/biocontainers/orthofin
 **With conda** instead:
 
 ```bash
+source "$(conda info --base)/etc/profile.d/conda.sh"   # only needed in a batch job or other non-interactive shell
 conda activate orthofinder
 RUN=""
 ```
+
+Activate in the **same shell that runs the steps**: `conda activate` does nothing in a fresh non-interactive shell (it errors with
+`Run 'conda init' before 'conda activate'`), and OrthoFinder's launcher is `#!/usr/bin/env python3`, so an environment that is
+installed but not on your `PATH` makes it run another Python and fail with a misleading `NameError: name 'Console' is not defined`.
 
 **With Docker** (a laptop without Apptainer; not tested here, and slow on Apple-silicon Macs, which emulate the x86 image):
 
@@ -127,6 +143,10 @@ ls orthofinder/Results_$SET/Orthogroups/Orthogroups.tsv
 
 `-s` gives OrthoFinder the species tree, so it does not have to infer one. OrthoFinder refuses to write into an existing `-o` folder.
 To run this step again, first `rm -r orthofinder`.
+
+The `ls` is the check that matters here, not the prompt: because the command is piped through `tee`, the shell reports `tee`'s exit
+status, so a run that OrthoFinder gave up on still looks clean. (The one-script version at the end of this page is safe — it starts
+with `set -euo pipefail`.) If the `ls` fails, `grep 'OrthoFinder stopped' orthofinder.log` says why.
 
 If OrthoFinder stops with `Cannot run MSA method 'famsa'`, the CPU is too old for FAMSA, its default aligner (seen on 2012-era AMD
 cluster nodes). Add `-A mafft` to the command, or run on a newer node.
@@ -196,6 +216,12 @@ Ncrassa,Anidulans                     1105   21
 Ncrassa                               894    679
 Anidulans                             1557   164
 ```
+
+Those are the counts from the run behind [`bench/D1`](../bench/D1_howto_public_genomes/README.md), and they are what the step prints,
+not invariants: NCBI edits RefSeq annotations under the same accession and OrthoFinder's version changes the families, so a later run
+will not match line for line. A fresh run of Example 1 in November 2026 reproduced every branch to within 0.2 % (root 1934 rather
+than 1935, *C. neoformans* 8328 rather than 8342, *A. nidulans* identical at 1557/164; 1,816 tier-A families rather than 1,817).
+Differences of a fraction of a percent are the annotation moving; differences of several percent are worth investigating.
 
 How to read it: a **gain** is where an intron position first appears (Dollo parsimony allows one origin per position). A **loss** is a
 descendant that lacks it.

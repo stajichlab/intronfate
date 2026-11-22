@@ -49,23 +49,28 @@ The binary has no runtime dependencies; copy it or put `target/release` on your 
 cargo run --release -p intronfate-cli -- demo -o intron_demo
 ```
 
-Writes a worked five-species example (inputs + every table) and prints the interesting ones:
+Writes a worked five-species example (inputs + every table) into `intron_demo` **under the directory you run it from**, and prints
+the interesting tables. The last line is the demo checking its own numbers, so you can tell a good run from a broken build:
 
 ```text
-site    column  phase  n_taxa  n_observable  pattern  species1  species2  species3  species4  outgroup
-4:0     4       0      4       5            11101    1         1         1         0         1
-6:0     6       0      2       5            01100    0         1         1         0         0
-9:0     9       0      3       5            10011    1         0         0         1         1
+# format=2 alignment=demo alen=15 phase_mode=strict flank=1 masked_present=0 taxa=5 sites=3 unannotated=- residues=13,14,14,13,13
+site  column  phase  n_taxa  n_observable  pattern  species1  species2  species3  species4  outgroup
+4:0   4       0      4       5             11101    1         1         1         0         1
+6:0   6       0      2       5             01100    0         1         1         0         0
+9:0   9       0      3       5             10011    1         0         0         1         1
 
-site    column  phase  n_present  n_missing  gains  losses  monophyletic  dollo_compatible  gained_at            lost_in
-4:0     4       0      4          0          1      1       no            no                root                 species4
-6:0     6       0      2          0          1      0       yes           yes               species2,species3
-9:0     9       0      3          0          1      1       no            no                root                 species2,species3
+site  column  phase  n_present  n_missing  gains  losses  monophyletic  dollo_compatible  gained_at          lost_in
+4:0   4       0      4          0          1      1       no            no                root               species4
+6:0   6       0      2          0          1      0       yes           yes               species2,species3
+9:0   9       0      3          0          1      1       no            no                root               species2,species3
 
-site    column  phase  n_present  n_missing  steps  informative  ambiguous
-4:0     4       0      4          0          1      no           yes
-6:0     6       0      2          0          1      yes          yes
-9:0     9       0      3          0          1      yes          yes
+site  column  phase  n_present  n_missing  steps  informative  ambiguous
+4:0   4       0      4          0          1      no           no
+6:0   6       0      2          0          1      yes          no
+9:0   9       0      3          0          1      yes          no
+
+demo inputs and tables written to intron_demo
+expect 3 sites, 3 Dollo gains, 2 Dollo losses, 3 mp steps: got 3 sites, 3 gains, 2 losses, 3 steps
 ```
 
 Three intron positions: two ancestral (each lost once) and one derived insertion on the
@@ -138,9 +143,10 @@ scripts/                 helpers for docs/HOWTO.md (one_protein_per_gene.py, mak
 
 Implemented: GFF3/GTF ingestion with frame/exon/length cross-checks, protein-space projection, FASTA/Stockholm alignments,
 site × taxon matrices with per-cell missing data, pairwise sharing, the five scoring methods above (`likelihood` with
-`--error-rates`, bootstrap intervals and gamma rate classes), TSV/NEXUS output, MALIN import/export (`convert`), and combined
-matrices over many families (`--combine`).
+`--error-rates`, bootstrap intervals, gamma rate classes and separate gain/loss factors), TSV/NEXUS output, MALIN import/export
+(`convert`) and MALIN's own FASTA input (`--malin-fasta`), RNA-seq junction support as soft evidence (`junctions`), combined
+matrices over many families (`--combine`), and pipes in both directions (`-` for any single input, `--stdout TABLE` for one table).
 
-Not yet: SQL/Chado/Ensembl annotation sources (the `AnnotationSource` seam is there), separate gain and loss rate factors in the
-likelihood model, validation against MALIN's `*.rates`, stdin/stdout support. The full list: [`docs/HANDOFF.md`](docs/HANDOFF.md) and
+Not yet: SQL/Chado/Ensembl annotation sources (the `AnnotationSource` seam is there), a site-by-site check of `--malin-fasta`
+against a MALIN run on the same files, and Python bindings. The full list: [`docs/HANDOFF.md`](docs/HANDOFF.md) and
 [`docs/SPEC.md`](docs/SPEC.md) §12.

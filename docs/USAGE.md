@@ -116,6 +116,11 @@ protein2genome layouts all group correctly; change the order with `--transcript-
 the first complete codon. Both strands, gzip, CRLF and stray Latin-1 bytes are fine. Use
 `--derive-cds-from-exons` only for GFFs that carry exons but no CDS.
 
+The names it looks for are options, not constants, and each takes a comma-separated list tried in order: `--transcript-attrs`
+(default `Parent,transcript_id,transcript,rna_id`), `--protein-attrs` (`protein_id,protein`), `--gene-attrs`
+(`gene_id,gene,locus_tag`) and `--cds-types` (`cds`). Transcript features are recognised as `mrna`, `transcript`, `cdna` and
+`pseudogenic_transcript`; a transcript with no CDS is dropped and counted as `no_cds` unless you ask for `--keep-noncoding` (§4).
+
 ## 4. Commands
 
 ```sh
@@ -137,6 +142,11 @@ files (collisions are reported).
 parallel. A transcript id that appears in two files is therefore two records — never one chimera built from both —
 and is reported as `transcript_id_collision`; ids should be unique across species (funannotate's locus-tag prefix
 makes them so). Likewise each `-p` file is read in parallel and merged in the order given.
+
+**What the per-alignment folder is called.** `matrix` and `analyze` write each alignment into `<-o>/<alignment>/`, where
+`<alignment>` is the alignment file's name **without its last extension** and without a trailing `.gz`: `fam.aln.fasta` gives
+`fam.aln/`, `fam.aln` gives `fam/`, `fam.sto` gives `fam/`, and an alignment piped from standard input is named `stdin`. With one
+alignment, `score -o DIR` writes its tables straight into `DIR`; several matrices score into `<DIR>/<family>/` (§3).
 
 ### Scoring methods (`-m`)
 
@@ -205,6 +215,7 @@ intronfate score --matrix out/fam.aln/matrix.tsv -t tree.nwk -m likelihood --ml-
 | `--id-map FILE` | – | Two-column `annotation_id → protein_id` for stubborn joins. |
 | `--taxon-map FILE` | – | Two-column `alignment_row_id → taxon`. **Needed for one-alignment-per-gene-family runs**, where each species' row carries its own protein id but the tree's tips are species. Rows not listed keep their id; two rows of one alignment may not map to one taxon. See §9. |
 | `--strict` | off | Abort on a malformed annotation line instead of counting it. |
+| `--keep-noncoding` | off | Keep transcripts with no CDS in the record instead of dropping them as `no_cds`. It raises `transcripts_read` in `summary_project.tsv` and removes the `no_cds` count; `introns.tsv` is unchanged (a transcript with no CDS has no coding offset to project from), so no score moves. Use it to inventory noncoding models, e.g. against an ncRNA annotation. |
 | `--outgroup NAME` | – | Root the tree on a tip (or a set that forms a split). **Dollo results depend on rooting**; a tree that looks unrooted triggers a warning. |
 | `-m LIST` | `dollo,mp,counts` | Which scoring methods to run (table above). `dollo_weighted` and `likelihood` run only when asked for. |
 | `--gain-loss-weights G:L,...` | `1:1,2:1,5:1,10:1` | The gain:loss costs swept by `-m dollo_weighted` (a gain costs G, a loss L; G ≥ 1). Per site, the cheapest history in which a lost position never comes back. |
@@ -327,6 +338,7 @@ records first, then the join and the alignment step:
 | `zero_length_cds` | A joined protein has a transcript with no coding length. | Inspect the model. |
 | `protein_without_annotation` | Proteins in the FASTA that no transcript names (listed in `unmatched.tsv`). | Normal when the FASTA has more than the annotation; otherwise check ids. |
 | `protein_not_in_fasta` | A transcript names a protein that is not in the FASTA. | Check ids; try `--strip-version` or `--id-map`. |
+| `no_protein_id` | A transcript carries no protein identifier at all, so nothing can be joined to it (it is also listed in `unmatched.tsv`, with an empty `attempted_protein_id`). | Add `protein_id=` to the CDS rows or a `polypeptide` child feature, or map it with `--id-map`. GTF-style files that name the protein by transcript id are covered by `protein_id_fallback_transcript` instead. |
 | `protein_id_fallback_transcript` | Transcripts with no protein id were joined on their transcript id (one informational record per annotation file, with the count). | Normal for funannotate and most GTF, whose protein FASTA ids are transcript ids; otherwise add `protein_id` or use `--id-map`. |
 | `length_mismatch` | Protein length ≠ CDS/3 beyond the slack. | Wrong paralog or isoform? Check the join; raise `--length-slack` only if the annotation really omits stops/UTR. |
 | `frame_mismatch` | CDS `phase` values disagree with the derived reading frame. | The CDS set is incomplete or inconsistent; offsets may be unreliable for that transcript. |
@@ -337,11 +349,15 @@ records first, then the join and the alignment step:
 | `row_sequence_mismatch` | Alignment row ≠ protein sequence. | Use the untrimmed protein for the alignment, or rebuild it. |
 | `proteins_not_in_alignment` | Some annotated proteins have no row in this alignment (one informational record per alignment: the count and the first few ids). | Expected when several species and families are run together; otherwise check row ids. |
 | `unannotated_taxon` / `protein_not_annotated` | An alignment row has no annotation. | Its cells are `?`. |
+| `protein_not_in_sequence_set` | An alignment row names a protein that is not among the `-p` / `--proteins*` files given, so no annotation could be joined for it. This is the row's `reason_if_not` in `taxa.tsv`; its cells are `?`. | Pass every genome's proteins (a whole folder: `--proteins-dir`, §3), and check that the row ids are protein ids from that FASTA rather than gene or locus tags — nothing is matched fuzzily, on purpose (§3, requirement 3). |
 | `tail_sites_dropped` | Introns anchor past the aligned part of a row. | Expected for trimmed alignments; `--clamp-tail` is the (blunt) alternative. |
 | `present_not_observable` | Annotated introns where the taxon isn't aligned around the site. | Reported as `?`; inspect the alignment there. |
 | `invalid_utf8` | Non-UTF-8 bytes in an input. | Read lossily; fix the file if the field matters. |
 
-Exit status: `0` success, `1` the run failed (message on stderr), `2` command-line usage error.
+Exit status: `0` success, `1` the run failed *or a required input was missing* (message on stderr), `2` the command line itself could
+not be parsed — an unknown flag, or an option clap marks as required (`score` given nothing, since it needs `--matrix`; `analyze`
+given nothing is exit `1`, because its inputs are checked once the run starts). So "no `--msa` was given" and "`--tree` is required
+to score with dollo" are exit `1`, not `2`.
 
 ## 9. Several species, many gene families
 
