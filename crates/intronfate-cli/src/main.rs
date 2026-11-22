@@ -1723,8 +1723,26 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     never_seen_global: a.ml_never_seen == "global",
                     origins: a.ml_origins,
                     soft_evidence: a.ml_soft_evidence.clone(),
-                    tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).0,
-                    param_tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).1,
+                    tol: resolve_tol(
+                        a.ml_tol,
+                        a.ml_param_tol,
+                        [
+                            a.ml_rate_categories,
+                            a.ml_gain_categories,
+                            a.ml_loss_categories,
+                        ],
+                    )
+                    .0,
+                    param_tol: resolve_tol(
+                        a.ml_tol,
+                        a.ml_param_tol,
+                        [
+                            a.ml_rate_categories,
+                            a.ml_gain_categories,
+                            a.ml_loss_categories,
+                        ],
+                    )
+                    .1,
                 },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
@@ -1767,8 +1785,26 @@ fn cmd_analyze(a: &AnalyzeArgs, verbose: u8) -> Result<()> {
                     never_seen_global: a.ml_never_seen == "global",
                     origins: a.ml_origins,
                     soft_evidence: a.ml_soft_evidence.clone(),
-                    tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).0,
-                    param_tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).1,
+                    tol: resolve_tol(
+                        a.ml_tol,
+                        a.ml_param_tol,
+                        [
+                            a.ml_rate_categories,
+                            a.ml_gain_categories,
+                            a.ml_loss_categories,
+                        ],
+                    )
+                    .0,
+                    param_tol: resolve_tol(
+                        a.ml_tol,
+                        a.ml_param_tol,
+                        [
+                            a.ml_rate_categories,
+                            a.ml_gain_categories,
+                            a.ml_loss_categories,
+                        ],
+                    )
+                    .1,
                 },
                 matrix_label: dir.join("matrix.tsv").display().to_string(),
             },
@@ -1831,8 +1867,26 @@ fn cmd_score(a: &ScoreArgs, verbose: u8) -> Result<()> {
                     never_seen_global: a.ml_never_seen == "global",
                     origins: a.ml_origins,
                     soft_evidence: a.ml_soft_evidence.clone(),
-                    tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).0,
-                    param_tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).1,
+                    tol: resolve_tol(
+                        a.ml_tol,
+                        a.ml_param_tol,
+                        [
+                            a.ml_rate_categories,
+                            a.ml_gain_categories,
+                            a.ml_loss_categories,
+                        ],
+                    )
+                    .0,
+                    param_tol: resolve_tol(
+                        a.ml_tol,
+                        a.ml_param_tol,
+                        [
+                            a.ml_rate_categories,
+                            a.ml_gain_categories,
+                            a.ml_loss_categories,
+                        ],
+                    )
+                    .1,
                 },
                 matrix_label: format!("{} matrices combined", parts.len()),
             },
@@ -1906,8 +1960,26 @@ fn score_one(a: &ScoreArgs, matrix: &Path, out_dir: &Path, verbose: u8) -> Resul
                 never_seen_global: a.ml_never_seen == "global",
                 origins: a.ml_origins,
                 soft_evidence: a.ml_soft_evidence.clone(),
-                tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).0,
-                param_tol: resolve_tol(a.ml_tol, a.ml_param_tol, [a.ml_rate_categories, a.ml_gain_categories, a.ml_loss_categories]).1,
+                tol: resolve_tol(
+                    a.ml_tol,
+                    a.ml_param_tol,
+                    [
+                        a.ml_rate_categories,
+                        a.ml_gain_categories,
+                        a.ml_loss_categories,
+                    ],
+                )
+                .0,
+                param_tol: resolve_tol(
+                    a.ml_tol,
+                    a.ml_param_tol,
+                    [
+                        a.ml_rate_categories,
+                        a.ml_gain_categories,
+                        a.ml_loss_categories,
+                    ],
+                )
+                .1,
             },
             matrix_label: matrix.display().to_string(),
         },
@@ -2427,7 +2499,11 @@ fn resolve_methods(requested: &[String]) -> Result<Vec<Method>> {
 /// tens of thousands of iterations along directions the data barely constrain (bench J3b); the looser pair gives the same outputs to three
 /// digits (ln L within 1e-4, gains and losses within 0.1 %, same top 100 origin sites) in less than half the iterations.
 fn resolve_tol(tol: Option<f64>, param_tol: Option<f64>, categories: [usize; 3]) -> (f64, f64) {
-    let (t, p) = if categories.iter().any(|&k| k > 1) { (1e-5, 1e-6) } else { (1e-6, 1e-7) };
+    let (t, p) = if categories.iter().any(|&k| k > 1) {
+        (1e-5, 1e-6)
+    } else {
+        (1e-6, 1e-7)
+    };
     (tol.unwrap_or(t), param_tol.unwrap_or(p))
 }
 
