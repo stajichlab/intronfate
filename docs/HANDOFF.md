@@ -24,7 +24,8 @@ branch no longer exists on the remote).
 - **MALIN** import/export (`convert`), validated on MALIN's published data (V1).
 - **Docs**: [`HOWTO.md`](HOWTO.md) on public genomes, run as written on the HPCC for both examples ([D1](../bench/D1_howto_public_genomes/README.md));
   the doc set was restructured on 2026-11-16 so each topic has one home (install → README, outputs → OUTPUTS, options → USAGE,
-  numbers → the bench READMEs, tests → TESTING).
+  numbers → the bench READMEs, tests → TESTING). `scripts/test_doc_samples.py` (2026-11-21) keeps the pages describing the binary:
+  README's `demo` sample, `--help` flag coverage, OUTPUTS file rows and summary keys, USAGE §8 codes.
 
 Analyses for a separate research project (formerly `bench/V8`–`V15`) moved to that project; nothing here depends on them.
 
@@ -81,6 +82,7 @@ cargo build --release
 cargo test --workspace --release            # two tests are #[ignore]d: the real-data likelihood check and the MALIN .rates comparison (TESTING.md)
 cargo clippy --workspace --all-targets --release && cargo fmt --check
 python3 -I scripts/test_malin_to_matrix.py && python3 -I scripts/test_howto_scripts.py
+python3 -I scripts/test_doc_samples.py      # the prose pages vs the binary; skipped if there is no built binary
 target/release/intronfate demo -o intron_demo   # expect 3 sites, 3 gains, 2 losses, 3 MP steps
 ```
 

@@ -136,7 +136,8 @@ examples/                three runnable examples with committed expected output,
 bench/                   validation runs on the HPCC (index: bench/README.md)
 tests/data/              tiny synthetic fixtures
 scripts/                 helpers for docs/HOWTO.md (one_protein_per_gene.py, make_families.py, align_families.sh, doc_blocks.py);
-                         malin_to_matrix.py, an independent MALIN importer used as a cross-check
+                         malin_to_matrix.py, an independent MALIN importer used as a cross-check;
+                         test_*.py, the fixture tests (see docs/TESTING.md) — test_doc_samples.py checks the pages against the binary
 ```
 
 ## Status
