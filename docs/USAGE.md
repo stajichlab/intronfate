@@ -133,6 +133,9 @@ intronfate junctions --introns out/introns.tsv --sites out/fam/sites.tsv --matri
 intronfate demo     -o intron_demo                                  # built-in worked example
 ```
 
+`intronfate --version` prints the build's version (`intronfate 0.1.0`); `--help` and `help <command>` give the short and long help,
+and `intronfate <command> --help` the options of one command.
+
 `project` does not need an alignment. `matrix` writes everything up to the matrix; `score` re-reads a
 `matrix.tsv`, so you can re-score under other rootings, filters and methods without re-parsing the
 annotation. Give several `--gff`, `-p` and `--msa` for multi-species runs; ids must be unique across
@@ -287,7 +290,7 @@ one character per intron site. `convert` moves between the two:
 ```sh
 intronfate convert --from-malin Chromo23.table -o matrices      # one matrices/<aln>/matrix.tsv each
 intronfate score   --matrix matrices/KOG0004/matrix.tsv -t tree.nwk
-intronfate convert --to-malin out/*/matrix.tsv -o ours.table    # taxa must be identical
+intronfate convert --to-malin matrices/*/matrix.tsv -o ours.table  # taxa must be identical; or out/*/matrix.tsv after an analyze run
 ```
 
 A MALIN site is `(column, phase) = (alipos / 3, alipos % 3)`; phase digits are `3`=phase 0, `1`, `2`.
@@ -303,7 +306,7 @@ MALIN reads one aligned protein FASTA per gene family, with the organism and the
 
 ```sh
 intronfate analyze --malin-fasta fam1.aln --malin-fasta fam2.aln -t tree.nwk -o out
-intronfate matrix  --malin-fasta-dir families/ -o out          # folder, list and `-` (one file from a pipe) work as for --msa
+intronfate matrix  --malin-fasta-dir families/ -o out          # --malin-fasta-list FILE and --malin-fasta-ext EXT work as for --msa; `-` reads one file from a pipe
 ```
 
 ```
