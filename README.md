@@ -137,7 +137,8 @@ bench/                   validation runs on the HPCC (index: bench/README.md)
 tests/data/              tiny synthetic fixtures
 scripts/                 helpers for docs/HOWTO.md (one_protein_per_gene.py, make_families.py, align_families.sh, doc_blocks.py);
                          malin_to_matrix.py, an independent MALIN importer used as a cross-check;
-                         test_*.py, the fixture tests (see docs/TESTING.md) — test_doc_samples.py checks the pages against the binary
+                         test_*.py, the fixture tests (see docs/TESTING.md) — test_doc_samples.py checks the pages against the
+                         binary, and mutate_doc_samples.py checks that those checks still fail when a page is wrong
 ```
 
 ## Status
