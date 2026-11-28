@@ -21,8 +21,9 @@ rm -rf "$OUT"; mkdir -p "$OUT"
 TSV="$OUT/timings.tsv"; printf 'tool\ttask\trep\twall_s\tmax_rss_kb\texit\n' > "$TSV"
 
 if [ "${SMOKE:-0}" = 1 ]; then
-    "$BIN" convert --from-malin "$REPO/tests/data/malin_binary.table" -o "$OUT/smoke_matrix" > /dev/null
-    MATRIX=$(ls "$OUT"/smoke_matrix/*/matrix.tsv | head -1); TREE=$REPO/examples/03_malin/tiny.nwk; REPS=1
+    python3 -I "$HERE/make_smoke_table.py" "$OUT/smoke"
+    "$BIN" convert --from-malin "$OUT/smoke.table" -o "$OUT/smoke_matrix" > /dev/null
+    MATRIX=$(ls "$OUT"/smoke_matrix/*/matrix.tsv | head -1); TREE=$OUT/smoke.nwk; REPS=1
 fi
 : "${MATRIX:?set MATRIX to one matrix.tsv (for example OUT/combined/matrix.tsv from analyze --combine)}"
 : "${TREE:?set TREE}"

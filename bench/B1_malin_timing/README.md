@@ -36,8 +36,8 @@ with `species.nwk`. Read those paths in place; this folder writes only under its
 
 ## Tests
 
-`python3 -I test_summarize.py` (summary statistics, failed runs excluded). `SMOKE=1` runs the whole pipeline on the fixtures in
-`tests/data` and `examples/03_malin`.
+`python3 -I test_summarize.py` (summary statistics, failed runs excluded) and `python3 -I test_make_smoke_table.py`. `SMOKE=1` runs the whole pipeline on a generated 6-taxon table (`make_smoke_table.py`);
+
 
 ## Results
 

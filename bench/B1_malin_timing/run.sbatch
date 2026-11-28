@@ -14,7 +14,7 @@ cd "$HERE"
 module load rust >/dev/null 2>&1 || true
 module load java >/dev/null 2>&1 || true
 ( cd "$REPO" && cargo build --release --locked )
-python3 -I test_summarize.py
+python3 -I test_summarize.py && python3 -I test_make_smoke_table.py
 export INTRONFATE=$REPO/target/release/intronfate
 echo "node: $(hostname)  cpu: $(lscpu | sed -n 's/^Model name: *//p')  java: $(java -version 2>&1 | head -1)"
 ./bench.sh
