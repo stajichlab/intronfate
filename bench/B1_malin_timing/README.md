@@ -30,7 +30,7 @@ sbatch --export=ALL,MATRIX=<OUT>/combined/matrix.tsv,TREE=<species.nwk>,MALIN_JA
 ```
 
 Real data: the V6 tier A matrix (1,106 families, nine species), `bench/V6_orthology_nine_species/results_projection/A_strict/combined/matrix.tsv`
-with `species.nwk`. Run that from a copy of `MATRIX`/`TREE` paths, never into the shared group folder.
+with `species.nwk`. Read those paths in place; this folder writes only under its own `results/`.
 
 `Malin.jar` is third-party and git-ignored; it is not in this repository.
 

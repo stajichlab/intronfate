@@ -35,7 +35,6 @@ timed() {  # timed <tool> <task> <rep> <stdout-file> <command...>
     /usr/bin/time -f '%e\t%M' -o "$tf" "$@" > "$out" 2> "$out.err" || rc=$?
     printf '%s\t%s\t%s\t%s\t%s\n' "$tool" "$task" "$rep" "$(tail -1 "$tf")" "$rc" >> "$TSV"; rm -f "$tf"
 }
-# the awk below moves `exit` to the last column: timed rows are tool task rep wall rss exit
 TABLE=$OUT/matrix.malin.table
 timed intronfate export_malin_table 1 "$OUT/export.out" "$BIN" convert --to-malin "$MATRIX" -o "$TABLE"
 
