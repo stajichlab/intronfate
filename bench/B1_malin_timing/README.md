@@ -53,8 +53,32 @@ supplied by the owner, Java 21.0.7 (`-Xmx8g`). Input: V6 tier A combined matrix 
 | MALIN | `calculateRASRates` | 90.75 | 89.72-90.95 | 175 |
 | intronfate | `convert --to-malin` | 0.14 | one run | 28 |
 
+## Likelihood comparability check (2026-11-27): NOT like for like, cause unknown
+
+`run_lnl.sbatch` fits MALIN (`calculateRASRates`) on the same table (the tree needs named internal nodes: `label_internal_nodes.py`),
+then evaluates intronfate's log-likelihood at MALIN's printed parameters with the L1 test (`malin_rates.rs`), next to intronfate's own
+maximum on the same positions. Jobs 32512872, 32512893, 32512945; outputs `lnl_*.txt` on the HPCC.
+
+| MALIN run | positions scored | intronfate lnL at its maximum | intronfate lnL at MALIN's parameters | gap |
+|---|---|---|---|---|
+| default (all columns) | 15,697 | -46,709.99 | -71,581.81 | 24,872 |
+| `-ambiguous 0` (complete columns only) | 10,926 | -37,224.28 | -58,020.57 | 20,796 |
+| `-ambiguous 0.5` | 14,031 | -45,668.16 | -69,872.33 | 24,204 |
+| `-ambiguous 0`, `-opt-round 5000` | 10,926 | -37,224.28 | -58,018.80 | 20,795 |
+
+Reading: the gap is the same size with complete columns only (so missing-data handling, per-pattern vs global never-seen, is not
+the cause; both modes agree there) and does not move when MALIN is allowed 5,000 rounds (so it is not early stopping). MALIN
+fits one class. On the Rogozin table the same test agrees to 0.002 (L1), so the two tools do not maximise the same function on *this*
+table, or the exported table or its tree is read differently by MALIN. Not yet diagnosed. Candidates, none tested: how MALIN reads the
+exported phase codes and `#MAP` block for this table; a root with a tip child (`Spunctatus`) and MALIN's resolution of the root split;
+MALIN's treatment of columns with an intron in one genome only. Cheapest next step: run this harness on the Rogozin table, where L1
+already agrees, to tell a harness fault from a data-specific difference.
+
+MALIN wall time depends strongly on its options (default 90 s; `-ambiguous 0` 23 s; `-ambiguous 0.5` 146 s; `-opt-round 5000` 108 s), so
+no speed ratio is quotable until the comparison above is explained.
+
 Open before any of this is quoted:
-- **The likelihood ratio (about 60x) is not yet a like-for-like claim.** intronfate's `ml_log_likelihood` is -46709.99 (default
+- **The likelihood ratio (about 60x) is withdrawn pending the check above.** intronfate's `ml_log_likelihood` is -46709.99 (default
   settings, tolerances 1e-6/1e-7). MALIN's `calculateRASRates` output carries no log-likelihood line, so the two fits have not
   been compared. Next step: score MALIN's `.rates` with `intronfate` (as [L1](../L1_malin_likelihood/README.md) did) or run
   `computeRASPosteriors`, and compare the likelihood each stopping rule reaches; also try `-opt-eps` looser and tighter.
