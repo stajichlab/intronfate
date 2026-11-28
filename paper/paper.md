@@ -19,6 +19,7 @@ bibliography: paper.bib
 ---
 
 <!--
+OUTLINE STATUS (2026-11-27): evidence map below is current; B2 scaling series submitted; prose not yet written.
 DRAFT SKELETON. JOSS limit is roughly 750-1000 words in the body; target word counts are in brackets.
 Every number below must be traced to a bench/ README or a log before submission; "TODO(bench)" marks the ones
 that still need a run. Do not cite from memory: check each paper.bib entry against the publisher record.
@@ -67,10 +68,25 @@ Use cases: bench/P1 intron density across the BFD; F1/F2 flank and column-ambigu
 sensitivity; J1-J3 junction support vs RefSeq. Future use: intron density and position questions at clade
 scale (loss rate by lineage, convergent insertion, annotation-quality screening). -->
 
-# AI usage disclosure  [~50 words]
+# AI usage disclosure
 
-<!-- Claude Code (Anthropic) assisted with code, tests and documentation; the author reviewed, ran and validated
-the output. Check wording against JOSS's current AI policy before submission. -->
+Generative AI tools were used in developing the software, its documentation and this paper.
+
+- **Tools and models.** Claude Code (Anthropic), a coding assistant that runs in the terminal, driven by Claude models (recent Sonnet and
+  Opus releases; commits written with its help carry a `Co-Authored-By: Claude` trailer in the repository history).
+- **Software.** The assistant wrote and edited Rust code, unit and command-line tests, benchmark harnesses (`bench/`) and the user
+  documentation (`docs/`, README). The author specified the design (position identity as alignment column plus phase, missing is not
+  absent, the scoring models), directed each change, and reviewed the diffs.
+- **Validation.** Correctness was not taken from the assistant. The code is tested against MALIN's published test data and outputs
+  (`bench/V1`, `bench/L1`), against hand-computed fixtures, and the documentation examples are executed by tests that fail when a page
+  and the binary disagree (`scripts/test_doc_samples.py`, with mutation checks). The author ran the benchmarks on the UCR HPCC and
+  checked the reported numbers against the logs.
+- **Paper.** The assistant drafted an outline and helped with wording and the benchmark tables; the author wrote and approved the
+  final text, and checked every reference against its publisher record. No AI tool is an author, and the author takes responsibility for
+  the software and the paper.
+
+<!-- TODO(author): confirm the model names, the extent statement, and the "checked every reference" claim once it is true; compare with
+JOSS's current AI policy (https://joss.readthedocs.io/en/latest/policies.html) before submission. -->
 
 # Acknowledgements
 
