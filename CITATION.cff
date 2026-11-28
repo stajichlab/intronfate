@@ -10,8 +10,9 @@ abstract: >-
 authors:
   - family-names: Stajich
     given-names: "Jason E."
-    affiliation: "University of California, Riverside"
-    # orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO: add the author's ORCID
+    affiliation: University of California-Riverside
+    email: jason.stajich@ucr.edu
+    orcid: "https://orcid.org/0000-0002-7591-0020"
 repository-code: "https://github.com/stajichlab/intronfate"
 license: MIT
 version: 0.1.0

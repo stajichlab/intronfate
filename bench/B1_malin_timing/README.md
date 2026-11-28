@@ -90,6 +90,26 @@ optimises a different objective from the program that wrote the published files 
 the table or tree reach it differently from how the published runs did. Not resolved. The one run's `-start-with` row came back
 without a value on its second pass (an evaluation hiccup, not re-run).
 
+**MALIN's own likelihood (`malin_own_lnl.sbatch`, job 32517974, `malin_own_lnl.txt`).** `computeRASPosteriors` prints MALIN's log-likelihood of
+the table under a rate file (uncorrected / corrected for unseen intron-less sites):
+
+| rate file | MALIN corrected lnL | intronfate lnL at the same parameters |
+|---|---|---|
+| published `Rog-ecdysozoa.rates` | -32,520.67 | -17,817.37 |
+| published `Rog-ecdysozoa1000.rates` | -32,427.37 | -17,796.13 |
+| CLI fit, default | -18,097.60 | -30,946.5 |
+| CLI fit, `-opt-eps 1e-10 -opt-round 1000` | -18,077.59 | -30,984.1 |
+
+The two programs rank the same four parameter sets in **opposite** orders: MALIN prefers its CLI fit by about 14,000 units, intronfate
+prefers MALIN's published files by about 13,000. So this is not a convergence problem on either side; the two likelihood functions are not
+being applied to the same inputs. L1's agreement (published parameters sit at intronfate's optimum; Chromo23 reproduces MALIN's *printed*
+-28430.9249 to four decimals) was always checked against numbers MALIN printed for its own runs, never by asking MALIN to score a file. The
+published Rogozin files score badly in MALIN here, which suggests MALIN reads them differently from my table/tree (node correspondence
+between the rate file and the labelled tree, or the table's coding), or that the published files were fitted to a different version of the
+table. Not resolved. The arbiter experiment is to write intronfate's fitted parameters into a MALIN rate file (template: a CLI-fitted file
+with `p(gain)`, `p(loss)` and the root probability replaced) and have `computeRASPosteriors` score it: if MALIN gives about -17,817, the
+functions agree and the problem is how the CLI-fitted and published files are read; if not, they differ.
+
 **Consequence for the paper:** do not report a MALIN likelihood timing from this CLI. Report the likelihood equivalence from L1 (published
 MALIN outputs, within 0.002 to 0.07 log-likelihood units, Chromo23 to four decimals) and compare time only where both tools demonstrably
 compute the same thing: Dollo parsimony (V1: per-branch losses match MALIN's guide exactly; here 0.17 s against 0.58 s on tier A, both

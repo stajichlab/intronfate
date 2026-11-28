@@ -9,10 +9,10 @@ tags:
   - fungi
 authors:
   - name: Jason E. Stajich
-    orcid: 0000-0000-0000-0000   # TODO: fill in
+    orcid: 0000-0002-7591-0020
     affiliation: 1
 affiliations:
-  - name: TODO department, University of California, Riverside, USA   # TODO: confirm wording
+  - name: University of California-Riverside, Riverside, CA, USA   # TODO: add department if JOSS asks
     index: 1
 date: TODO
 bibliography: paper.bib
