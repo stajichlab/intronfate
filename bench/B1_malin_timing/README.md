@@ -66,6 +66,15 @@ maximum on the same positions. Jobs 32512872, 32512893, 32512945; outputs `lnl_*
 | `-ambiguous 0.5` | 14,031 | -45,668.16 | -69,872.33 | 24,204 |
 | `-ambiguous 0`, `-opt-round 5000` | 10,926 | -37,224.28 | -58,018.80 | 20,795 |
 
+**Rogozin control (job 32513341, `results_rog/`).** The same harness on the Rogozin table and tree, where L1 agrees with MALIN's
+*published* `.rates` to 0.002, gives lnL -17,817.36 at intronfate's maximum but **-30,984.14 at the parameters this harness got
+from `calculateRASRates`** (default switches, `-ambiguous 0`, 7.7 s). So the fault is in how the harness obtains MALIN's fit, not in the
+V6 data and not in the model: the fitted internal branches sit at about 1e-5 (for example Diptera, Ecdysozoa), unlike the published file
+(0.004, 0.32). The jar has no `calculateConstantRates` class (L1's published file came from that program or the GUI), only
+`calculateRASRates`, whose CLI defaults reach a different, much worse optimum under this likelihood. Until MALIN's CLI is made to reproduce
+its published fit on Rogozin (try `-start-with` the published rates, a tighter `-opt-eps`, and check that `-opt-round` reaches the program;
+the switch syntax is in the guide, Appendix B.3), none of the MALIN timings above is a like-for-like number.
+
 Reading: the gap is the same size with complete columns only (so missing-data handling, per-pattern vs global never-seen, is not
 the cause; both modes agree there) and does not move when MALIN is allowed 5,000 rounds (so it is not early stopping). MALIN
 fits one class. On the Rogozin table the same test agrees to 0.002 (L1), so the two tools do not maximise the same function on *this*

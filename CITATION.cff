@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use intronfate, please cite it as below."
+type: software
+title: "intronfate"
+abstract: >-
+  Projects annotated introns from GFF3/GTF files onto protein alignments as (alignment column, phase) positions,
+  builds an intron presence/absence/missing matrix across genomes, and reconstructs intron gain and loss on a
+  species tree (Dollo and Fitch parsimony, weighted Dollo, and a likelihood model with annotation error).
+  Reads and writes MALIN intron tables.
+authors:
+  - family-names: Stajich
+    given-names: "Jason E."
+    affiliation: "University of California, Riverside"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO: add the author's ORCID
+repository-code: "https://github.com/stajichlab/intronfate"
+license: MIT
+version: 0.1.0
+# date-released: TODO (set when the release is tagged)
+# doi: TODO (Zenodo archive of the tagged release)
+keywords:
+  - introns
+  - comparative genomics
+  - molecular evolution
+  - Dollo parsimony
+  - Rust
