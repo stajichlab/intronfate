@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write a small deterministic MALIN intron table and tree for the B1 smoke test (no third-party data).
 
-Six taxa on ((A,B),(C,D),(E,F)); each site is one gain at a random node and independent losses on the branches below it,
+Six taxa on ((A,B),((C,D),(E,F))); each site is one gain at a random node and independent losses on the branches below it,
 so Dollo and the likelihood both have something to find. The table has `#MAP` lines (alignment name, alignment column),
 so the phase is kept and `convert --to-malin` can write it back. Usage: make_smoke_table.py OUT_PREFIX [N_SITES] [SEED]
 """
@@ -10,7 +10,7 @@ import sys
 
 TAXA = list("ABCDEF")
 CLADES = [list("AB"), list("CD"), list("EF"), TAXA]  # nodes a gain can occur at
-TREE = "((A,B),(C,D),(E,F));\n"
+TREE = "((A,B),((C,D),(E,F)));\n"
 
 
 def build(n_sites=60, seed=1):

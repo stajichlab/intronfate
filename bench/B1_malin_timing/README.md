@@ -41,4 +41,24 @@ with `species.nwk`. Read those paths in place; this folder writes only under its
 
 ## Results
 
-Not run yet. TODO: table from `results/summary.md`, the matching log-likelihoods, node and CPU.
+Job 32512585 (2026-11-27), HPCC node c05 (AMD Opteron 6376), `intronfate` 0.1.0 at `main` `2c8aee4`, MALIN `Malin.jar` as
+supplied by the owner, Java 21.0.7 (`-Xmx8g`). Input: V6 tier A combined matrix (1,106 families, 9 species, 15,716 table lines),
+`species.nwk`; 3 repeats; raw rows in `results_V6A/timings.tsv` on the HPCC.
+
+| tool | task | median wall (s) | min-max (s) | peak RSS (MB) |
+|---|---|---|---|---|
+| intronfate | `score -m dollo` | 0.17 | 0.17-0.19 | 37 |
+| MALIN | `DolloParsimony` | 0.58 | 0.57-0.59 | 81 |
+| intronfate | `score -m likelihood` | 1.50 | 1.49-1.54 | 30 |
+| MALIN | `calculateRASRates` | 90.75 | 89.72-90.95 | 175 |
+| intronfate | `convert --to-malin` | 0.14 | one run | 28 |
+
+Open before any of this is quoted:
+- **The likelihood ratio (about 60x) is not yet a like-for-like claim.** intronfate's `ml_log_likelihood` is -46709.99 (default
+  settings, tolerances 1e-6/1e-7). MALIN's `calculateRASRates` output carries no log-likelihood line, so the two fits have not
+  been compared. Next step: score MALIN's `.rates` with `intronfate` (as [L1](../L1_malin_likelihood/README.md) did) or run
+  `computeRASPosteriors`, and compare the likelihood each stopping rule reaches; also try `-opt-eps` looser and tighter.
+- The models differ in detail (MALIN fits branch lengths and a root density; intronfate fixes the root and treats the
+  error rates as inputs, SPEC §5.5), so say what is fitted by each.
+- Dollo is under a second for both: report it as comparable, not as a win.
+- One data set, one node, nine species. A scaling series in taxa and sites is still to do (HANDOFF item 8).
