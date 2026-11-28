@@ -25,48 +25,74 @@ Every number below must be traced to a bench/ README or a log before submission;
 that still need a run. Do not cite from memory: check each paper.bib entry against the publisher record.
 -->
 
-# Summary  [~120 words]
+<!-- PROSE DRAFT 2026-11-28 (~820 words, body only). Numbers come from: V3 (52 s, 7.0 GB, 1.6 s), B2 (10^8 cells; likelihood 1,216 s),
+V6 tier A + B1 (Dollo 0.17 s vs 0.58 s, likelihood 1.5 s), L1 and V1. TODO(author) to verify before submission: the D1 conda/container
+'within 0.2 percent' statement; 'rarely documented or tested' (opinion about the field); the use-case paragraph has no numbers yet
+(P1, V7 results); the likelihood-scaling sentence will change if B3 finds a cheaper tolerance. -->
 
-<!-- Introns sit at specific positions in homologous genes; presence/absence across species records history.
-intronfate = Rust CLI + library. GFF3/GTF + protein alignments -> intron positions as (alignment column, phase)
--> presence/absence/missing matrix -> gains and losses on a species tree (Dollo, parsimony, weighted Dollo,
-likelihood). Imports and exports MALIN tables. -->
+# Summary
 
-# Statement of need  [~180 words]
+Spliceosomal introns sit at specific positions in homologous genes, and their presence or absence across species records
+gain and loss over evolutionary time. `intronfate` is a Rust command-line tool and library that turns genome annotations
+(GFF3 or GTF) and protein alignments into intron positions, expressed as an alignment column and a phase, and builds a
+presence, absence and missing matrix with one row per position and one column per genome. It then reconstructs gains and
+losses on a species tree with Dollo parsimony, maximum parsimony, weighted Dollo, simple counts or a maximum-likelihood model
+that allows annotation error and rate variation. It reads and writes MALIN tables [@Csuros2008], so results move between the two programs.
 
-<!-- Who: comparative genomicists studying intron density, loss and gain across large clades (fungi first).
-Problem: the projection step (annotation -> alignment columns) is done with ad hoc scripts; MALIN [@Csuros2008]
-starts from a hand-built matrix. Two design commitments: position identity is alignment column + phase
-(docs/SPEC.md section 2); missing is not absent (a column in a gap or unannotated region stays '?').
-Scale: genome-scale annotation is routine; a folder of GFFs + alignments should give a scored matrix in one step. -->
+# Statement of need
 
-# State of the field  [~120 words]
+Studies of intron density and position across a clade need the same step first: place every annotated intron into a shared
+coordinate system. This is usually done with one-off scripts, and the output is a hand-built matrix that is then given to a
+likelihood program such as MALIN [@Csuros2008]. The step is where errors enter, and it is rarely documented or tested.
+`intronfate` makes it a single command, from a folder of annotations and alignments to a scored matrix.
 
-<!-- MALIN [@Csuros2008; @Csuros2011] is the reference likelihood implementation; intronfate is complementary,
-covers the upstream projection step, and reads/writes MALIN tables (validated on MALIN's published data, bench/V1, L1).
-Earlier Dollo analyses of intron positions [@Rogozin2003]. State plainly what other tools do not do. -->
+Two design commitments follow from how annotation-based data fail. First, a position is identified by its alignment column
+and phase, so introns from different genomes are the same position when they fall in the same column and phase. Second,
+missing is not absent: a column that is in an alignment gap, or in a region a genome does not annotate, stays `?` and is not
+counted as a loss. Treating gaps as losses inflates loss estimates in exactly the places where annotations are weakest.
+The target users are comparative genomicists working across tens to thousands of genomes, with fungi as the first clade.
 
-# Software design  [~250 words]
+# State of the field
 
-<!-- Figure 1: pipeline (annotation -> projection -> matrix -> scoring -> tables).
-Core + CLI crates; AnnotationSource seam. Inputs: file / list-file / folder, stdin and --stdout TABLE,
---taxon-map for one alignment per family, --combine (equals the per-family sum; tested).
-Scoring: dollo, mp, dollo_weighted, counts, likelihood (per-genome annotation error, family-block bootstrap,
-gamma classes, free class levels). Optional junction-support soft evidence, presented as a sensitivity analysis
-(bench/S1: it did not improve ranking). Testing: unit + CLI tests; MALIN validation V1; MALIN likelihood
-reproduced to four decimals (L1); doc-sample tests with mutation checks so the pages cannot drift from the binary
-(scripts/test_doc_samples.py, scripts/mutate_doc_samples.py). -->
+MALIN [@Csuros2008; @Csuros2011] is the reference program for likelihood analysis of intron presence and absence, with
+rate variation across positions and branches. It starts from a table of intron presence and absence, and its table is
+prepared outside the program. Earlier analyses of intron positions used Dollo-style counts [@Rogozin2003]. `intronfate` is
+complementary: it produces the table from annotation, then offers its own scoring and exports the table to MALIN. It is
+a reimplementation of the scoring models, not a replacement for MALIN's graphical interface or its published methods.
 
-# Research impact statement  [~200 words]
+# Software design
 
-<!-- Three evidence blocks, each tied to a bench result. NO Antarctolithica material (private project).
-Ease of use: docs/HOWTO.md run as written on the HPCC with Apptainer (bench/D1) and via conda on macOS/arm64
-(within 0.2 percent of D1); give install + run commands and counts of steps.
-Speed and scale: bench/V3 (1,000 genomes in 52 s and 7.0 GB; largest GFF3 in the BFD 1.6 s; single-file parsing
-is single-threaded, state as a limitation). MALIN likelihood timing is PARKED (bench/B1_malin_timing README): cite L1 for likelihood equivalence, time only Dollo against MALIN, and do not claim a likelihood speedup. Scaling series DONE (bench/B2_scaling): import, Dollo and parsimony linear in cells (10^8 cells: import 26 s, Dollo 34 s, 5.8 GB); the likelihood is NOT scalable (30 taxa x 100,000 sites 1,216 s; 1,000 taxa x 1,000 sites >1,800 s on simulated data) - report as a limitation.
-Use cases: bench/P1 intron density across the BFD; F1/F2 flank and column-ambiguity; V4/V7 annotation-error
-sensitivity; J1-J3 junction support vs RefSeq. Future use: intron density and position questions at clade
-scale (loss rate by lineage, convergent insertion, annotation-quality screening). -->
+The core crate holds the annotation reader, the projection onto alignments, the matrix and the scoring models, and a
+second crate provides the command-line interface. Annotation enters through an `AnnotationSource` seam, so other formats can
+be added. Input can be one file, a list file, a folder, or standard input, and `--taxon-map` handles one alignment per
+gene family. `--combine` joins families into one matrix and equals the sum of the per-family results, which a test checks.
+
+The likelihood model has per-genome annotation error, a family-block bootstrap, gamma or free-level rate classes, and
+MALIN's correction for positions never seen with an intron. Documentation examples are executed as tests, with mutation
+checks that confirm a changed binary breaks them, so the pages cannot drift from the program.
+
+Validation against MALIN used its published test data. Branch-wise losses from Dollo parsimony on the Rogozin table
+match the MALIN guide exactly. For the likelihood, the published Rogozin parameters score within 0.002 log-likelihood units
+of this tool's own maximum, and the Chromo23 log-likelihood, with its never-seen correction, reproduces MALIN's printed
+value (-28430.9249) to four decimals.
+
+# Research impact statement
+
+**Ease of use.** The documented workflow, from public genomes to a scored matrix, was run as written on a cluster with a
+container and again with conda on macOS. The two runs agreed within 0.2 percent. A MALIN table converts to and from the
+matrix with one command each (`convert --from-malin`, `--to-malin`).
+
+**Speed and scale.** Projection of 1,000 fungal genomes in one process takes 52 s and 7.0 GB; the largest
+annotation in the genome collection tested (165 MB uncompressed) takes 1.6 s. On simulated data, import, Dollo and parsimony
+scale linearly in matrix size: a matrix of 1,000 taxa and 100,000 sites (10^8 cells) imports in 26 s and is scored in about 35 s,
+using 5.8 GB. The likelihood does not scale like this: on the same simulated data it took 1,216 s for 30 taxa and 100,000
+sites, so it is suited to tens of taxa, not hundreds. On a real nine-species set with 15,697 sites it takes 1.5 s. For Dollo
+parsimony on that set, `intronfate` took 0.17 s and MALIN's command-line program 0.58 s; both are fast, and we make no
+speed claim for the likelihood against MALIN.
+
+**Use cases.** The tool supports questions about intron density and position at clade scale: loss rates by lineage,
+convergent insertion at the same position, and screening of annotation quality, with error-sensitivity analyses to show
+how much a result depends on annotation misses.
 
 # AI usage disclosure
 
