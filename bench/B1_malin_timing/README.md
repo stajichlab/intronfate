@@ -71,9 +71,29 @@ maximum on the same positions. Jobs 32512872, 32512893, 32512945; outputs `lnl_*
 from `calculateRASRates`** (default switches, `-ambiguous 0`, 7.7 s). So the fault is in how the harness obtains MALIN's fit, not in the
 V6 data and not in the model: the fitted internal branches sit at about 1e-5 (for example Diptera, Ecdysozoa), unlike the published file
 (0.004, 0.32). The jar has no `calculateConstantRates` class (L1's published file came from that program or the GUI), only
-`calculateRASRates`, whose CLI defaults reach a different, much worse optimum under this likelihood. Until MALIN's CLI is made to reproduce
-its published fit on Rogozin (try `-start-with` the published rates, a tighter `-opt-eps`, and check that `-opt-round` reaches the program;
-the switch syntax is in the guide, Appendix B.3), none of the MALIN timings above is a like-for-like number.
+`calculateRASRates`, whose CLI defaults reach a different, much worse optimum under this likelihood. Reproduction attempts (`repro_rogozin.sbatch`, jobs 32514242, 32514328, 32514939; `repro_rog.tsv`; intronfate's maximum is -17,817.36
+for constant rates, -17,796.75 with two loss levels):
+
+| MALIN run on the Rogozin table | intronfate lnL at MALIN's parameters |
+|---|---|
+| published `Rog-ecdysozoa.rates` (control) | -17,817.37 |
+| published `Rog-ecdysozoa1000.rates` (control, two loss levels) | -17,796.13 |
+| `calculateRASRates` defaults; `-opt-eps` 1e-10; `-opt-round` 1000; both | -30,946.5; -30,984.1; -30,946.5; -30,984.1 |
+| ... `-start-with` the published rates (and eps/round as above) | -30,984.1 |
+| ... branch lengths of the published fit in the Newick file, or 0.5 on every branch | -30,984.1 |
+| `-low-loss-levels 1`; with tight eps/round (also from a uniform tree) | -29,929.4; -30,648.7 |
+
+Every setting ends at the same parameters (about -30,984 under intronfate's likelihood), including a start at the published parameters and
+at the published branch lengths, so this is not early stopping, a poor start or missing branch lengths. The jar's `calculateRASRates`
+CLI reaches a result that intronfate's likelihood scores 13,000 units below MALIN's published fits on the same table. Either the CLI
+optimises a different objective from the program that wrote the published files (the jar has no `calculateConstantRates` class), or
+the table or tree reach it differently from how the published runs did. Not resolved. The one run's `-start-with` row came back
+without a value on its second pass (an evaluation hiccup, not re-run).
+
+**Consequence for the paper:** do not report a MALIN likelihood timing from this CLI. Report the likelihood equivalence from L1 (published
+MALIN outputs, within 0.002 to 0.07 log-likelihood units, Chromo23 to four decimals) and compare time only where both tools demonstrably
+compute the same thing: Dollo parsimony (V1: per-branch losses match MALIN's guide exactly; here 0.17 s against 0.58 s on tier A, both
+under a second). To make a likelihood timing defensible, ask how `Rog-ecdysozoa.rates` was produced (which MALIN program or GUI settings).
 
 Reading: the gap is the same size with complete columns only (so missing-data handling, per-pattern vs global never-seen, is not
 the cause; both modes agree there) and does not move when MALIN is allowed 5,000 rounds (so it is not early stopping). MALIN
