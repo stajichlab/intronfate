@@ -110,6 +110,8 @@ table. Not resolved. The arbiter experiment is to write intronfate's fitted para
 with `p(gain)`, `p(loss)` and the root probability replaced) and have `computeRASPosteriors` score it: if MALIN gives about -17,817, the
 functions agree and the problem is how the CLI-fitted and published files are read; if not, they differ.
 
+**Status: PARKED (2026-11-27, owner's decision).** The MALIN likelihood comparison and timing are out of scope for the JOSS paper; the arbiter experiment above is the way to resume it.
+
 **Consequence for the paper:** do not report a MALIN likelihood timing from this CLI. Report the likelihood equivalence from L1 (published
 MALIN outputs, within 0.002 to 0.07 log-likelihood units, Chromo23 to four decimals) and compare time only where both tools demonstrably
 compute the same thing: Dollo parsimony (V1: per-branch losses match MALIN's guide exactly; here 0.17 s against 0.58 s on tier A, both

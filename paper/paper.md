@@ -62,7 +62,7 @@ reproduced to four decimals (L1); doc-sample tests with mutation checks so the p
 Ease of use: docs/HOWTO.md run as written on the HPCC with Apptainer (bench/D1) and via conda on macOS/arm64
 (within 0.2 percent of D1); give install + run commands and counts of steps.
 Speed and scale: bench/V3 (1,000 genomes in 52 s and 7.0 GB; largest GFF3 in the BFD 1.6 s; single-file parsing
-is single-threaded, state as a limitation). TODO(bench): head-to-head with MALIN (bench/B1_malin_timing).
+is single-threaded, state as a limitation). MALIN likelihood timing is PARKED (bench/B1_malin_timing README): cite L1 for likelihood equivalence, time only Dollo against MALIN, and do not claim a likelihood speedup. TODO(bench): intronfate-only scaling series (taxa x sites).
 Use cases: bench/P1 intron density across the BFD; F1/F2 flank and column-ambiguity; V4/V7 annotation-error
 sensitivity; J1-J3 junction support vs RefSeq. Future use: intron density and position questions at clade
 scale (loss rate by lineage, convergent insertion, annotation-quality screening). -->
